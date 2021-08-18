@@ -9,13 +9,14 @@ const makeCircle = (d: number, k: string, l: number, movable: boolean = false, x
   else g = makeMovableObject(d, d, x, y)
   const o = {
     ...g,
+    fillStyle: k,
     radius: d / 2,
   }
 
   o.render = (c) => {
     c.strokeStyle = 'black'
     c.lineWidth = l
-    c.fillStyle = k
+    c.fillStyle = o.fillStyle
     c.beginPath()
     c.arc(o.radius + (-o.radius * 2 * o.pivotX), o.radius + (-o.radius * 2 * o.pivotY), o.radius, 0, 2 * PI, false)
     if (l) c.stroke()
@@ -27,7 +28,7 @@ const makeCircle = (d: number, k: string, l: number, movable: boolean = false, x
 }
 
 const makeRectangle = (w: number, h: number, k: string, s: number = 1, x = 0, y = 0) => {
-  const g = makeGeneralObject(w, h)
+  const g = makeGeneralObject(w, h, x, y)
   const o = {
     ...g,
     x: x,
@@ -42,6 +43,7 @@ const makeRectangle = (w: number, h: number, k: string, s: number = 1, x = 0, y 
     c.lineWidth = s
     c.fillStyle = o.fillStyle
     c.beginPath()
+    c.moveTo(x, y)
     c.rect(-o.width * o.pivotX, -o.height * o.pivotY, o.width, o.height);
     c.fill()
     if (s) c.stroke()
@@ -63,57 +65,6 @@ const makeSelectionBox = () => {
       c.rect(o.WIDTH, o.HEIGHT, -o.WIDTH, -o.HEIGHT)
       c.stroke()
     }
-  }
-  moreProperties(o)
-  return o
-}
-
-const makeTreeTop = (t, type, color) => {
-  const treeYOffset = 16
-  const w = t.width * 3
-  const g = makeGeneralObject(w, w)
-  const o = {
-    ...g,
-    type: type,
-    x: t.x,
-    y: t.y,
-    r: (t.width) * 1.5,
-    render(c) {
-      c.fillStyle = color
-      if (type) {
-        c.beginPath()
-        c.arc(0, 0, o.r, 0, PI * 2, false)
-        c.fill()
-      } else { 
-        c.beginPath()
-        c.arc(-3, treeYOffset - 2, 5, PI * 0.0, PI * 1.4, false)
-        c.arc(-11, treeYOffset - 6, 5, PI * 0.0, PI * 1.4, false)
-        c.arc(-17, treeYOffset - 15, 6, PI * 0.4, PI * 1.7, false)
-        c.arc(-11, treeYOffset - 27, 7, PI * 0.7, PI * 2, false)
-        c.arc(+ 2, treeYOffset - 30, 7, PI * 1.1, PI * 0.2, false)
-        c.arc(+ 17, treeYOffset - 24, 9, PI * 1.1, PI * 0.5, false)
-        c.arc(+ 15, treeYOffset - 9, 6, PI * 1.5, PI * 0.8, false)
-        c.arc(+ 6,  treeYOffset - 2, 5, PI * 1.7, PI * 0.9, false)
-        c.fill()
-      }
-    }
-  }
-  moreProperties(o)
-
-  
-  return o
-}
-
-const makeTreeTrunk = (x = 0, y = 0, width = 30, color) => {
-  const g = makeGeneralObject(width, width * 3, x, y)
-  const o = {
-    ...g,
-  }
-  o.render = (c) => {
-    c.fillStyle = color
-    c.beginPath()
-    c.rect(-o.width * o.pivotX, -o.height * o.pivotY, o.width, o.height)
-    c.fill()
   }
   moreProperties(o)
   return o
@@ -143,7 +94,7 @@ const makeSlash = (n: number) => {
   return o
 }
 
-const makeTwoEyes = (two = 1) => {
+const makeTwoEyes = (two = 1, x = 0, y = 0) => {
   const g = makeGeneralObject(34, 10)
   const o = {
     ...g,
@@ -153,18 +104,18 @@ const makeTwoEyes = (two = 1) => {
       c.fillStyle = 'red'
       c.lineWidth = 0.7
       c.beginPath()
-      c.moveTo(0, 0)
-      c.lineTo(14, 10)
-      c.lineTo(0, 5)
-      c.lineTo(0, 0)
+      c.moveTo(x, y)
+      c.lineTo(x + 14, y + 10)
+      c.lineTo(x, y + 5)
+      c.lineTo(x, y)
       c.fill()
       
       // Right eye
       if (two) {
-        c.moveTo(34, 0)
-        c.lineTo(20, 10)
-        c.lineTo(34, 5)
-        c.lineTo(34, 0)
+        c.moveTo(x + 34, y)
+        c.lineTo(x + 20, y + 10)
+        c.lineTo(x + 34, y + 5)
+        c.lineTo(x + 34, y)
         c.fill()
       }
       c.stroke()
@@ -174,7 +125,7 @@ const makeTwoEyes = (two = 1) => {
   return o
 }
 
-const makeThirdEye = () => {
+const makeThirdEye = (x = -3, y = -80) => {
   const g = makeGeneralObject(6, 15)
   const o = {
     ...g,
@@ -183,15 +134,16 @@ const makeThirdEye = () => {
       c.fillStyle = 'red'
       c.lineWidth = 0.5
       c.beginPath()
-      c.moveTo(0, 0)
-      c.lineTo(6, 0)
-      c.lineTo(3, 15)
-      c.lineTo(0, 0)
+      c.moveTo(x, y)
+      c.lineTo(x + 6, y)
+      c.lineTo(x + 3, y + 15)
+      c.lineTo(x, y)
       c.fill()
       c.stroke()
     }
   }
   moreProperties(o)
+  
   return o
 }
 
@@ -288,6 +240,88 @@ const makeHeadDetails = (two = 1) => {
   return o
 }
 
+const shotHit = (x, y) => {
+  const g = makeGeneralObject(10, 10, x, y)
+  const o = {
+    ...g,
+    render(c) {
+      c.strokeStyle = '#F00'
+      c.fillStyle = '#FF0'
+      c.lineWidth = 4
+      c.beginPath()
+      c.arc(-1,-1,2, 0, 2*PI, false)
+      c.stroke()
+      c.fill()
+    }
+  }
+  moreProperties(o)
+  return o
+}
+
+const flash = (x = 0, y = 0) => {
+  const g = makeGeneralObject(10, 10, x, y)
+  const o = {
+    ...g,
+    render(c) {
+      c.strokeStyle = '#F00'
+      c.fillStyle = '#FF0'
+      c.lineWidth = 2
+      c.beginPath()
+      c.lineTo(0, 1)
+      c.lineTo(50, 0)
+      c.lineTo(0, -1)
+      c.stroke()
+      c.fill()
+    }
+  }
+  moreProperties(o)
+  return o
+}
+
+const actionMark = (x = 0, y = 0, attack = true) => {
+  const g = makeGeneralObject(10, 10, x, y)
+  const o = {
+    ...g,
+    render(c) {
+      c.lineWidth = 8
+      c.beginPath()
+      if (attack) {
+        c.strokeStyle = '#F00'
+        c.arc(20, 22, 35, 0, 2 *PI, false)
+        c.stroke()
+      } else {
+        c.strokeStyle = '#0F0'
+        c.moveTo(-10, -10)
+        c.lineTo(10, 10)
+        c.moveTo(10, -10)
+        c.lineTo(-10, 10)
+        c.stroke()
+      }
+    }
+  }
+  moreProperties(o)
+  return o
+}
+
+
+const makeEnemyEyes = () => {
+  const g = makeGeneralObject(0, 0)
+  const o = {
+    ...g,
+    render(c) {
+      c.strokeStyle = '#FFF'
+      c.lineWidth = 2
+      c.beginPath()
+
+    }
+  }
+  moreProperties(o)
+  return o
+
+
+
+}
+
 
 const moonSurface1 = (w, h) => {
   const g = makeGeneralObject(w, h)
@@ -309,13 +343,16 @@ export {
   makeCircle,
   makeRectangle,
   makeSelectionBox,
-  makeTreeTop,
-  makeTreeTrunk,
+  // makeTreeTop,
+  // makeTreeTrunk,
   makeSlash,
   makeTwoEyes,
   makeThirdEye,
   makeLeg,
   makeBorder,
   makeHeadDetails,
+  shotHit,
+  flash,
+  actionMark
   // moonSurface1
 }

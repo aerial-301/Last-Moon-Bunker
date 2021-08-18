@@ -1,10 +1,9 @@
-import { randomNum, removeItem, globalAngle, getDistance, randomNum } from './functions.js'
+import { randomNum, removeItem, globalAngle, getDistance, tempAngle } from './functions.js'
 import { moveCamera, movePlayer, resetPointerOffsets, setPointerOffsets } from './keyboard.js'
 import { createSelectionBox, beginSelection, pointerDown, pointerUp } from './mouse.js'
-import { cellHeight, cellWidth, createFromMaze } from './Map/mapSetup.js'
 import { centerCam, moveMazeCamera } from './camera.js'
-import { mainPlayer, makeGeneralObject, makeText, moreProperties, newVillager } from './unitObject.js'
-import { makeTreeTrunk, makeTreeTop, makeRectangle, makeCircle } from './drawings.js'
+import { mainPlayer, makeEnemy, makeGeneralObject, makeText, moreProperties, newVillager } from './unitObject.js'
+import { makeRectangle, makeCircle, shotHit, flash, actionMark } from './drawings.js'
 import { GA } from './ga_minTest.js'
 import { debugShape, tempIndicator} from '../extra/debug.js'
 import { tempDrawing, tempEarth, tempDrawing_2, gun } from '../extra/Drawing-Test.js'
@@ -25,12 +24,13 @@ const C = {
 
 let currentPlayer
 let player
-let tempVill
+let MK = false
+
 
 
 
 let c
-let players = []
+let playerUnits = []
 let mazeEntrance
 let maze
 let g
@@ -46,6 +46,9 @@ let movingEnemies = []
 let bloods = []
 let bloodSplats = []
 let shots = []
+let attackingTarget = []
+
+
 let moved = false
 let moveCycle = false
 
@@ -119,35 +122,8 @@ const moveEnemies = () => {
   }
 }
 
-const generateOneTree = (x, y, w, h) => {
-  let flip
-  const treeTrunk = makeTreeTrunk(x, y, w, trunkColors[randomNum(0, trunkColors.length)])
-  const someTree = makeTreeTop(treeTrunk, randomNum(0, 2), treeColors[randomNum(0, treeColors.length)])
-  if (someTree.type) {
-    someTree.x = treeTrunk.centerX - someTree.r
-    someTree.y = treeTrunk.centerY - someTree.r * 2
-  } else {
-    flip = Math.random() > 0.5 ? 1 : -1
-    someTree.scaleX = w / 7 * flip
-    flip = Math.random() > 0.5 ? 1 : -1
-    someTree.scaleY = w / 16 * flip
-    someTree.x = treeTrunk.centerX - someTree.r
-    someTree.y = treeTrunk.centerY - someTree.r * 1.8
-  }
-  someTree.yOffset = someTree.height
-
-  objLayer.addChild(treeTrunk)
-  objLayer.addChild(someTree)
-
-  const treeBase = makeGeneralObject(w, Math.floor(w * 0.6), treeTrunk.x, Math.floor(treeTrunk.y + h - w * 0.6))
-  moreProperties(treeBase)
-  objLayer.addChild(treeBase)
-  solids.push(treeBase)
-  // debugShape(treeBase)
-}
-
 const animatePlayer = () => {
-  for (const u of players) {
+  for (const u of units) {
     if (!u.attacked && !u.attacked2) {
       if (u.isMoving) {
         u.moveAnimation()
@@ -158,15 +134,30 @@ const animatePlayer = () => {
   }
 }
 
-let MK = false
 
 const switchMode = () => {
-  MK = !MK
-  setPointerOffsets()
-  player.isMoving = false
-  removeItem(movingUnits, player)
-  selectedUnits.forEach(v => v.deselect())
-  selectedUnits = []
+  if (!MK) {
+    if (selectedUnits.length === 1) {
+      MK = true
+      // setPointerOffsets()
+      currentPlayer = selectedUnits[0]
+      currentPlayer.isMoving = false
+      removeItem(movingUnits, currentPlayer)
+      currentPlayer.deselect()
+      selectedUnits = []
+    } 
+    
+  } else {
+    if (currentPlayer) {
+      MK = false
+      currentPlayer.isMoving = false
+      currentPlayer.weapon.rotation = currentPlayer.weaponRotation
+      currentPlayer = null
+      // setPointerOffsets()
+      setPointerOffsets()
+    }
+  }
+  
 }
 
 
@@ -177,19 +168,51 @@ const play = () => {
   
   if (MK) {
     moveMazeCamera()
-    if (!player.attacked) {
-      if (!player.attacked2) {
-        if (!player.isRolling) {
+
+    if (!currentPlayer.attacked) {
+      if (!currentPlayer.attacked2) {
+        if (!currentPlayer.isRolling) {
           movePlayer()
-          player.swordHandle.rotation = -globalAngle(player.playerHand, g.pointer) + C.idleSwordAngle
-          tempVill.gun.rotation = -globalAngle(tempVill.gun, g.pointer)
+          // currentPlayer.weapon.rotation = -globalAngle(currentPlayer.playerHand, g.pointer) + currentPlayer.weaponAngle
+          currentPlayer.weapon.rotation = -tempAngle(currentPlayer.playerHand, g.pointer, currentPlayer.angleOffX, currentPlayer.angleOffY) + currentPlayer.weaponAngle
+            // debugText.content = `
+            // a = ${currentPlayer.playerHand.centerX}  ${currentPlayer.playerHand.centerY}
+            // b = ${g.pointer.centerX}  ${g.pointer.centerY}
+            // `
+
+
+          // player.swordHandle.rotation = -globalAngle(player.playerHand, g.pointer) + C.idleSwordAngle
+          // tempVill.gun.rotation = -globalAngle(tempVill.playerHand, g.pointer)
         }
       }
     }
+    
   } else {
     beginSelection()
     moveCamera()
   }
+
+  if (shots.length > 0) {
+    shots.forEach(shot => {
+      shot.scaleX += 0.1
+      shot.scaleY += 0.1
+    })
+  }
+
+
+  if (attackingTarget.length > 0) {
+    attackingTarget.forEach(unit => {
+      if (!unit.attacked) {
+        if (unit.target) unit.attack(unit.target)
+        else {
+          removeItem(attackingTarget, unit)
+          unit.weapon.rotation = -0.2
+        }
+      }
+    })
+  }
+
+
   // if (moveSun) {
   //   moveSun = false
   //   sun.x += 0.8
@@ -262,7 +285,7 @@ const setup = () => {
           if (maxPlayerUnits) {
             const v = newVillager(cellCenterX - 25, cellCenterX - 25)
             objLayer.addChild(v)
-            players.push(v)
+            playerUnits.push(v)
             units.push(v)
             v.speed = 2
             maxPlayerUnits -= 1
@@ -291,23 +314,33 @@ const setup = () => {
 
   // Create the main player unit
   // player = mainPlayer(100, 200)
-  player = mainPlayer(100, 200)
+  player = mainPlayer(300, 300)
   objLayer.addChild(player)
-  players.push(player)
+  playerUnits.push(player)
   units.push(player)
   player.speed = 2
 
-  tempVill = newVillager(100, 300)
+  const tempVill = newVillager(300, 400, true)
   objLayer.addChild(tempVill)
-  players.push(tempVill)
+  playerUnits.push(tempVill)
   units.push(tempVill)
   tempVill.speed = 2
 
 
+  const tempEnemy = makeEnemy(400, 300)
+  objLayer.addChild(tempEnemy)
+  units.push(tempEnemy)
+  enemies.push(tempEnemy)
+  tempEnemy.speed = 2
 
-  const gun_1 = gun(tempVill)
+  // const tempMark = actionMark(400, 300)
+  // objLayer.addChild(tempMark)
 
-  tempVill.gun = gun_1
+
+
+  // debugShape(tempEnemy)
+
+
 
   createSelectionBox()
   debugText = makeText(' ', '22px arial', 'white', 20, 100)
@@ -334,7 +367,8 @@ export {
   selectedUnits, 
   movingUnits,
   solids,
-  player,
+  playerUnits,
+  // player,
   C,
   bloods,
   bloodSplats,
@@ -345,5 +379,7 @@ export {
   surfaceWidth,
   surfaceHeight,
   switchMode,
-  MK
+  MK,
+  currentPlayer,
+  attackingTarget,
 }

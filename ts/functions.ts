@@ -1,5 +1,5 @@
 import { makeRectangle } from './drawings.js'
-import { g, player, movingUnits, solids, MK } from './main.js'
+import { g, movingUnits, solids, MK, currentPlayer } from './main.js'
 import { makeText } from './unitObject.js'
 import { tempIndicator } from '../extra/debug.js'
 
@@ -61,7 +61,7 @@ const aroundAll = (collider, H) => {
   })
 }
   
-const checkCollisions = (side, collider = player) => {
+const checkCollisions = (side, collider = currentPlayer) => {
   if (!collider.obstacles) return false
 
   collider.obstacles.forEach(obst => {
@@ -70,16 +70,16 @@ const checkCollisions = (side, collider = player) => {
       collider.collisionSide = side
       switch (side) {
         case 'top':
-          collider.y = obst.y - collider.height
+          collider.y = obst.y - collider.height - 1
           break
         case 'bot':
-          collider.y = obst.y + obst.height
+          collider.y = obst.y + obst.height + 1
           break
         case 'left':
-          collider.x = obst.x - collider.width
+          collider.x = obst.x - collider.width - 1
           break
         case 'right':
-          collider.x = obst.x + obst.width
+          collider.x = obst.x + obst.width + 1
           break
         default:
           console.log('side not found !')
@@ -133,6 +133,14 @@ const globalAngle = (a, b) => {
   )
 }
 
+
+const tempAngle = (a, b, bOffsetX = 0, bOffsetY = 0) => {
+  return Math.atan2(
+    (b.centerX + bOffsetX - a.centerX),
+    (b.centerY + bOffsetY - a.centerY),
+  )
+}
+
 const sortUnits = (array, x: number, y: number, moveArray) => {
   const len = array.length
   if (len == 0) return
@@ -163,6 +171,7 @@ const sortUnits = (array, x: number, y: number, moveArray) => {
   for (let i in array) {
     const u = array[i]
     u.isCollided = false
+    u.target = null
     const dX = x + (i % size) * (maxWidth + xSpace) - midX
     const dY = y + Math.floor(i / size) * (maxHeight + ySpace) - midY
     u.destinationX = dX
@@ -299,4 +308,5 @@ export {
   scan,
   roll,
   newMoveTest,
+  tempAngle
 }

@@ -348,8 +348,9 @@ export var GA = {
       return hit;
     }
   
-    g.gDistance = (a, b) => {
-        return Math.sqrt( ((b.gx + b.halfWidth) - (a.gx + a.halfWidth)) ** 2 + ((b.gy + b.halfHeight) - (a.gy + a.halfHeight)) ** 2 )
+    g.gDistance = (a, b, aOffX = 0, aOffY = 0) => {
+        // return Math.sqrt( ((b.gx + b.halfWidth) - (a.gx + a.halfWidth + aOffX)) ** 2 + ((b.gy + b.halfHeight) - (a.gy + a.halfHeight + aOffY)) ** 2 )
+        return Math.sqrt( ((b.centerX) - (a.centerX + aOffX)) ** 2 + ((b.centerY) - (a.centerY + aOffY)) ** 2 )
     }
 
     return g

@@ -1,13 +1,13 @@
 import { makeRectangle } from './drawings.js'
 import { getUnitVector } from './functions.js'
-import { g, shots, objLayer, maze, player } from './main.js'
+import { g, shots, objLayer, maze } from './main.js'
 import { makeMovableObject, moreProperties } from './unitObject.js'
 
 const makeShot = (x, y) => {
   const m = makeMovableObject(20, 20)
   const o = {
     ...m,
-    obstacles: [...maze.borders, player],
+    obstacles: [...maze.borders],
     render(c) {
       c.strokeStyle = 'black'
       c.lineWidth = 1
@@ -127,5 +127,6 @@ const makeEnemy = (x, y) => {
 }
 
 export {
-  makeEnemy,
+  // makeEnemy,
+  // makeShot
 }

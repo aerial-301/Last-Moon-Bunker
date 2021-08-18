@@ -1,6 +1,6 @@
-import { g, world, units, objLayer, player, surfaceWidth, surfaceHeight, switchMode, MK, enemies } from './main.js'
+import { g, world, objLayer, surfaceWidth, surfaceHeight, switchMode, MK, enemies, currentPlayer } from './main.js'
 import { checkCollisions, randomNum } from './functions.js'
-import { makeEnemy } from './enemyObject.js';
+import { makeEnemy } from './unitObject.js';
 
 
 let paused: boolean = false;
@@ -37,7 +37,7 @@ const resetPointerOffsets = () => {
 window.addEventListener('keydown', (k) => {
   if (k.key in keys) {
     keys[k.key] = true
-    if (MK) player.isMoving = true
+    if (MK) currentPlayer.isMoving = true
   } 
   // else if (k.key === 'r') player.getHit(20)
 })
@@ -46,7 +46,7 @@ window.addEventListener('keyup', (k) => {
     keys[k.key] = false
     if (MK) {
       if (Object.values(keys).every(v => v === false)) {
-        player.isMoving = false
+        currentPlayer.isMoving = false
       }
     }
 
@@ -98,26 +98,26 @@ const moveCamera = () => {
 const movePlayer = () => {
 
   if (keys.w) {
-    player.y -= player.speed
+    currentPlayer.y -= currentPlayer.speed
     checkCollisions('bot')
-    player.scan()
+    currentPlayer.scan()
     objLayer.children.sort((a, b) =>  (a.Y + a.height) - (b.Y + b.height))
   }
   if (keys.s) {
-    player.y += player.speed
+    currentPlayer.y += currentPlayer.speed
     checkCollisions('top')
-    player.scan()
+    currentPlayer.scan()
     objLayer.children.sort((a, b) =>  (a.Y + a.height) - (b.Y + b.height))
   }
   if (keys.a) {
-    player.x -= player.speed
+    currentPlayer.x -= currentPlayer.speed
     checkCollisions('right')
-    player.scan()
+    currentPlayer.scan()
   }
   if (keys.d) {
-    player.x += player.speed
+    currentPlayer.x += currentPlayer.speed
     checkCollisions('left')
-    player.scan()
+    currentPlayer.scan()
   }
 }
 
