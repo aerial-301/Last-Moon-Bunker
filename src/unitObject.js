@@ -1,4 +1,4 @@
-import { alertedEnemies, bloodSplats, C, enemies, floorLayer, g, PI, selectedUnits, uiLayer, MK, world, shots, movingUnits, attackingTarget, playerUnits } from './main.js'
+import { alertedEnemies, bloodSplats, C, enemies, floorLayer, g, PI, selectedUnits, uiLayer, MK, world, shots, movingUnits, attackingTarget, playerUnits, units } from './main.js'
 import { newMoveTest, randomNum, removeItem, roll, scan, tempAngle } from './functions.js'
 import { makeLeg, makeCircle, makeHeadDetails, makeBorder, makeRectangle, makeTwoEyes, makeThirdEye, makeSlash, shotHit } from './drawings.js'
 import { debugShape } from '../extra/debug.js'
@@ -37,6 +37,7 @@ const moreUnitsProperties = (o, n = 0) => {
   o.attacked = false,
   o.damagedAmount = 0
   o.isDamaged = false
+  o.isDead = false
   o.HBscale = 0.5
   o.firstStep = true
   o.justStoped = true
@@ -106,12 +107,23 @@ const moreUnitsProperties = (o, n = 0) => {
     }
   }
   o.getHit = (damage) => {
+    // console.log(damage)
     o.health -= damage
     if (o.health <= 0) {
-      // gameOverScreen()
-      o.HB.width = 0
-      o.damagedAmount += (damage + o.health) * o.HBscale
-      if (!o.isDamaged) o.decreaseHB()
+      o.isDead = true
+      g.remove(o)
+      removeItem(units, o)
+      if (o.type == 'invader') {
+        removeItem(enemies, o)
+      } else {
+        removeItem(playerUnits, o)
+      }
+      // o.HB.width = 0
+      // o.damagedAmount += (damage + o.health) * o.HBscale
+      // if (!o.isDamaged) o.decreaseHB()
+
+
+
     }
     else {
       o.damagedAmount += damage * o.HBscale
@@ -401,8 +413,8 @@ const mainPlayer = (x = 0, y = 0) => {
   thirdEye.height = 170
   playerHand.x = -25
   playerHand.y = 16
-  const d = debugShape(playerHand)
-  world.addChild(d)
+  // const d = debugShape(playerHand)
+  // world.addChild(d)
   p.x = x
   p.y = y
   return p
@@ -422,6 +434,12 @@ const newVillager = (x = 0, y = 0, armed = false) => {
     target: null,
     attack(target = g.pointer) {
       if (armed) {
+        // if (target.isDead)
+        // if (this.isMoving) {
+        //   this.isMoving = false
+        //   removeItem(movingUnits, this)
+        // }
+
         if (!this.attacked) {
           const r = 5
           this.attacked = true
@@ -429,18 +447,16 @@ const newVillager = (x = 0, y = 0, armed = false) => {
           if (MK) {
             rx = randomNum(-40, 40)
             ry = randomNum(-35, 35)
-            rate = 120
-          }
-          else {
-            if (!this.target) {
-              this.target = target
-              attackingTarget.push(this)
-            }
+            rate = 10
+          } else {
+            // if (!this.target) {
+            //   this.target = target
+            //   attackingTarget.push(this)
+            // }
             rx = randomNum(-60, 60)
             ry = randomNum(-60, 60)
-            rate = 300
-            this.isMoving = false
-            removeItem(movingUnits, this)
+            rate = 500
+            
             this.weapon.rotation = -tempAngle(this.playerHand, target, this.angleOffX, this.angleOffY) + this.weaponAngle
           }
 
@@ -455,16 +471,17 @@ const newVillager = (x = 0, y = 0, armed = false) => {
             if (enemies.length > 0) {
               enemies.forEach(enemy => {
                 if (g.gDistance(shot, enemy) < enemy.halfWidth + r) {
-                  console.log('e hit')
-                  enemy.getHit(0)
+                  // console.log('e hit')
+                  enemy.getHit(20)
                 }
               })
             }
           }
           else {
+
             if (g.gDistance(shot, target) < target.halfWidth + r) {
-              console.log('ally hit enenmy')
-              target.getHit(1)
+              // console.log('ally hit enenmy')
+              target.getHit(24)
             }
           }
           g.wait(170, () => {
@@ -497,21 +514,32 @@ const makeEnemy = (x = 0, y = 0) => {
   const eye = makeEnemyEyes()
   const o = {
     ...m,
+    type: 'invader',
     baseHealth: 100,
     health: 100,
-    twoEyes: eye
+    twoEyes: eye,
+    // weaponAngle: (PI / 2) + 0.1,
+    // weaponRotation: -0.2,
+    // target: null,
   }
   moreUnitsProperties(o)
   o.addChild(eye)
+  o.twoEyes.addChild(o.playerHand)
 
+
+  o.playerHand.width = 50
+  o.playerHand.height = 50
+  // o.x = x
+  // o.y = y
   gun(o)
-
-
-
   o.angleOffX = -25
   o.angleOffY = -40
   o.HB.alpha = 1
   o.yellowHB.alpha = 1
+
+
+  // debugShape(o.twoEyes)
+
   return o
 }
 export { mainPlayer, newVillager, makeMovableObject, moreProperties, makeGeneralObject, makeText, makeEnemy }

@@ -1,5 +1,5 @@
-import { g, uiLayer, playerUnits, selectedUnits, movingUnits, MK, currentPlayer, enemies, world } from './main.js'
-import { getUnitVector, sortUnits } from './functions.js'
+import { g, uiLayer, playerUnits, selectedUnits, movingUnits, MK, currentPlayer, enemies, world, attackingTarget } from './main.js'
+import { getUnitVector, removeItem, sortUnits } from './functions.js'
 import { actionMark, makeRectangle, makeSelectionBox } from './drawings.js'
 let selectionBox
 let selectionStarted
@@ -33,14 +33,14 @@ const rightMouseDown = () => {
       if (enemies.length > 0) {
         for (const enemy of enemies) {
           if (g.gDistance(enemy, g.pointer) <= 25) {
-            // if (g.hitTestPoint(g.pointer, enemy)) {
-            // console.log('attack enemy')
             const a = actionMark(0, 0, true)
             enemy.addChild(a)
             g.wait(300, () => g.remove(a))
-            for (const unit of selectedUnits) {
-              unit.attack(enemy)
-            }
+            selectedUnits.forEach(unit => {
+              unit.isMoving = false
+              unit.target = enemy
+              attackingTarget.push(unit)
+            })
             return
           }
         }

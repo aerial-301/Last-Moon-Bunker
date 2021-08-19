@@ -56,9 +56,13 @@ const moveUnits = () => {
   if (movingUnits.length > 0) {
     if (!moved) {
       moved = true
-      for (let i in movingUnits) {
-        movingUnits[i].move()
-      }
+      // for (let i in movingUnits) {
+      movingUnits.forEach(unit => {
+        if (unit.isMoving) unit.move()
+        else {
+          removeItem(movingUnits, unit)
+        }
+      })
       g.wait(moveSpeed, () => moved = false)
     }
   }
@@ -110,14 +114,14 @@ const moveEnemies = () => {
 }
 const animatePlayer = () => {
     for (const u of units) {
-        if (!u.attacked && !u.attacked2) {
+        // if (!u.attacked && !u.attacked2) {
             if (u.isMoving) {
                 u.moveAnimation()
             }
             else {
                 u.idleAnimation()
             }
-        }
+        // }
     }
 }
 const switchMode = () => {
@@ -142,48 +146,48 @@ const switchMode = () => {
     }
 }
 const play = () => {
-    moveUnits()
-    animatePlayer()
-    if (MK) {
-        moveMazeCamera()
-        if (!currentPlayer.attacked) {
-            if (!currentPlayer.attacked2) {
-                if (!currentPlayer.isRolling) {
-                    movePlayer()
-                    // currentPlayer.weapon.rotation = -globalAngle(currentPlayer.playerHand, g.pointer) + currentPlayer.weaponAngle
-                    currentPlayer.weapon.rotation = -tempAngle(currentPlayer.playerHand, g.pointer, currentPlayer.angleOffX, currentPlayer.angleOffY) + currentPlayer.weaponAngle
-                    // debugText.content = `
-                    // a = ${currentPlayer.playerHand.centerX}  ${currentPlayer.playerHand.centerY}
-                    // b = ${g.pointer.centerX}  ${g.pointer.centerY}
-                    // `
-                    // player.swordHandle.rotation = -globalAngle(player.playerHand, g.pointer) + C.idleSwordAngle
-                    // tempVill.gun.rotation = -globalAngle(tempVill.playerHand, g.pointer)
-                }
-            }
+  moveUnits()
+  animatePlayer()
+  if (MK) {
+    moveMazeCamera()
+    if (!currentPlayer.attacked) {
+      if (!currentPlayer.attacked2) {
+        if (!currentPlayer.isRolling) {
+          movePlayer()
+          // currentPlayer.weapon.rotation = -globalAngle(currentPlayer.playerHand, g.pointer) + currentPlayer.weaponAngle
+          currentPlayer.weapon.rotation = -tempAngle(currentPlayer.playerHand, g.pointer, currentPlayer.angleOffX, currentPlayer.angleOffY) + currentPlayer.weaponAngle
+          // debugText.content = `
+          // a = ${currentPlayer.playerHand.centerX}  ${currentPlayer.playerHand.centerY}
+          // b = ${g.pointer.centerX}  ${g.pointer.centerY}
+          // `
+          // player.swordHandle.rotation = -globalAngle(player.playerHand, g.pointer) + C.idleSwordAngle
+          // tempVill.gun.rotation = -globalAngle(tempVill.playerHand, g.pointer)
         }
+      }
     }
-    else {
-        beginSelection()
-        moveCamera()
-    }
-    if (shots.length > 0) {
-        shots.forEach(shot => {
-            shot.scaleX += 0.1
-            shot.scaleY += 0.1
-        })
-    }
-    if (attackingTarget.length > 0) {
-        attackingTarget.forEach(unit => {
-            if (!unit.attacked) {
-                if (unit.target)
-                    unit.attack(unit.target)
-                else {
-                    removeItem(attackingTarget, unit)
-                    unit.weapon.rotation = -0.2
-                }
-            }
-        })
-    }
+  }
+  else {
+    beginSelection()
+    moveCamera()
+  }
+  if (shots.length > 0) {
+    shots.forEach(shot => {
+      shot.scaleX += 0.1
+      shot.scaleY += 0.1
+    })
+  }
+  if (attackingTarget.length > 0) {
+    attackingTarget.forEach(unit => {
+      if (unit.target && !unit.target.isDead) {
+        unit.attack(unit.target)
+      }
+      else {
+        removeItem(attackingTarget, unit)
+        unit.target = null
+        unit.weapon.rotation = -0.2
+      }
+    })
+  }
     // if (moveSun) {
     //   moveSun = false
     //   sun.x += 0.8
@@ -281,28 +285,28 @@ const setup = () => {
         } 
       }
     }
-    // Create the main player unit
-    // player = mainPlayer(100, 200)
+
+
     player = mainPlayer(300, 300)
     objLayer.addChild(player)
     playerUnits.push(player)
     units.push(player)
-    player.speed = 2
 
-    const tempVill = newVillager(300, 400, true)
-    objLayer.addChild(tempVill)
-    playerUnits.push(tempVill)
-    units.push(tempVill)
-    tempVill.speed = 2
+    for (let i = 0; i < 4; i++) {
+      const tempVill = newVillager(300, 400 + i * 55, true)
+      objLayer.addChild(tempVill)
+      playerUnits.push(tempVill)
+      units.push(tempVill)
+    }
 
 
 
     for (let i = 0; i < 4; i++) {
-      const e = makeRectangle
-      const tempEnemy = makeEnemy(400, 300)
+      const tempEnemy = makeEnemy(400 + i * 50, 300)
       objLayer.addChild(tempEnemy)
       units.push(tempEnemy)
       enemies.push(tempEnemy)
+      console.log(tempEnemy)
       // tempEnemy.speed = 2
     }
     // const tempEnemy = makeEnemy(400, 300)

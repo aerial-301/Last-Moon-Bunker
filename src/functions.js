@@ -156,7 +156,7 @@ const sortUnits = (array, x, y, moveArray) => {
   array.sort((a, b) => b.width - a.width)
   const maxWidth = array[0].width
   const maxHeight = array[0].height
-  const xSpace = 10
+  const xSpace = 20
   const ySpace = 10
   const firstX = x
   const firstY = y
@@ -166,8 +166,11 @@ const sortUnits = (array, x, y, moveArray) => {
   const midY = (lastY - firstY) / 2
   for (let i in array) {
     const u = array[i]
+
     u.isCollided = false
     u.target = null
+    // u.attacked = false
+
     const dX = x + (i % size) * (maxWidth + xSpace) - midX
     const dY = y + Math.floor(i / size) * (maxHeight + ySpace) - midY
     u.destinationX = dX //- world.x
