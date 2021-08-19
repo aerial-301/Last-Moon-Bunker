@@ -26,6 +26,7 @@ const keys = {
   'k': false,
   'h': false,
   'j': false,
+  'u': false,
 }
 
 window.addEventListener('keydown', (k) => {
@@ -46,23 +47,20 @@ window.addEventListener('keyup', (k) => {
     if (k.key === 'p') moveSpeed += 100
     if (k.key === 'o') moveSpeed -= 100
 
+    if (k.key === 'u') {
+      
+    }
+
 
 
 
 
     if (k.key === 'k') {
-      // console.log('world = ', world.x, world.y)
-      // console.log('objLayer =  ', objLayer.gx, objLayer.gy)
       tempIndicator(world.gx, world.gy, 400, 'white', 10)
       for (const c of objLayer.children) {
-
-
         tempIndicator(c.parent.gx, c.parent.gy, 400, 'purple', 20)
-
-        
         tempIndicator(c.gx, c.gy, 500, 'red', 20)
         tempIndicator(c.centerX, c.centerY, 500, 'yellow', 20)
-        
       }
     }
 

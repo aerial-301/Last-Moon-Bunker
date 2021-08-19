@@ -430,16 +430,10 @@ const newVillager = (x = 0, y = 0, armed = false) => {
     damage: 0,
     twoEyes: twoEyes,
     weaponAngle: (PI / 2) + 0.1,
-    weaponRotation: -0.2,
+    weaponRotation: 0.4,
     target: null,
     attack(target = g.pointer) {
       if (armed) {
-        // if (target.isDead)
-        // if (this.isMoving) {
-        //   this.isMoving = false
-        //   removeItem(movingUnits, this)
-        // }
-
         if (!this.attacked) {
           const r = 5
           this.attacked = true
@@ -449,10 +443,6 @@ const newVillager = (x = 0, y = 0, armed = false) => {
             ry = randomNum(-35, 35)
             rate = 10
           } else {
-            // if (!this.target) {
-            //   this.target = target
-            //   attackingTarget.push(this)
-            // }
             rx = randomNum(-60, 60)
             ry = randomNum(-60, 60)
             rate = 500
@@ -518,9 +508,17 @@ const makeEnemy = (x = 0, y = 0) => {
     baseHealth: 100,
     health: 100,
     twoEyes: eye,
-    // weaponAngle: (PI / 2) + 0.1,
-    // weaponRotation: -0.2,
-    // target: null,
+    weaponAngle: (PI / 2) + 0.1,
+    weaponRotation: -0.2,
+    target: null,
+
+    attack(target) {
+      this.weapon.rotation = -tempAngle(this.playerHand, target, this.angleOffX, this.angleOffY) + this.weaponAngle
+      
+
+    }
+
+
   }
   moreUnitsProperties(o)
   o.addChild(eye)

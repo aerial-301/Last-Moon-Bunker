@@ -3,7 +3,7 @@ import { moveCamera, movePlayer } from './keyboard.js'
 import { createSelectionBox, beginSelection, pointerDown, pointerUp } from './mouse.js'
 import { centerCam, moveMazeCamera } from './camera.js'
 import { mainPlayer, makeEnemy, makeText, newVillager } from './unitObject.js'
-import { makeRectangle, makeCircle, HQ } from './drawings.js'
+import { makeRectangle, makeCircle, HQ, moonGround, laser } from './drawings.js'
 import { moveSpeed } from './keyboard.js'
 import { GA } from './ga_minTest.js'
 import { tempDrawing, tempEarth, tempDrawing_2, gun } from '../extra/Drawing-Test.js'
@@ -31,6 +31,7 @@ let g
 let world, uiLayer, floorLayer, objLayer, treeTops
 let debugText
 let units = []
+let armedUnits = []
 let selectedUnits = []
 let movingUnits = []
 let solids = []
@@ -43,6 +44,10 @@ let shots = []
 let attackingTarget = []
 let moved = false
 let moveCycle = false
+
+
+let readyToScan = true
+let currentScanner = -1
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////
 const canvasSetup = () => {
     if (c)
@@ -52,6 +57,7 @@ const canvasSetup = () => {
     c.addEventListener('pointerdown', (e) => pointerDown(e))
     c.addEventListener('pointerup', (e) => pointerUp(e))
 }
+
 const moveUnits = () => {
   if (movingUnits.length > 0) {
     if (!moved) {
@@ -67,6 +73,34 @@ const moveUnits = () => {
     }
   }
 }
+
+const scanForEnemies = () => {
+  if (readyToScan) {
+    readyToScan = false
+
+
+    armedUnits.forEach(unit => {
+      if (!unit.target) {
+        enemies.forEach(enemy => {
+          if (g.gDistance(unit, enemy) < 300) {
+            unit.target = enemy
+            attackingTarget.push(unit)
+          }
+        })
+      }
+    })
+  
+
+
+    g.wait(3000, () => readyToScan = true)
+
+
+  }
+}
+
+
+
+
 const moveEnemies = () => {
     if (!moveCycle) {
         moveCycle = true
@@ -112,17 +146,15 @@ const moveEnemies = () => {
         })
     }
 }
+
+
 const animatePlayer = () => {
-    for (const u of units) {
-        // if (!u.attacked && !u.attacked2) {
-            if (u.isMoving) {
-                u.moveAnimation()
-            }
-            else {
-                u.idleAnimation()
-            }
-        // }
-    }
+  units.forEach(u => {
+    // if (!u.attacked && !u.attacked2) {
+    if (u.isMoving) u.moveAnimation()
+    else u.idleAnimation()
+    // }
+  })
 }
 const switchMode = () => {
     if (!MK) {
@@ -184,10 +216,14 @@ const play = () => {
       else {
         removeItem(attackingTarget, unit)
         unit.target = null
-        unit.weapon.rotation = -0.2
+        unit.weapon.rotation = unit.weaponRotation
       }
     })
   }
+
+  scanForEnemies()
+
+
     // if (moveSun) {
     //   moveSun = false
     //   sun.x += 0.8
@@ -219,115 +255,118 @@ let sun, earth
 const surfaceWidth = 2400
 const surfaceHeight = 1000
 const setup = () => {
-    canvasSetup()
-    floorLayer = g.group()
-    objLayer = g.group()
-    sun = makeCircle(130, 'orange', 0, false, 500, -250)
-    earth = tempEarth(150, 260, -200)
-    ground = makeRectangle(surfaceWidth, surfaceHeight, '#555')
-    world = g.group(sun, earth, ground, floorLayer, objLayer)
-    uiLayer = g.group()
-    let maxPlayerUnits = 4
-    cellSize = 100
-    const rows = ground.height / cellSize
-    const cols = ground.width / cellSize
-    // Map Objects
-    for (let row = 0; row < rows; row++) {
-      gridMap.push([])
-      for (let cell = 0; cell < cols; cell++) {
-        const cellCenterX = cellSize * cell + cellSize / 2
-        const cellCenterY = cellSize * row + cellSize / 2
-        if (row < 2) {
-          if (cell > 8) {
-            if (cell < 12) {
-              if (row == 0 && cell == 10) {
-                gridMap[row].push([7, cellCenterX, cellCenterY])
-                // const tempHQ = HQ(400, 380)
-                const empty = makeRectangle(cellSize, cellSize, '#321', 2, cellCenterX - cellSize / 2, cellCenterY - cellSize / 2)
-                floorLayer.addChild(empty)
-                const tempHQ = HQ(cell * cellSize, row * cellSize)
-                objLayer.addChild(tempHQ)
-                solids.push(tempHQ)
-                empty.alpha = 0.5
-                continue
-              }
+  canvasSetup()
+  floorLayer = g.group()
+  objLayer = g.group()
+  sun = makeCircle(130, 'orange', 0, false, 500, -250)
+  earth = tempEarth(150, 260, -200)
+
+  // ground = makeRectangle(surfaceWidth, surfaceHeight, '#555')
+  ground = moonGround()
+
+
+  world = g.group(sun, earth, ground, floorLayer, objLayer)
+  uiLayer = g.group()
+  let maxPlayerUnits = 4
+  cellSize = 100
+  const rows = ground.height / cellSize
+  const cols = ground.width / cellSize
+  // Map Objects
+  for (let row = 0; row < rows; row++) {
+    gridMap.push([])
+    for (let cell = 0; cell < cols; cell++) {
+      const cellCenterX = cellSize * cell + cellSize / 2
+      const cellCenterY = cellSize * row + cellSize / 2
+      if (row < 2) {
+        if (cell > 8) {
+          if (cell < 12) {
+            if (row == 0 && cell == 10) {
+              gridMap[row].push([7, cellCenterX, cellCenterY])
+              // const tempHQ = HQ(400, 380)
+              const empty = makeRectangle(cellSize, cellSize, '#321', 2, cellCenterX - cellSize / 2, cellCenterY - cellSize / 2)
+              floorLayer.addChild(empty)
+              const tempHQ = HQ(cell * cellSize, row * cellSize)
+              objLayer.addChild(tempHQ)
+              solids.push(tempHQ)
+              empty.alpha = 0.5
+              continue
+            }
+          }
+        }
+      } else {
+
+        if (Math.random() <= 0.20) {
+          gridMap[row].push([0, cellCenterX, cellCenterY])
+          // const empty = makeRectangle(cellSize, cellSize, '#321', 2, cellCenterX - cellSize / 2, cellCenterY - cellSize / 2)
+          // floorLayer.addChild(empty)
+          if (Math.random() <= 0.2) {
+            if (maxPlayerUnits) {
+              const v = newVillager(cellCenterX - 25, cellCenterX - 25)
+              objLayer.addChild(v)
+              playerUnits.push(v)
+              units.push(v)
+              v.speed = 2
+              maxPlayerUnits -= 1
             }
           }
         } else {
-
-          if (Math.random() <= 0.20) {
-            gridMap[row].push([0, cellCenterX, cellCenterY])
-            // const empty = makeRectangle(cellSize, cellSize, '#321', 2, cellCenterX - cellSize / 2, cellCenterY - cellSize / 2)
-            // floorLayer.addChild(empty)
-            if (Math.random() <= 0.2) {
-              if (maxPlayerUnits) {
-                const v = newVillager(cellCenterX - 25, cellCenterX - 25)
-                objLayer.addChild(v)
-                playerUnits.push(v)
-                units.push(v)
-                v.speed = 2
-                maxPlayerUnits -= 1
-              }
+          if (row % 2 == 1) {
+            if (Math.random() > 0.5) {
+              tempDrawing_2(randomNum(10, 170, 0), 10, cell * cellSize, row * cellSize + randomNum(-100, 100), randomNum(1, 4), randomNum(0, 5, 0))
+              continue
             }
-          } else {
-            if (row % 2 == 1) {
-              if (Math.random() > 0.5) {
-                tempDrawing_2(randomNum(10, 170, 0), 10, cell * cellSize, row * cellSize + randomNum(-100, 100), randomNum(1, 4), randomNum(0, 5, 0))
-                continue
-              }
-              if (cell % 2 == 0) {
-                gridMap[row].push([3, cellCenterX, cellCenterY])
-                const d = randomNum(5, cellSize * 0.25)
-                tempDrawing(d, cell * cellSize + d * 1.5 + randomNum(-35, 35), row * cellSize + d * 1.5 + randomNum(-35, 35))
-              }
+            if (cell % 2 == 0) {
+              gridMap[row].push([3, cellCenterX, cellCenterY])
+              const d = randomNum(5, cellSize * 0.25)
+              tempDrawing(d, cell * cellSize + d * 1.5 + randomNum(-35, 35), row * cellSize + d * 1.5 + randomNum(-35, 35))
             }
           }
-        } 
-      }
+        }
+      } 
     }
+  }
 
 
-    player = mainPlayer(300, 300)
-    objLayer.addChild(player)
-    playerUnits.push(player)
-    units.push(player)
+  player = mainPlayer(300, 300)
+  objLayer.addChild(player)
+  playerUnits.push(player)
+  units.push(player)
 
-    for (let i = 0; i < 4; i++) {
-      const tempVill = newVillager(300, 400 + i * 55, true)
-      objLayer.addChild(tempVill)
-      playerUnits.push(tempVill)
-      units.push(tempVill)
-    }
+  for (let i = 0; i < 4; i++) {
+    const tempVill = newVillager(300, 400 + i * 55, true)
+    objLayer.addChild(tempVill)
+    playerUnits.push(tempVill)
+    units.push(tempVill)
+    armedUnits.push(tempVill)
+  }
 
 
 
-    for (let i = 0; i < 4; i++) {
-      const tempEnemy = makeEnemy(400 + i * 50, 300)
-      objLayer.addChild(tempEnemy)
-      units.push(tempEnemy)
-      enemies.push(tempEnemy)
-      console.log(tempEnemy)
-      // tempEnemy.speed = 2
-    }
-    // const tempEnemy = makeEnemy(400, 300)
-    // objLayer.addChild(tempEnemy)
-    // units.push(tempEnemy)
-    // enemies.push(tempEnemy)
-
+  for (let i = 0; i < 4; i++) {
+    const tempEnemy = makeEnemy(800 + i * 50, 350)
+    objLayer.addChild(tempEnemy)
+    units.push(tempEnemy)
+    enemies.push(tempEnemy)
+    armedUnits.push(tempEnemy)
+    // console.log(tempEnemy)
     // tempEnemy.speed = 2
-    // const tempHQ = HQ(400, 380)
-    // objLayer.addChild(tempHQ)
-    // solids.push(tempHQ)
-    
+  }
 
-    // const tempMark = actionMark(400, 300)
-    // objLayer.addChild(tempMark)
-    // debugShape(tempEnemy)
-    createSelectionBox()
-    debugText = makeText(' ', '12px arial', 'white', 0, 100)
-    objLayer.children.sort((a, b) => (a.Y + a.height) - (b.Y + b.height))
-    centerCam()
-    g.state = play
+
+  const laser1 = laser(0, 0, 100, 100)
+  world.addChild(laser1)
+
+
+
+
+
+
+
+  createSelectionBox()
+  debugText = makeText(' ', '12px arial', 'white', 0, 100)
+  objLayer.children.sort((a, b) => (a.Y + a.height) - (b.Y + b.height))
+  centerCam()
+  g.state = play
 }
 g = GA.create(setup)
 g.start()
