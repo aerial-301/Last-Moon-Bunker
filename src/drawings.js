@@ -2,6 +2,7 @@ import { debugShape } from "../extra/debug.js"
 import { world } from "./main.js"
 import { makeGeneralObject, makeMovableObject, moreProperties } from "./unitObject.js"
 const PI = Math.PI
+
 const makeCircle = (d, k, l, movable = false, x = 0, y = 0) => {
     let g
     if (!movable)

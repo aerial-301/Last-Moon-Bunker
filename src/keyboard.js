@@ -43,8 +43,8 @@ window.addEventListener('keyup', (k) => {
       if (Object.values(keys).every(v => v === false)) currentPlayer.isMoving = false
     }
     if (k.key === 'r') switchMode()
-    if (k.key === 'p') moveSpeed += 10
-    if (k.key === 'o') moveSpeed -= 10
+    if (k.key === 'p') moveSpeed += 100
+    if (k.key === 'o') moveSpeed -= 100
 
 
 

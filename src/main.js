@@ -6,11 +6,8 @@ import { mainPlayer, makeEnemy, makeText, newVillager } from './unitObject.js'
 import { makeRectangle, makeCircle, HQ } from './drawings.js'
 import { moveSpeed } from './keyboard.js'
 import { GA } from './ga_minTest.js'
-import { tempDrawing, tempEarth, tempDrawing_2 } from '../extra/Drawing-Test.js'
+import { tempDrawing, tempEarth, tempDrawing_2, gun } from '../extra/Drawing-Test.js'
 import { tempIndicator } from '../extra/debug.js'
-
-
-
 
 const RAD_DEG = Math.PI / 180
 const initialAngle = -60
@@ -56,23 +53,15 @@ const canvasSetup = () => {
     c.addEventListener('pointerup', (e) => pointerUp(e))
 }
 const moveUnits = () => {
-    if (movingUnits.length > 0) {
-        if (!moved) {
-            moved = true
-            for (let i in movingUnits) {
-                movingUnits[i].move()
-                const u = movingUnits[i]
-                // if (u) tempIndicator(u.destinationX, u.destinationY, 9, 'orange')
-                // console.log(i.cen)
-                // if (u) tempIndicator(u.centerX, u.centerY, 100, 'white', 100)
-                // if (u) tempIndicator(u.gx, u.gy, 50, 'red', 50)
-            }
-            objLayer.children.sort((a, b) => (a.Y + a.height) - (b.Y + b.height))
-
-
-            g.wait(moveSpeed, () => { moved = false })
-        }
+  if (movingUnits.length > 0) {
+    if (!moved) {
+      moved = true
+      for (let i in movingUnits) {
+        movingUnits[i].move()
+      }
+      g.wait(moveSpeed, () => moved = false)
     }
+  }
 }
 const moveEnemies = () => {
     if (!moveCycle) {
@@ -135,10 +124,10 @@ const switchMode = () => {
     if (!MK) {
         if (selectedUnits.length === 1) {
             MK = true
-            // setPointerOffsets()
             currentPlayer = selectedUnits[0]
             currentPlayer.isMoving = false
             removeItem(movingUnits, currentPlayer)
+            removeItem(attackingTarget, currentPlayer)
             currentPlayer.deselect()
             selectedUnits = []
         }
@@ -149,8 +138,6 @@ const switchMode = () => {
             currentPlayer.isMoving = false
             currentPlayer.weapon.rotation = currentPlayer.weaponRotation
             currentPlayer = null
-            // setPointerOffsets()
-            // setPointerOffsets()
         }
     }
 }
@@ -204,12 +191,23 @@ const play = () => {
     //   g.wait(100, () => moveSun = true)
     // }
     // debugText.content = `
-    // p.vx = ${player.vx.toFixed(4)}
-    // p.vy = ${player.vy.toFixed(4)}
-    // CH = ${player.isCollidingH}
-    // CV = ${player.isCollidingV}
+    // world.xy = ${world.x}, ${world.y}\n\n
+    // pointer = ${g.pointer.x + world.x}, ${g.pointer.y + world.y}
     // `
+    // if( selectedUnits.length > 0) {
+    //   current = selectedUnits[0]
+    //   if (current.collidedWith) {
+    //     console.log(`
+    //     destX - obstCX = ${Math.abs(current.destinationX + world.x - current.collidedWith.centerX)}\n
+    //     destY - obstCY = ${Math.abs(current.destinationY + world.y - current.collidedWith.centerY)}\n
+    //     `)
+    //   }
+    // }
+    
 }
+let current
+
+
 let ground
 let gridMap = []
 let cellSize
@@ -218,10 +216,8 @@ const surfaceWidth = 2400
 const surfaceHeight = 1000
 const setup = () => {
     canvasSetup()
-    // resetPointerOffsets()
     floorLayer = g.group()
     objLayer = g.group()
-    // treeTops = g.group()
     sun = makeCircle(130, 'orange', 0, false, 500, -250)
     earth = tempEarth(150, 260, -200)
     ground = makeRectangle(surfaceWidth, surfaceHeight, '#555')
@@ -285,7 +281,7 @@ const setup = () => {
         } 
       }
     }
-          // Create the main player unit
+    // Create the main player unit
     // player = mainPlayer(100, 200)
     player = mainPlayer(300, 300)
     objLayer.addChild(player)
@@ -299,13 +295,22 @@ const setup = () => {
     units.push(tempVill)
     tempVill.speed = 2
 
-    const tempEnemy = makeEnemy(400, 300)
-    objLayer.addChild(tempEnemy)
-    units.push(tempEnemy)
-    enemies.push(tempEnemy)
-    tempEnemy.speed = 2
 
 
+    for (let i = 0; i < 4; i++) {
+      const e = makeRectangle
+      const tempEnemy = makeEnemy(400, 300)
+      objLayer.addChild(tempEnemy)
+      units.push(tempEnemy)
+      enemies.push(tempEnemy)
+      // tempEnemy.speed = 2
+    }
+    // const tempEnemy = makeEnemy(400, 300)
+    // objLayer.addChild(tempEnemy)
+    // units.push(tempEnemy)
+    // enemies.push(tempEnemy)
+
+    // tempEnemy.speed = 2
     // const tempHQ = HQ(400, 380)
     // objLayer.addChild(tempHQ)
     // solids.push(tempHQ)
@@ -315,7 +320,7 @@ const setup = () => {
     // objLayer.addChild(tempMark)
     // debugShape(tempEnemy)
     createSelectionBox()
-    debugText = makeText(' ', '22px arial', 'white', 20, 100)
+    debugText = makeText(' ', '12px arial', 'white', 0, 100)
     objLayer.children.sort((a, b) => (a.Y + a.height) - (b.Y + b.height))
     centerCam()
     g.state = play

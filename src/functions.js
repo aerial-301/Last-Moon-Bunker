@@ -1,5 +1,5 @@
 import { makeRectangle } from './drawings.js'
-import { g, movingUnits, solids, MK, currentPlayer, world } from './main.js'
+import { g, movingUnits, solids, MK, currentPlayer, world, objLayer } from './main.js'
 import { makeText } from './unitObject.js'
 import { tempIndicator } from '../extra/debug.js'
 
@@ -20,8 +20,6 @@ const aroundAll = (collider, H) => {
     if (g.hitTestRectangle(collider, obst)) {
       const desX = collider.destinationX + world.x
       const desY = collider.destinationY + world.y
-      const wX = world.x
-      const wY = world.y
 
       const obCx = obst.centerX
       const obCY = obst.centerY
@@ -29,32 +27,37 @@ const aroundAll = (collider, H) => {
       const collY = collider.centerY
       // collider.destinationX += world.x
       // collider.destinationY += world.y
-
+      // console.log(`
+      // diffX = ${Math.abs(desX - obCx)}
+      // diffY = ${Math.abs(desY - obCY)}
+      // `)
 
 
       if (collider.collidedWith == undefined) {
         collider.collidedWith = obst
-        if (Math.abs(desX - obCx) <= (obst.halfWidth + collider.halfWidth)) {
-          if (Math.abs(desY - obCY) <= (obst.halfHeight + collider.halfHeight)) {
+        if (Math.abs(desX - obCx) <= (obst.halfWidth + 60)) {
+          if (Math.abs(desY - obCY) <= (obst.halfHeight + 60)) {
             // tempIndicator(collider.x, collider.y, 20, 'green', 80)
-            tempIndicator(obCx, obCY, 10, 'red', 20)
+            // tempIndicator(obCx, obCY, 10, 'red', 20)
 
-            tempIndicator(desX, desY, 10, '#00F', 40)
+            // tempIndicator(desX, desY, 100, '#33F', 40)
 
 
 
             // collider.destinationX = collider.x
             // collider.destinationY = collider.y
-            collider.destinationX = collider.x - collider.speed * collider.vx //+ world.x
-            collider.destinationY = collider.y - collider.speed * collider.vy//+ world.y
-            setDirection(collider)
+            collider.destinationX = collider.x// - collider.speed * collider.vx * 1 //+ world.x
+            collider.destinationY = collider.y// - collider.speed * collider.vy * 1//+ world.y
+            // console.log('new dests = ', collider.destinationX, collider.destinationY)
+            // setDirection(collider)
+            // collider.collidedWith = undefined
             // return
           }
         }
       }
 
-      tempIndicator(desX, desY, 50, 'white', 30)
-      tempIndicator(obCx, obCY, 40, 'red', 20)
+      // tempIndicator(desX, desY, 50, 'white', 30)
+      // tempIndicator(obCx, obCY, 40, 'red', 20)
 
 
       if (H) {
@@ -197,32 +200,30 @@ const newMoveX = (u) => {
       if (u.obstacles.length > 0) {
         if (xD != 0) aroundAll(u, 1)
       }
-      if (!MK) u.scan(1500, OBSDIST)
+      u.scan(1500, OBSDIST)
       return true
     } else return false
   } else u.x += u.vx * u.speed
 }
 const newMoveY = (u) => {
+  objLayer.children.sort((a, b) => (a.Y + a.height) - (b.Y + b.height))
   const yD = u.destinationY - u.y
   const yd = Math.abs(yD)
   if (!u.isCollidingH) {
-      if (yd > u.speed) {
-        u.y += u.vy * u.speed
-        if (u.obstacles.length > 0) {
-          if (yD != 0) aroundAll(u, 0)
-        }
-        if (!MK) u.scan(1500, OBSDIST)
-        return true
+    if (yd > u.speed) {
+      u.y += u.vy * u.speed
+      if (u.obstacles.length > 0) {
+        if (yD != 0) aroundAll(u, 0)
       }
-    else return false
+      u.scan(1500, OBSDIST)
+      return true
+    } else return false
   } else u.y += u.vy * u.speed
 }
 const newMoveTest = (u) => {
   const x = newMoveX(u)
   const y = newMoveY(u)
 
-  // tempIndicator(u.destinationX, u.destinationY, 10, 'green', 30)
-  // tempIndicator(u.y, u.x, 10, 'white', 10)
   if (!x && !y) {
     removeItem(movingUnits, u)
     u.isMoving = false

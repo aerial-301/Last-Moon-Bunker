@@ -1,4 +1,4 @@
-import { alertedEnemies, bloodSplats, C, enemies, floorLayer, g, PI, selectedUnits, uiLayer, MK, world, shots, movingUnits, attackingTarget } from './main.js'
+import { alertedEnemies, bloodSplats, C, enemies, floorLayer, g, PI, selectedUnits, uiLayer, MK, world, shots, movingUnits, attackingTarget, playerUnits } from './main.js'
 import { newMoveTest, randomNum, removeItem, roll, scan, tempAngle } from './functions.js'
 import { makeLeg, makeCircle, makeHeadDetails, makeBorder, makeRectangle, makeTwoEyes, makeThirdEye, makeSlash, shotHit } from './drawings.js'
 import { debugShape } from '../extra/debug.js'
@@ -7,8 +7,10 @@ import { gun, makeEnemyEyes } from '../extra/Drawing-Test.js'
 const moreProperties = (o) => {
     o.yOffset = 0
     Object.defineProperties(o, {
-      gx: { get: () => { return (o.parent ? o.x + o.parent.gx : o.x) } },
-      gy: { get: () => { return (o.parent ? o.y + o.parent.gy : o.y) } },
+      // gx: { get: () => { return (o.parent ? o.x + o.parent.gx : o.x) } },
+      // gy: { get: () => { return (o.parent ? o.y + o.parent.gy : o.y) } },
+      gx: { get: () => { return (o.x + (o.parent? o.parent.gx : 0) ) } },
+      gy: { get: () => { return (o.y + (o.parent? o.parent.gy : 0) ) } },
       centerX: { get: () => { return o.gx + o.halfWidth } },
       centerY: { get: () => { return o.gy + o.halfHeight } },
       Y: { get: () => { return o.y + o.parent.gy + o.yOffset } }
@@ -23,6 +25,7 @@ const moreProperties = (o) => {
 }
 const moreUnitsProperties = (o, n = 0) => {
   moreProperties(o)
+  o.speed = 2
   o.obstacles = []
   o.leftLeg = makeLeg(5)
   o.rightLeg = makeLeg(30)
@@ -242,8 +245,20 @@ const mainPlayer = (x = 0, y = 0) => {
   const hitRange = 175
   const handBase = makeRectangle(1, 1, 'white', 0)
   const movableObject = makeMovableObject(50, 50)
-  const p = {...movableObject, type: 'main', health: 100, baseHealth: 100, speed: 5, damage: 0, twoEyes: twoEyes, thirdEye: thirdEye, 
-    swordHandle: swordHandle, sword: sword, slash1: slash1, slash2: slash2, weaponRotation: PI, weaponAngle: C.idleSwordAngle, 
+  const p = {
+    ...movableObject,
+    type: 'main',
+    health: 100,
+    baseHealth: 100,
+    damage: 0,
+    twoEyes: twoEyes,
+    thirdEye: thirdEye, 
+    swordHandle: swordHandle,
+    sword: sword,
+    slash1: slash1,
+    slash2: slash2,
+    weaponRotation: PI,
+    weaponAngle: C.idleSwordAngle,
     rollDistance: 10, rollCounter: 10, alertSent: false, 
     attack() {
       handPointerAngle = -tempAngle(this.playerHand, g.pointer)
@@ -395,16 +410,26 @@ const mainPlayer = (x = 0, y = 0) => {
 const newVillager = (x = 0, y = 0, armed = false) => {
   const twoEyes = makeTwoEyes(1, -17, -10)
   const m = makeMovableObject(50, 50)
-  const o = {...m, type: 'villager', health: 100, baseHealth: 100, speed: 5, damage: 0, twoEyes: twoEyes, weaponAngle: (PI / 2) + 0.1, weaponRotation: -0.2, target: null,
+  const o = {
+    ...m, 
+    type: 'villager',
+    health: 100,
+    baseHealth: 100,
+    damage: 0,
+    twoEyes: twoEyes,
+    weaponAngle: (PI / 2) + 0.1,
+    weaponRotation: -0.2,
+    target: null,
     attack(target = g.pointer) {
       if (armed) {
         if (!this.attacked) {
           const r = 5
           this.attacked = true
-          let rx, ry, targetX, targetY
+          let rx, ry, targetX, targetY, rate
           if (MK) {
             rx = randomNum(-40, 40)
             ry = randomNum(-35, 35)
+            rate = 120
           }
           else {
             if (!this.target) {
@@ -413,6 +438,7 @@ const newVillager = (x = 0, y = 0, armed = false) => {
             }
             rx = randomNum(-60, 60)
             ry = randomNum(-60, 60)
+            rate = 300
             this.isMoving = false
             removeItem(movingUnits, this)
             this.weapon.rotation = -tempAngle(this.playerHand, target, this.angleOffX, this.angleOffY) + this.weaponAngle
@@ -445,10 +471,10 @@ const newVillager = (x = 0, y = 0, armed = false) => {
             g.remove(shot)
             removeItem(shots, shot)
           })
-          g.wait(200, () => { this.attacked = false })
+          g.wait(rate, () => { this.attacked = false })
         }
       }
-    } 
+    }
   }
   morePlayerProperties(o, 0)
   o.addChild(twoEyes)
@@ -461,12 +487,7 @@ const newVillager = (x = 0, y = 0, armed = false) => {
   playerHand.height = 50
   o.x = x
   o.y = y
-  if (armed) {
-      const gun_1 = gun(o)
-      playerHand.addChild(gun_1)
-      o.weapon = gun_1
-      o.weapon.rotation = -0.25
-  }
+  if (armed) gun(o)
   o.angleOffX = -25
   o.angleOffY = -40
   return o
@@ -474,9 +495,21 @@ const newVillager = (x = 0, y = 0, armed = false) => {
 const makeEnemy = (x = 0, y = 0) => {
   const m = makeMovableObject(50, 50, x, y)
   const eye = makeEnemyEyes()
-  const o = {...m, baseHealth: 100, health: 100, twoEyes: eye }
+  const o = {
+    ...m,
+    baseHealth: 100,
+    health: 100,
+    twoEyes: eye
+  }
   moreUnitsProperties(o)
   o.addChild(eye)
+
+  gun(o)
+
+
+
+  o.angleOffX = -25
+  o.angleOffY = -40
   o.HB.alpha = 1
   o.yellowHB.alpha = 1
   return o
