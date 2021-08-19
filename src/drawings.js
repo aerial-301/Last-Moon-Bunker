@@ -1,3 +1,5 @@
+import { debugShape } from "../extra/debug.js"
+import { world } from "./main.js"
 import { makeGeneralObject, makeMovableObject, moreProperties } from "./unitObject.js"
 const PI = Math.PI
 const makeCircle = (d, k, l, movable = false, x = 0, y = 0) => {
@@ -210,67 +212,126 @@ const shotHit = (x, y) => {
 }
 const flash = (x = 0, y = 0) => {
     const g = makeGeneralObject(10, 10, x, y)
-    const o = Object.assign(Object.assign({}, g), { render(c) {
-            c.strokeStyle = '#F00'
-            c.fillStyle = '#FF0'
-            c.lineWidth = 2
-            c.beginPath()
-            c.lineTo(0, 1)
-            c.lineTo(50, 0)
-            c.lineTo(0, -1)
-            c.stroke()
-            c.fill()
-        } })
+    const o = {
+      ...g,
+      render(c) {
+          c.strokeStyle = '#F00'
+          c.fillStyle = '#FF0'
+          c.lineWidth = 2
+          c.beginPath()
+          c.lineTo(0, 1)
+          c.lineTo(50, 0)
+          c.lineTo(0, -1)
+          c.stroke()
+          c.fill()
+        } 
+      }
     moreProperties(o)
     return o
 }
 const actionMark = (x = 0, y = 0, attack = true) => {
     const g = makeGeneralObject(10, 10, x, y)
-    const o = Object.assign(Object.assign({}, g), { render(c) {
-            c.lineWidth = 8
-            c.beginPath()
-            if (attack) {
-                c.strokeStyle = '#F00'
-                c.arc(20, 22, 35, 0, 2 * PI, false)
-                c.stroke()
-            }
-            else {
-                c.strokeStyle = '#0F0'
-                c.moveTo(-10, -10)
-                c.lineTo(10, 10)
-                c.moveTo(10, -10)
-                c.lineTo(-10, 10)
-                c.stroke()
-            }
-        } })
+    const o = {
+      ...g,
+      render(c) {
+          c.lineWidth = 8
+          c.beginPath()
+          if (attack) {
+              c.strokeStyle = '#F00'
+              c.arc(20, 22, 35, 0, 2 * PI, false)
+              c.stroke()
+          }
+          else {
+              c.strokeStyle = '#0F0'
+              c.moveTo(-10, -10)
+              c.lineTo(10, 10)
+              c.moveTo(10, -10)
+              c.lineTo(-10, 10)
+              c.stroke()
+          }
+        } 
+      }
     moreProperties(o)
     return o
 }
 const makeEnemyEyes = () => {
     const g = makeGeneralObject(0, 0)
-    const o = Object.assign(Object.assign({}, g), { render(c) {
-            c.strokeStyle = '#FFF'
-            c.lineWidth = 2
-            c.beginPath()
-        } })
+    const o = {
+      ...g,
+      render(c) {
+          c.strokeStyle = '#FFF'
+          c.lineWidth = 2
+          c.beginPath()
+      }
+    }
     moreProperties(o)
     return o
 }
 const moonSurface1 = (w, h) => {
-    const g = makeGeneralObject(w, h)
-    const o = Object.assign(Object.assign({}, g), { render(c) {
-            c.strokeStyle = '#FFF'
-            c.lineWidth = 2
-            c.beginPath()
-            c.rect(0, 0, 100, 100)
-            c.stroke()
-        } })
-    moreProperties(o)
-    return o
+  const g = makeGeneralObject(w, h)
+  const o = {
+    ...g,
+    render(c) {
+      c.strokeStyle = '#FFF'
+      c.lineWidth = 2
+      c.beginPath()
+      c.rect(0, 0, 100, 100)
+      c.stroke()
+    }
+  }
+  moreProperties(o)
+  return o
 }
-export { makeCircle, makeRectangle, makeSelectionBox, 
-// makeTreeTop,
-// makeTreeTrunk,
-makeSlash, makeTwoEyes, makeThirdEye, makeLeg, makeBorder, makeHeadDetails, shotHit, flash, actionMark
-// moonSurface1
+
+const HQ = (x, y) => {
+  const g = makeGeneralObject(100, 100, x, y)
+  const o = {
+    ...g,
+    render(c) {
+      c.lineWidth = 3
+      c.beginPath()
+      const grad = c.createLinearGradient(30, -100,-100, 100)
+      const gradTop = c.createLinearGradient(50, -30, 0, 40)
+      grad.addColorStop(0, '#999')
+      grad.addColorStop(0.5, '#444')
+      grad.addColorStop(1, '#000')
+      gradTop.addColorStop(0, '#777')
+      gradTop.addColorStop(1, '#000')
+
+      c.arc(0, 7, 60, 0, 2*PI, false)
+      c.clip()
+
+      c.fillStyle = gradTop
+      c.fillRect(-35, -50, 70, 50)
+      
+      c.fillStyle = grad
+      c.fillRect(-50, 0, 100, 50)
+
+      c.fillStyle = '#00F'
+      c.fillRect(-20,20, 40, 30)
+
+    }
+  }
+  moreProperties(o)
+
+
+  // const de = debugShape(o)
+  // world.addChild(de)
+  return o
+}
+
+export { 
+  makeCircle, 
+  makeRectangle, 
+  makeSelectionBox, 
+  makeSlash, 
+  makeTwoEyes, 
+  makeThirdEye, 
+  makeLeg, 
+  makeBorder, 
+  makeHeadDetails, 
+  shotHit, 
+  flash, 
+  actionMark,
+  HQ
  }

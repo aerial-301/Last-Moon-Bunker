@@ -1,11 +1,15 @@
 import { randomNum, removeItem, tempAngle } from './functions.js'
-import { moveCamera, movePlayer, resetPointerOffsets, setPointerOffsets } from './keyboard.js'
+import { moveCamera, movePlayer } from './keyboard.js'
 import { createSelectionBox, beginSelection, pointerDown, pointerUp } from './mouse.js'
 import { centerCam, moveMazeCamera } from './camera.js'
 import { mainPlayer, makeEnemy, makeText, newVillager } from './unitObject.js'
-import { makeRectangle, makeCircle } from './drawings.js'
+import { makeRectangle, makeCircle, HQ } from './drawings.js'
+import { moveSpeed } from './keyboard.js'
 import { GA } from './ga_minTest.js'
 import { tempDrawing, tempEarth, tempDrawing_2 } from '../extra/Drawing-Test.js'
+import { tempIndicator } from '../extra/debug.js'
+
+
 
 
 const RAD_DEG = Math.PI / 180
@@ -57,11 +61,16 @@ const moveUnits = () => {
             moved = true
             for (let i in movingUnits) {
                 movingUnits[i].move()
-                // const u = movingUnits[i]
+                const u = movingUnits[i]
                 // if (u) tempIndicator(u.destinationX, u.destinationY, 9, 'orange')
+                // console.log(i.cen)
+                // if (u) tempIndicator(u.centerX, u.centerY, 100, 'white', 100)
+                // if (u) tempIndicator(u.gx, u.gy, 50, 'red', 50)
             }
             objLayer.children.sort((a, b) => (a.Y + a.height) - (b.Y + b.height))
-            g.wait(10, () => { moved = false })
+
+
+            g.wait(moveSpeed, () => { moved = false })
         }
     }
 }
@@ -141,7 +150,7 @@ const switchMode = () => {
             currentPlayer.weapon.rotation = currentPlayer.weaponRotation
             currentPlayer = null
             // setPointerOffsets()
-            setPointerOffsets()
+            // setPointerOffsets()
         }
     }
 }
@@ -209,14 +218,14 @@ const surfaceWidth = 2400
 const surfaceHeight = 1000
 const setup = () => {
     canvasSetup()
-    resetPointerOffsets()
+    // resetPointerOffsets()
     floorLayer = g.group()
     objLayer = g.group()
-    treeTops = g.group()
+    // treeTops = g.group()
     sun = makeCircle(130, 'orange', 0, false, 500, -250)
     earth = tempEarth(150, 260, -200)
     ground = makeRectangle(surfaceWidth, surfaceHeight, '#555')
-    world = g.group(sun, earth, ground, floorLayer, objLayer, treeTops)
+    world = g.group(sun, earth, ground, floorLayer, objLayer)
     uiLayer = g.group()
     let maxPlayerUnits = 4
     cellSize = 100
@@ -224,70 +233,84 @@ const setup = () => {
     const cols = ground.width / cellSize
     // Map Objects
     for (let row = 0; row < rows; row++) {
-        gridMap.push([])
-        for (let cell = 0; cell < cols; cell++) {
-            const cellCenterX = cellSize * cell + cellSize / 2
-            const cellCenterY = cellSize * row + cellSize / 2
-            if (row < 2) {
-                if (cell > 8) {
-                    if (cell < 12) {
-                        if (row == 0 && cell == 10) {
-                            gridMap[row].push([7, cellCenterX, cellCenterY])
-                            const empty = makeRectangle(cellSize, cellSize, '#321', 2, cellCenterX - cellSize / 2, cellCenterY - cellSize / 2)
-                            floorLayer.addChild(empty)
-                            empty.alpha = 1
-                            continue
-                        }
-                    }
-                }
+      gridMap.push([])
+      for (let cell = 0; cell < cols; cell++) {
+        const cellCenterX = cellSize * cell + cellSize / 2
+        const cellCenterY = cellSize * row + cellSize / 2
+        if (row < 2) {
+          if (cell > 8) {
+            if (cell < 12) {
+              if (row == 0 && cell == 10) {
+                gridMap[row].push([7, cellCenterX, cellCenterY])
+                // const tempHQ = HQ(400, 380)
+                const empty = makeRectangle(cellSize, cellSize, '#321', 2, cellCenterX - cellSize / 2, cellCenterY - cellSize / 2)
+                floorLayer.addChild(empty)
+                const tempHQ = HQ(cell * cellSize, row * cellSize)
+                objLayer.addChild(tempHQ)
+                solids.push(tempHQ)
+                empty.alpha = 0.5
+                continue
+              }
             }
-            if (Math.random() <= 0.20) {
-                gridMap[row].push([0, cellCenterX, cellCenterY])
-                // const empty = makeRectangle(cellSize, cellSize, '#321', 2, cellCenterX - cellSize / 2, cellCenterY - cellSize / 2)
-                // floorLayer.addChild(empty)
-                if (Math.random() <= 0.2) {
-                    if (maxPlayerUnits) {
-                        const v = newVillager(cellCenterX - 25, cellCenterX - 25)
-                        objLayer.addChild(v)
-                        playerUnits.push(v)
-                        units.push(v)
-                        v.speed = 2
-                        maxPlayerUnits -= 1
-                    }
-                }
+          }
+        } else {
+
+          if (Math.random() <= 0.20) {
+            gridMap[row].push([0, cellCenterX, cellCenterY])
+            // const empty = makeRectangle(cellSize, cellSize, '#321', 2, cellCenterX - cellSize / 2, cellCenterY - cellSize / 2)
+            // floorLayer.addChild(empty)
+            if (Math.random() <= 0.2) {
+              if (maxPlayerUnits) {
+                const v = newVillager(cellCenterX - 25, cellCenterX - 25)
+                objLayer.addChild(v)
+                playerUnits.push(v)
+                units.push(v)
+                v.speed = 2
+                maxPlayerUnits -= 1
+              }
             }
-            else {
-                if (row % 2 == 1) {
-                    if (Math.random() > 0.5) {
-                        tempDrawing_2(randomNum(10, 170, 0), 10, cell * cellSize, row * cellSize + randomNum(-100, 100), randomNum(1, 4), randomNum(0, 5, 0))
-                        continue
-                    }
-                    if (cell % 2 == 0) {
-                        gridMap[row].push([3, cellCenterX, cellCenterY])
-                        const d = randomNum(5, cellSize * 0.25)
-                        tempDrawing(d, cell * cellSize + d * 1.5 + randomNum(-35, 35), row * cellSize + d * 1.5 + randomNum(-35, 35))
-                    }
-                }
+          } else {
+            if (row % 2 == 1) {
+              if (Math.random() > 0.5) {
+                tempDrawing_2(randomNum(10, 170, 0), 10, cell * cellSize, row * cellSize + randomNum(-100, 100), randomNum(1, 4), randomNum(0, 5, 0))
+                continue
+              }
+              if (cell % 2 == 0) {
+                gridMap[row].push([3, cellCenterX, cellCenterY])
+                const d = randomNum(5, cellSize * 0.25)
+                tempDrawing(d, cell * cellSize + d * 1.5 + randomNum(-35, 35), row * cellSize + d * 1.5 + randomNum(-35, 35))
+              }
             }
-        }
+          }
+        } 
+      }
     }
-    // Create the main player unit
+          // Create the main player unit
     // player = mainPlayer(100, 200)
     player = mainPlayer(300, 300)
     objLayer.addChild(player)
     playerUnits.push(player)
     units.push(player)
     player.speed = 2
+
     const tempVill = newVillager(300, 400, true)
     objLayer.addChild(tempVill)
     playerUnits.push(tempVill)
     units.push(tempVill)
     tempVill.speed = 2
+
     const tempEnemy = makeEnemy(400, 300)
     objLayer.addChild(tempEnemy)
     units.push(tempEnemy)
     enemies.push(tempEnemy)
     tempEnemy.speed = 2
+
+
+    // const tempHQ = HQ(400, 380)
+    // objLayer.addChild(tempHQ)
+    // solids.push(tempHQ)
+    
+
     // const tempMark = actionMark(400, 300)
     // objLayer.addChild(tempMark)
     // debugShape(tempEnemy)
