@@ -1,7 +1,7 @@
 import { makeRectangle } from './drawings.js'
 import { g, movingUnits, solids, MK, currentPlayer, world, objLayer } from './main.js'
 import { makeText } from './unitObject.js'
-import { tempIndicator } from '../extra/debug.js'
+// import { tempIndicator } from '../extra/debug.js'
 
 const OBSDIST = 250
 const OBSDIST_UNDERGROUND = 400
@@ -125,21 +125,35 @@ const getDistance = (a, b) => {
     if (a.gx === undefined) return Math.sqrt(Math.pow((a.x - b.x), 2) + Math.pow((a.y - b.y), 2))
     return Math.sqrt(Math.pow((a.gx - b.gx), 2) + Math.pow((a.gy - b.gy), 2))
 }
+
+
+
 const getUnitVector = (a, b, toPointer = false) => {
   let xv, yv
-  if (toPointer) {
-    xv = b.x - (a.gx + a.halfWidth)
-    yv = b.y - (a.gy + a.halfHeight)
-  } else {
-    b.halfWidth == null ? b.halfWidth = 0 : null
-    b.halfHeight == null ? b.halfHeight = 0 : null
-    xv = (b.gx + b.halfWidth) - (a.gx + a.halfWidth)
-    yv = (b.gy + b.halfHeight) - (a.gy + a.halfHeight)
-  }
-  const mag = Math.sqrt((Math.pow(xv, 2)) + (Math.pow(yv, 2)))
-  const uv = { x: xv / mag, y: yv / mag }
-  return uv
+  xv = b.centerX - a.centerX
+  yv = b.centerY - a.centerY
+  const mag = Math.sqrt( (xv**2) + (yv**2) )
+  return { x: xv / mag, y: yv / mag }
 }
+// const getUnitVector = (a, b, toPointer = false) => {
+//   let xv, yv
+//   if (toPointer) {
+//     xv = b.x - (a.gx + a.halfWidth)
+//     yv = b.y - (a.gy + a.halfHeight)
+//   } else {
+//     !b.halfWidth? b.halfWidth = 0 : 0
+//     !b.halfHeight? b.halfHeight = 0 : 0
+//     xv = (b.gx + b.halfWidth) - (a.gx + a.halfWidth)
+//     yv = (b.gy + b.halfHeight) - (a.gy + a.halfHeight)
+//   }
+//   const mag = Math.sqrt((Math.pow(xv, 2)) + (Math.pow(yv, 2)))
+//   const uv = { x: xv / mag, y: yv / mag }
+//   return uv
+// }
+
+
+
+
 const globalAngle = (a, b) => {return Math.atan2((b.gx + b.halfWidth - a.gx + a.halfWidth), (b.gy + b.halfHeight - a.gy + a.halfHeight))}
 
 const tempAngle = (a, b, bOffsetX = 0, bOffsetY = 0) => {return Math.atan2((b.centerX + bOffsetX - a.centerX), (b.centerY + bOffsetY - a.centerY))}
@@ -267,4 +281,9 @@ const roll = (t, vx, vy) => {
     t.isRolling = false
   }
 }
+
+// const cancelAttack = (attacker) => {
+//   attacker.target = null
+//   removeItem(attack)
+// }
 export { simpleButton, checkCollisions, removeItem, randomNum, getDistance, getUnitVector, globalAngle, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle }
