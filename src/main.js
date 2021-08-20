@@ -3,11 +3,11 @@ import { moveCamera, movePlayer } from './keyboard.js'
 import { createSelectionBox, beginSelection, pointerDown, pointerUp } from './mouse.js'
 import { centerCam, moveMazeCamera } from './camera.js'
 import { mainPlayer, makeEnemy, makeText, newVillager } from './unitObject.js'
-import { makeRectangle, makeCircle, HQ, moonGround, laser } from './drawings.js'
+import { makeRectangle, makeCircle, HQ, moonGround, laser, tempDrawing, tempEarth, tempDrawing_2, gun } from './drawings.js'
 import { moveSpeed } from './keyboard.js'
 import { GA } from './ga_minTest.js'
-import { tempDrawing, tempEarth, tempDrawing_2, gun } from '../extra/Drawing-Test.js'
-import { tempIndicator } from '../extra/debug.js'
+// import { tempDrawing, tempEarth, tempDrawing_2, gun } from '../extra/Drawing-Test.js'
+// import { tempIndicator } from '../extra/debug.js'
 
 const RAD_DEG = Math.PI / 180
 const initialAngle = -60
@@ -46,8 +46,13 @@ let moved = false
 let moveCycle = false
 
 
-let readyToScan = true
+let readyToScanE = true
+let readyToScanP = true
+let enemiesScanned = false
 let currentScanner = -1
+
+
+let blackHB, yellowHB, HB
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////
 const canvasSetup = () => {
     if (c)
@@ -74,78 +79,97 @@ const moveUnits = () => {
   }
 }
 
-const scanForEnemies = () => {
-  if (readyToScan) {
-    readyToScan = false
 
+const runScanners = () => {
+  scanFor(armedUnits, enemies, readyToScanE)
+  scanFor(enemies, playerUnits, readyToScanP)
+}
 
-    armedUnits.forEach(unit => {
+const scanFor = (scanners, scannees, ready) => {
+  if (ready) {
+    ready = false
+    scanners.forEach(unit => {
+      // console.log(unit.range)
       if (!unit.target) {
-        enemies.forEach(enemy => {
-          if (g.gDistance(unit, enemy) < 300) {
-            unit.target = enemy
-            attackingTarget.push(unit)
-          }
-        })
+        unit.scanForTargets(scannees)
       }
     })
-  
-
-
-    g.wait(3000, () => readyToScan = true)
-
-
+    g.wait(4000, () => ready = true)
   }
 }
 
 
+// const scanForAllies = () => {
+//   if (!enemiesScanned) {
+//     enemiesScanned = true
+
+//     enemies.forEach(e => {
+//       if (!e.target) {
+//         playerUnits.forEach(u => {
+//           if(g.gDistance(u, e) < 500) {
+//             e.target = u
+//             attackingTarget.push(e)
+//           }
+//         })
+//       }
+//     })
 
 
-const moveEnemies = () => {
-    if (!moveCycle) {
-        moveCycle = true
-        g.wait(2500, () => {
-            for (const enemy of enemies) {
-                if (enemy.readyToMove) {
-                    if (Math.random() <= 0.075)
-                        continue
-                    const cell = Math.floor(enemy.x / cellWidth)
-                    const row = Math.floor(enemy.y / cellHeight)
-                    let vertical = 1
-                    let direction = 1
-                    if (Math.random() >= 0.5)
-                        direction = -1
-                    if (Math.random() >= 0.5)
-                        vertical = 0
-                    let i = 0
-                    let gamma
-                    while (i <= 10) {
-                        i++
-                        gamma = i * direction
-                        if (maze.grid[row + gamma * vertical][cell + gamma * Math.pow(0, vertical)] != 0)
-                            continue
-                        break
-                    }
-                    if (i == 1)
-                        continue
-                    enemy.destinationX = (cell + (gamma - direction) * Math.pow(0, vertical)) * cellWidth + randomNum(5, cellWidth - enemy.width - 5)
-                    enemy.destinationY = (row + (gamma - direction) * vertical) * cellHeight + randomNum(5, cellHeight - enemy.height - 5)
-                    // tempIndicator(enemy.destinationX, enemy.destinationY)
-                    const mag = Math.sqrt(Math.pow((enemy.destinationX - enemy.x), 2) + Math.pow((enemy.destinationY - enemy.y), 2))
-                    enemy.vx = (enemy.destinationX - enemy.x) / mag
-                    enemy.vy = (enemy.destinationY - enemy.y) / mag
-                    enemy.readyToMove = false
-                    enemy.isMoving = true
-                    enemy.steps = 500
-                    movingEnemies.push(enemy)
-                }
-            }
-            if (enemies.length > 0) {
-                moveCycle = false
-            }
-        })
-    }
-}
+//     g.wait(3321, () => enemiesScanned = false)
+
+
+//   }
+
+
+// }
+
+
+
+// const moveEnemies = () => {
+//     if (!moveCycle) {
+//         moveCycle = true
+//         g.wait(2500, () => {
+//             for (const enemy of enemies) {
+//                 if (enemy.readyToMove) {
+//                     if (Math.random() <= 0.075)
+//                         continue
+//                     const cell = Math.floor(enemy.x / cellWidth)
+//                     const row = Math.floor(enemy.y / cellHeight)
+//                     let vertical = 1
+//                     let direction = 1
+//                     if (Math.random() >= 0.5)
+//                         direction = -1
+//                     if (Math.random() >= 0.5)
+//                         vertical = 0
+//                     let i = 0
+//                     let gamma
+//                     while (i <= 10) {
+//                         i++
+//                         gamma = i * direction
+//                         if (maze.grid[row + gamma * vertical][cell + gamma * Math.pow(0, vertical)] != 0)
+//                             continue
+//                         break
+//                     }
+//                     if (i == 1)
+//                         continue
+//                     enemy.destinationX = (cell + (gamma - direction) * Math.pow(0, vertical)) * cellWidth + randomNum(5, cellWidth - enemy.width - 5)
+//                     enemy.destinationY = (row + (gamma - direction) * vertical) * cellHeight + randomNum(5, cellHeight - enemy.height - 5)
+//                     // tempIndicator(enemy.destinationX, enemy.destinationY)
+//                     const mag = Math.sqrt(Math.pow((enemy.destinationX - enemy.x), 2) + Math.pow((enemy.destinationY - enemy.y), 2))
+//                     enemy.vx = (enemy.destinationX - enemy.x) / mag
+//                     enemy.vy = (enemy.destinationY - enemy.y) / mag
+//                     enemy.readyToMove = false
+//                     enemy.isMoving = true
+//                     enemy.steps = 500
+//                     movingEnemies.push(enemy)
+//                 }
+//             }
+//             if (enemies.length > 0) {
+//                 moveCycle = false
+//             }
+//         })
+//     }
+// }
 
 
 const animatePlayer = () => {
@@ -157,30 +181,43 @@ const animatePlayer = () => {
   })
 }
 const switchMode = () => {
-    if (!MK) {
-        if (selectedUnits.length === 1) {
-            MK = true
-            currentPlayer = selectedUnits[0]
-            currentPlayer.isMoving = false
-            removeItem(movingUnits, currentPlayer)
-            removeItem(attackingTarget, currentPlayer)
-            currentPlayer.deselect()
-            selectedUnits = []
-        }
+  if (!MK) {
+    if (selectedUnits.length === 1) {
+      MK = true
+      currentPlayer = selectedUnits[0]
+      currentPlayer.isMoving = false
+      removeItem(movingUnits, currentPlayer)
+      removeItem(attackingTarget, currentPlayer)
+      currentPlayer.deselect()
+      selectedUnits = []
+      ;[blackHB, yellowHB, HB].forEach(i => i.visible = true)
+
     }
-    else {
-        if (currentPlayer) {
-            MK = false
-            currentPlayer.isMoving = false
-            currentPlayer.weapon.rotation = currentPlayer.weaponRotation
-            currentPlayer = null
-        }
+  }
+  else {
+    MK = false
+    ;[blackHB, yellowHB, HB].forEach(i => i.visible = false)
+
+    if (!currentPlayer.isDead) {
+      currentPlayer.isMoving = false
+      currentPlayer.weapon.rotation = currentPlayer.weaponRotation
+      currentPlayer = null
+
     }
+  }
 }
+
+const stopAttack = () => {
+
+}
+
+
+
 const play = () => {
   moveUnits()
   animatePlayer()
   if (MK) {
+    if (currentPlayer.isDead) switchMode()
     moveMazeCamera()
     if (!currentPlayer.attacked) {
       if (!currentPlayer.attacked2) {
@@ -210,18 +247,23 @@ const play = () => {
   }
   if (attackingTarget.length > 0) {
     attackingTarget.forEach(unit => {
-      if (unit.target && !unit.target.isDead) {
-        unit.attack(unit.target)
-      }
-      else {
+      if (!unit.target || unit.isDead || unit.target.isDead) {
         removeItem(attackingTarget, unit)
         unit.target = null
         unit.weapon.rotation = unit.weaponRotation
       }
+      else {
+        unit.attack(unit.target)
+      }
     })
   }
 
-  scanForEnemies()
+  runScanners()
+
+  // scanForEnemies()
+  // scanForAllies()
+
+
 
 
     // if (moveSun) {
@@ -327,42 +369,64 @@ const setup = () => {
   }
 
 
-  player = mainPlayer(300, 300)
+  player = mainPlayer(100, 300)
   objLayer.addChild(player)
   playerUnits.push(player)
   units.push(player)
 
   for (let i = 0; i < 4; i++) {
-    const tempVill = newVillager(300, 400 + i * 55, true)
+    const tempVill = newVillager(100, 400 + i * 55, true)
     objLayer.addChild(tempVill)
     playerUnits.push(tempVill)
     units.push(tempVill)
     armedUnits.push(tempVill)
   }
 
+  const tempVill = newVillager(375, 250)
+  objLayer.addChild(tempVill)
+  playerUnits.push(tempVill)
+  units.push(tempVill)
+
 
 
   for (let i = 0; i < 4; i++) {
-    const tempEnemy = makeEnemy(800 + i * 50, 350)
+    const tempEnemy = makeEnemy(700 + i * 50, 350)
     objLayer.addChild(tempEnemy)
     units.push(tempEnemy)
     enemies.push(tempEnemy)
-    armedUnits.push(tempEnemy)
+    // armedUnits.push(tempEnemy)
     // console.log(tempEnemy)
     // tempEnemy.speed = 2
   }
 
 
-  const laser1 = laser(0, 0, 100, 100)
-  world.addChild(laser1)
 
 
 
 
 
-
-
+  // console.log(units)
   createSelectionBox()
+
+
+  // const blackHB = makeRectangle((p.health / p.baseHealth) * 100 * p.HBscale, 5, 'black', 8, 100, 20)
+  // blackHB.strokeStyle = 'darkgray'
+  // const yellowHB = makeRectangle((p.health / p.baseHealth) * 100 * p.HBscale, 5, 'Yellow', 0, 100, 20)
+  // const HB = makeRectangle((p.health / p.baseHealth) * 100 * p.HBscale, 5, 'red', 0, 100, 20)
+  blackHB = makeRectangle(400, 5, 'black', 8, 100, 20)
+  blackHB.strokeStyle = 'darkgray'
+  yellowHB = makeRectangle(400, 5, 'Yellow', 0, 100, 20)
+  HB = makeRectangle(400, 5, 'red', 0, 100, 20)
+  uiLayer.addChild(blackHB)
+  uiLayer.addChild(yellowHB)
+  uiLayer.addChild(HB);
+  [blackHB, yellowHB, HB].forEach(i => i.visible = false)
+
+  
+
+
+
+
   debugText = makeText(' ', '12px arial', 'white', 0, 100)
   objLayer.children.sort((a, b) => (a.Y + a.height) - (b.Y + b.height))
   centerCam()
@@ -372,4 +436,4 @@ g = GA.create(setup)
 g.start()
 export { g, world, floorLayer, uiLayer, objLayer, units, enemies, alertedEnemies, shots, selectedUnits, movingUnits, solids, playerUnits, 
 // player,
-C, bloods, bloodSplats, maze, gridMap, cellSize, PI, surfaceWidth, surfaceHeight, switchMode, MK, currentPlayer, attackingTarget, }
+C, bloods, bloodSplats, maze, gridMap, cellSize, PI, surfaceWidth, surfaceHeight, switchMode, MK, currentPlayer, attackingTarget, armedUnits }

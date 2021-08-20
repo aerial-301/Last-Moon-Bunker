@@ -66,9 +66,10 @@ export var GA = {
         else sprites[0].parent.removeChild(sprites[0])
       }
       else {
-        sprites[0].forEach(s => {
-          sprite.parent.removeChild(s)
-          spritesArray.splice(spritesArray.indexOf(s), 1)
+        let p = sprites[0]
+        p.forEach(s => {
+          s.parent.removeChild(s)
+          p.splice(p.indexOf(s), 1)
         })
       }
     }
@@ -98,27 +99,27 @@ export var GA = {
         return o
     }
     function moreProperties(o) {
-        o.yOffset = 0
-        Object.defineProperties(o, {
-            gx: { get: () => { return o.parent ? o.x + o.parent.gx : o.x } },
-            gy: { get: () => { return o.parent ? o.y + o.parent.gy : o.y } },
-            centerX: { get: () => { return o.x + o.halfWidth } },
-            centerY: { get: () => { return o.y + o.halfHeight } },
-            Y: { get: () => { return o.y + o.parent.gy + o.yOffset } }
-        })
-        o.children = []
-        o.addChild = (c) => {
-            addC(c, o)
-        }
-        o.removeChild = (c) => remC(c, o)
+      o.yOffset = 0
+      Object.defineProperties(o, {
+          gx: { get: () => { return o.parent ? o.x + o.parent.gx : o.x } },
+          gy: { get: () => { return o.parent ? o.y + o.parent.gy : o.y } },
+          centerX: { get: () => { return o.x + o.halfWidth } },
+          centerY: { get: () => { return o.y + o.halfHeight } },
+          Y: { get: () => { return o.y + o.parent.gy + o.yOffset } }
+      })
+      o.children = []
+      o.addChild = (c) => {
+          addC(c, o)
+      }
+      o.removeChild = (c) => remC(c, o)
     }
     function makeStage() {
-        const z = makeGeneralObject(g.canvas.width, g.canvas.height, 0, 0)
-        var o = Object.assign({}, z)
-        moreProperties(o)
-        o.stage = true
-        o.parent = undefined
-        return o
+      const z = makeGeneralObject(g.canvas.width, g.canvas.height, 0, 0)
+      var o = Object.assign({}, z)
+      moreProperties(o)
+      o.stage = true
+      o.parent = undefined
+      return o
     }
     const addC = (c, o) => {
         if (c.parent)
@@ -167,46 +168,30 @@ export var GA = {
     g.render = function (canvas, lagOffset) {
       let ctx = canvas.ctx
       ctx.clearRect(0, 0, canvas.width, canvas.height)
-      // for (var i = 0; i < g.stage.children.length; i++) {
-      //     var sprite = g.stage.children[i]
-      //     displaySprite(sprite)
-      // }
       g.stage.children.forEach(c => displaySprite(c))
       function displaySprite(s) {
-          if (s.visible && s.gx < canvas.width + s.width && s.gx + s.width >= -s.width && s.gy < canvas.height + s.height && s.gy + s.height >= -s.height) {
-              ctx.save()
-              if (g.interpolate) {
-                if (s._previousX !== undefined) s.renderX = (s.x - s._previousX) * lagOffset + s._previousX
-                else s.renderX = s.x
-                if (s._previousY !== undefined) s.renderY = (s.y - s._previousY) * lagOffset + s._previousY
-                else s.renderY = s.y
-              } else {
-                s.renderX = s.x
-                s.renderY = s.y
-              }
-              ctx.translate(s.renderX + (s.width * s.pivotX), s.renderY + (s.height * s.pivotY))
-              ctx.globalAlpha = s.alpha
-              ctx.rotate(s.rotation)
-              ctx.scale(s.scaleX, s.scaleY)
-              // if (s.shadow) {
-              //     ctx.shadowColor = s.shadowColor
-              //     ctx.shadowOffsetX = s.shadowOffsetX
-              //     ctx.shadowOffsetY = s.shadowOffsetY
-              //     ctx.shadowBlur = s.shadowBlur
-              // }
-              // if (s.blendMode)
-              //     ctx.globalCompositeOperation = s.blendMode
-              if (s.render) s.render(ctx)
-              if (s.children && s.children.length > 0) {
-                ctx.translate(-s.width * s.pivotX, -s.height * s.pivotY)
-                s.children.forEach(c => displaySprite(c))
-                // for (var j = 0; j < s.children.length; j++) {
-                //     var child = s.children[j]
-                //     displaySprite(child)
-                // }
-              }
-              ctx.restore()
+        if (s.alwaysVisible || s.visible && s.gx < canvas.width + s.width && s.gx + s.width >= -s.width && s.gy < canvas.height + s.height && s.gy + s.height >= -s.height) {
+          ctx.save()
+          if (g.interpolate) {
+            if (s._previousX !== undefined) s.renderX = (s.x - s._previousX) * lagOffset + s._previousX
+            else s.renderX = s.x
+            if (s._previousY !== undefined) s.renderY = (s.y - s._previousY) * lagOffset + s._previousY
+            else s.renderY = s.y
+          } else {
+            s.renderX = s.x
+            s.renderY = s.y
           }
+          ctx.translate(s.renderX + (s.width * s.pivotX), s.renderY + (s.height * s.pivotY))
+          ctx.globalAlpha = s.alpha
+          ctx.rotate(s.rotation)
+          ctx.scale(s.scaleX, s.scaleY)
+          if (s.render) s.render(ctx)
+          if (s.children && s.children.length > 0) {
+            ctx.translate(-s.width * s.pivotX, -s.height * s.pivotY)
+            s.children.forEach(c => displaySprite(c))
+          }
+          ctx.restore()
+        }
       }
     }
     function makePointer() {
@@ -214,24 +199,25 @@ export var GA = {
       o._x = 0
       o._y = 0
       Object.defineProperties(o, {
-          x: { get: () => o._x / g.scale },
-          y: { get: () => o._y / g.scale },
-          gx: { get: () => o.x },
-          gy: { get: () => o.y },
-          halfWidth: { get: () => 0 },
-          halfHeight: { get: () => 0 },
-          centerX: { get: () => o.x },
-          centerY: { get: () => o.y },
+        x: { get: () => o._x / g.scale },
+        y: { get: () => o._y / g.scale },
+        gx: { get: () => o.x },
+        gy: { get: () => o.y },
+        halfWidth: { get: () => 0 },
+        halfHeight: { get: () => 0 },
+        centerX: { get: () => o.x },
+        centerY: { get: () => o.y },
       })
       o.moveHandler = function (e) {
-          o._x = (e.pageX - e.target.offsetLeft)
-          o._y = (e.pageY - e.target.offsetTop)
-          e.preventDefault()
+        o._x = (e.pageX - e.target.offsetLeft)
+        o._y = (e.pageY - e.target.offsetTop)
+        e.preventDefault()
       }
       g.canvas.addEventListener("mousemove", o.moveHandler.bind(o), false)
       return o
     }
     g.wait = (d, c) => setTimeout(c, d)
+    
     g.hitTestRectangle = (r1, r2, global = false) => {
         let hit = false, combinedHalfWidths, combinedHalfHeights, vx, vy
         if (global) {
