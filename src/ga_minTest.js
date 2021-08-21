@@ -1,5 +1,6 @@
 export var GA = {
   create(setup) {
+
     var g = {}
     g.canvas = document.getElementById('c')
     g.canvas.style.backgroundColor = "black"
@@ -14,7 +15,12 @@ export var GA = {
     g._frameDuration = 1000 / g._fps
     g._lag = 0
     g.interpolate = true
-    g.scale = 1
+
+    let scaleToFit = Math.min(window.innerWidth / g.canvas.width, window.innerHeight / g.canvas.height)
+    g.canvas.style.transformOrigin = "0 0";
+    g.canvas.style.transform = "scale(" + scaleToFit + ")";
+    g.scale = scaleToFit
+
     function gameLoop() {
       requestAnimationFrame(gameLoop, g.canvas)
       if (g._fps === undefined) {
@@ -74,29 +80,29 @@ export var GA = {
       }
     }
     function makeGeneralObject(w = 0, h = 0, x = 0, y = 0) {
-        const o = {
-            x: x,
-            y: y,
-            width: w,
-            height: h,
-            halfWidth: w / 2,
-            halfHeight: h / 2,
-            scaleX: 1,
-            scaleY: 1,
-            pivotX: 0.5,
-            pivotY: 0.5,
-            rotation: 0,
-            visible: true,
-            parent: undefined,
-            stage: false,
-            blendMode: undefined,
-            alpha: 1,
-            putCenter(b, xOff = 0, yOff = 0, a = this) {
-                b.x = a.x + a.halfWidth - b.width + xOff
-                b.y = a.y + a.halfHeight - b.halfHeight + yOff
-            },
-        }
-        return o
+      const o = {
+        x: x,
+        y: y,
+        width: w,
+        height: h,
+        halfWidth: w / 2,
+        halfHeight: h / 2,
+        scaleX: 1,
+        scaleY: 1,
+        pivotX: 0.5,
+        pivotY: 0.5,
+        rotation: 0,
+        visible: true,
+        parent: undefined,
+        stage: false,
+        blendMode: undefined,
+        alpha: 1,
+        putCenter(b, xOff = 0, yOff = 0, a = this) {
+          b.x = a.x + a.halfWidth - b.width + xOff
+          b.y = a.y + a.halfHeight - b.halfHeight + yOff
+        },
+      }
+      return o
     }
     function moreProperties(o) {
       o.yOffset = 0
@@ -115,6 +121,7 @@ export var GA = {
     }
     function makeStage() {
       const z = makeGeneralObject(g.canvas.width, g.canvas.height, 0, 0)
+      // console.log('canvas size = ', g.canvas.width, g.canvas.height)
       var o = Object.assign({}, z)
       moreProperties(o)
       o.stage = true
@@ -217,7 +224,6 @@ export var GA = {
       return o
     }
     g.wait = (d, c) => setTimeout(c, d)
-    
     g.hitTestRectangle = (r1, r2, global = false) => {
         let hit = false, combinedHalfWidths, combinedHalfHeights, vx, vy
         if (global) {

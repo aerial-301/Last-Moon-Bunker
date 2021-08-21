@@ -1,6 +1,6 @@
 // import { debugShape } from "../extra/debug.js"
 import { surfaceHeight, surfaceWidth, world, floorLayer, objLayer, solids, g } from "./main.js"
-import { makeGeneralObject, makeMovableObject, moreProperties } from "./unitObject.js"
+import { makeGeneralObject, makeMovableObject, moreProperties, newmMakeGeneralObject } from "./unitObject.js"
 import { randomNum } from "./functions.js"
 const PI = Math.PI
 
@@ -37,7 +37,6 @@ const makeRectangle = (w, h, k, s = 1, x = 0, y = 0) => {
     fillStyle: k,
     strokeStyle: 'black' 
   }
-
   o.render = (c) => {
     c.strokeStyle = o.strokeStyle
     c.lineWidth = s
@@ -49,6 +48,8 @@ const makeRectangle = (w, h, k, s = 1, x = 0, y = 0) => {
     if (s) c.stroke()
   }
   moreProperties(o)
+
+
   return o
 }
 const makeSelectionBox = () => {
@@ -691,6 +692,23 @@ const makeEnemyEyes = () => {
   return o
 }
 
+
+const newMakeEnemyEyes = () => {
+  const o = {
+    render(c) {
+      c.strokeStyle = '#000'
+      c.fillStyle = '#0F0'
+      c.lineWidth = 2
+      c.beginPath()
+      c.ellipse(0, -14, 10, 12, 0, 0, 2*PI, false)
+      c.stroke()
+      c.fill()
+    }
+  }
+  newmMakeGeneralObject(o, 50, 50, 0, 0)
+  return o
+}
+
 export { 
   makeCircle, 
   makeRectangle, 
@@ -712,5 +730,7 @@ export {
   tempDrawing,
   tempEarth,
   makeEnemyEyes,
-  gun
+  gun,
+
+  newMakeEnemyEyes,
  }

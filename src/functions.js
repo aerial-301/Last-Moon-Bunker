@@ -223,7 +223,7 @@ const newMoveX = (u) => {
   } else u.x += u.vx * u.speed
 }
 const newMoveY = (u) => {
-  objLayer.children.sort((a, b) => (a.Y + a.height) - (b.Y + b.height))
+  objLayer.children.sort((a, b) => a.bottom - b.bottom)
   const yD = u.destinationY - u.y
   const yd = Math.abs(yD)
   if (!u.isCollidingH) {

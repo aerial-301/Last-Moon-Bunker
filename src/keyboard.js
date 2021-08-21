@@ -97,13 +97,13 @@ const movePlayer = () => {
     currentPlayer.y -= currentPlayer.speed
     checkCollisions('bot')
     currentPlayer.scan()
-    objLayer.children.sort((a, b) => (a.Y + a.height) - (b.Y + b.height))
+    objLayer.children.sort((a, b) => a.bottom - b.bottom)
   }
   if (keys.s) {
     currentPlayer.y += currentPlayer.speed
     checkCollisions('top')
     currentPlayer.scan()
-    objLayer.children.sort((a, b) => (a.Y + a.height) - (b.Y + b.height))
+    objLayer.children.sort((a, b) => a.bottom - b.bottom)
   }
   if (keys.a) {
     currentPlayer.x -= currentPlayer.speed

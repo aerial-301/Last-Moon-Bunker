@@ -2,7 +2,7 @@ import { randomNum, removeItem, tempAngle } from './functions.js'
 import { moveCamera, movePlayer } from './keyboard.js'
 import { createSelectionBox, beginSelection, pointerDown, pointerUp } from './mouse.js'
 import { centerCam, moveMazeCamera } from './camera.js'
-import { mainPlayer, makeEnemy, makeText, newVillager } from './unitObject.js'
+import { mainPlayer, makeEnemy, makeText, newMakeEnemy, newVillager } from './unitObject.js'
 import { makeRectangle, makeCircle, HQ, moonGround, laser, tempDrawing, tempEarth, tempDrawing_2, gun } from './drawings.js'
 import { moveSpeed } from './keyboard.js'
 import { GA } from './ga_minTest.js'
@@ -97,6 +97,7 @@ const scanFor = (scanners, scannees, ready) => {
     g.wait(4000, () => ready = true)
   }
 }
+
 
 
 // const scanForAllies = () => {
@@ -390,7 +391,8 @@ const setup = () => {
 
 
   for (let i = 0; i < 4; i++) {
-    const tempEnemy = makeEnemy(700 + i * 50, 350)
+    // const tempEnemy = makeEnemy(700 + i * 50, 350)
+    const tempEnemy = newMakeEnemy(700 + i * 50, 350)
     objLayer.addChild(tempEnemy)
     units.push(tempEnemy)
     enemies.push(tempEnemy)
@@ -428,7 +430,7 @@ const setup = () => {
 
 
   debugText = makeText(' ', '12px arial', 'white', 0, 100)
-  objLayer.children.sort((a, b) => (a.Y + a.height) - (b.Y + b.height))
+  objLayer.children.sort((a, b) => a.bottom - b.bottom)
   centerCam()
   g.state = play
 }
