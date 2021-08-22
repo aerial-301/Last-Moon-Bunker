@@ -17,9 +17,10 @@ export var GA = {
     g.interpolate = true
 
     let scaleToFit = Math.min(window.innerWidth / g.canvas.width, window.innerHeight / g.canvas.height)
-    g.canvas.style.transformOrigin = "0 0";
-    g.canvas.style.transform = "scale(" + scaleToFit + ")";
-    g.scale = scaleToFit
+    // g.canvas.style.transformOrigin = "0 0";
+    // g.canvas.style.transform = "scale(" + scaleToFit + ")";
+    // g.scale = scaleToFit
+    g.scale = 1
 
     function gameLoop() {
       requestAnimationFrame(gameLoop, g.canvas)

@@ -1,7 +1,8 @@
-// import { debugShape } from "../extra/debug.js"
+import { debugShape } from "../extra/debug.js"
 import { surfaceHeight, surfaceWidth, world, floorLayer, objLayer, solids, g } from "./main.js"
 import { makeGeneralObject, makeMovableObject, moreProperties, newmMakeGeneralObject } from "./unitObject.js"
 import { randomNum } from "./functions.js"
+
 const PI = Math.PI
 
 const makeCircle = (d, k, l, movable = false, x = 0, y = 0) => {
@@ -27,9 +28,9 @@ const makeCircle = (d, k, l, movable = false, x = 0, y = 0) => {
   return o
 }
 const makeRectangle = (w, h, k, s = 1, x = 0, y = 0) => {
-  const g = makeGeneralObject(w, h, x, y)
+  // const g = makeGeneralObject(w, h, x, y)
   const o = {
-    ...g,
+    // ...g,
     x: x,
     y: y,
     width: w,
@@ -47,9 +48,8 @@ const makeRectangle = (w, h, k, s = 1, x = 0, y = 0) => {
     c.fill()
     if (s) c.stroke()
   }
-  moreProperties(o)
-
-
+  // moreProperties(o)
+  newmMakeGeneralObject(o, x, y, w, h)
   return o
 }
 const makeSelectionBox = () => {
@@ -70,10 +70,7 @@ const makeSelectionBox = () => {
   return o
 }
 const makeSlash = (n) => {
-  const g = makeGeneralObject(140, 140)
   const o = {
-    ...g,
-    visible: false,
     render(c) {
       c.fillStyle = '#fff'
       if (n) {
@@ -89,56 +86,51 @@ const makeSlash = (n) => {
       }
     } 
   }
-  moreProperties(o)
+  newmMakeGeneralObject(o, 0, 0)
+  o.visible = false
   return o
 }
-const makeTwoEyes = (two = 1, x = 0, y = 0) => {
-  const g = makeGeneralObject(34, 10)
+const makeTwoEyes = (x = 0, y = 0) => {
   const o = {
-    ...g,
     render(c) {
       c.lineJoin = 'round'
-      c.strokeStyle = 'black'
+      c.strokeStyle = '#000'
       c.fillStyle = 'red'
       c.lineWidth = 0.7
       c.beginPath()
-      c.moveTo(x, y)
-      c.lineTo(x + 14, y + 10)
-      c.lineTo(x, y + 5)
-      c.lineTo(x, y)
+      c.moveTo(-18, -10)
+      c.lineTo(-4, 0)
+      c.lineTo(-18, -5)
+      c.lineTo(-18, -10)
       c.fill()
       // Right eye
-      if (two) {
-        c.moveTo(x + 34, y)
-        c.lineTo(x + 20, y + 10)
-        c.lineTo(x + 34, y + 5)
-        c.lineTo(x + 34, y)
-        c.fill()
-      }
-      c.stroke()
-    } 
-  }
-  moreProperties(o)
-  return o
-}
-const makeThirdEye = (x = -3, y = -80) => {
-  const g = makeGeneralObject(6, 15)
-  const o = {
-    ...g,
-    render(c) {
-      c.strokeStyle = 'black'
-      c.fillStyle = 'red'
-      c.lineWidth = 0.5
-      c.beginPath()
-      c.moveTo(x, y)
-      c.lineTo(x + 6, y)
-      c.lineTo(x + 3, y + 15)
-      c.lineTo(x, y)
+      c.moveTo(18, -10)
+      c.lineTo(4, 0)
+      c.lineTo(18, -5)
+      c.lineTo(18, -10)
       c.fill()
       c.stroke()
     } 
   }
-  moreProperties(o)
+  newmMakeGeneralObject(o, x, y)
+  return o
+}
+const makeThirdEye = () => {
+  const o = {
+    render(c) {
+      c.strokeStyle = '#000'
+      c.fillStyle = 'red'
+      c.lineWidth = .8
+      c.beginPath()
+      c.moveTo(-3, -18)
+      c.lineTo(3, -18)
+      c.lineTo(0, -3)
+      c.lineTo(-3, -18)
+      c.fill()
+      c.stroke()
+    } 
+  }
+  newmMakeGeneralObject(o)
   return o
 }
 const makeLeg = (x) => {
@@ -191,32 +183,28 @@ const makeBorder = (w, h) => {
   return o
 }
 
-const makeHeadDetails = (two = 1) => {
-  const g = makeGeneralObject(50, 50)
+const makeHeadDetails = () => {
   const o = {
-    ...g,
     render(c) {
-      c.strokeStyle = 'black'
+      c.strokeStyle = '#000'
       c.lineWidth = 1.5
       c.beginPath()
-      c.arc(14, 12, 35, Math.PI * 0.20, Math.PI * 0.4, false)
+      c.arc(-12, -13, 35, Math.PI * 0.20, Math.PI * 0.4, false)
       c.stroke()
       c.beginPath()
-      c.arc(47, 20, 22, Math.PI * 0.55, Math.PI * 0.85, false)
+      c.arc(20, -5, 22, Math.PI * 0.55, Math.PI * 0.85, false)
       c.stroke()
       c.beginPath()
-      c.arc(43, 22, 22, Math.PI * 0.55, Math.PI * 0.85, false)
+      c.arc(17, -3, 22, Math.PI * 0.55, Math.PI * 0.85, false)
       c.stroke()
     } 
   }
-  moreProperties(o)
+  newmMakeGeneralObject(o, 0, 0)
   return o
 }
 
 const makeHead = () => {
-  const g = makeGeneralObject(50, 50)
   const o = {
-    ...g,
     fillStyle: '#555',
     render(c) {
       const grad = c.createRadialGradient(2, -3, 27, 10, -20,0)
@@ -231,14 +219,12 @@ const makeHead = () => {
       c.fill()
     } 
   }
-  moreProperties(o)
+  newmMakeGeneralObject(o)
   return o
 }
 
 const shotHit = (x, y) => {
-  const g = makeGeneralObject(10, 10, x, y)
   const o = {
-    ...g,
     render(c) {
       c.strokeStyle = '#F00'
       c.fillStyle = '#FF0'
@@ -249,14 +235,11 @@ const shotHit = (x, y) => {
       c.fill()
     } 
   }
-  moreProperties(o)
+  newmMakeGeneralObject(o, x, y, 4, 4)
   return o
 }
 const flash = (x = 0, y = 0) => {
-  const g = makeGeneralObject(10, 10, x, y)
   const o = {
-    ...g,
-    visible: false,
     render(c) {
       c.strokeStyle = '#F00'
       c.fillStyle = '#FF0'
@@ -269,7 +252,8 @@ const flash = (x = 0, y = 0) => {
       c.fill()
     } 
   }
-  moreProperties(o)
+  newmMakeGeneralObject(o, x, y)
+  o.visible = false
   return o
 }
 
@@ -518,42 +502,25 @@ const tempDrawing_2 = (w, h, x, y, lineWidth = 2, yOff = 0) => {
 }
 
 const tempLaser = (x = 0, y = 0) => {
-  // let length = 100
-  const g = makeGeneralObject(100, 100, x, y)
   const o = {
-    ...g,
-    length: 100,
-    visible: false,
-    // alwaysVisible: true,
+    length: 10,
     render(c) {
       c.strokeStyle = '#F00'
-      // c.fillStyle = '#FFb'
       c.lineWidth = 2
       c.beginPath()
       c.moveTo(0, 0)
       c.lineTo(this.length, 0)
       c.stroke()
-      // c.moveTo(270, 0)
-      // c.strokeStyle = '#FF0'
-      // c.arc(250, 0, 4, 0, 2 * PI, false)
-      // c.stroke()
-      // c.fill()
     },
-
-    setLength(l) {
-      this.length = l -40
-    }
-
-
+    setLength(l) {this.length = l -40}
   }
-  moreProperties(o)
+  newmMakeGeneralObject(o, x, y, 100, 100)
+  o.visible = false
   return o
 }
 
-const gun = (owner, rifle = true, x = 40, y = 17, w = 70, h = 5) => {
-  const j = makeGeneralObject(w, h * 10, x, y)
+const gun = (owner, rifle = true, x = -50, y = -35, w = 70, h = 5) => {
   const o = {
-    ...j,
     render(c) {
       c.lineWidth = 2
       c.beginPath()
@@ -566,30 +533,8 @@ const gun = (owner, rifle = true, x = 40, y = 17, w = 70, h = 5) => {
       c.fill()
     },
   }
-  moreProperties(o)
-  if (rifle) {
-    const gunFlash = flash(0, 0)
-    o.addChild(gunFlash)
-    o.flash = gunFlash
-    gunFlash.x = 65
-    gunFlash.y = 20
-  } else {
-    var laser1 = tempLaser()
-    o.addChild(laser1)
-    laser1.y = -25
-    laser1.x = 20
-    
-
-    // laser.x = -100
-    // laser.y = 110
-
-  }
-
-
-
-  const k = makeGeneralObject(100,100, -24, -9)
+  newmMakeGeneralObject(o, x, y, 150, 150)
   const handle = {
-    ...k,
     render(c) {
       c.lineWidth = 2
       c.beginPath()
@@ -599,26 +544,35 @@ const gun = (owner, rifle = true, x = 40, y = 17, w = 70, h = 5) => {
       c.stroke()
       c.fill()
     },
-    fire() {
-      o.flash.visible = true
-      g.wait(50, () => o.flash.visible = false)
-    }
   }
-  
-  moreProperties(handle)
+  handle.fire = () => {
+    handle.flash.alwaysVisible = true
+    g.wait(50, () => handle.flash.alwaysVisible = false)
+  }
+  newmMakeGeneralObject(handle, x, y, 150, 150)
+  handle.alwaysVisible = true
   handle.addChild(o)
+  o.y = -8
+  o.x = 23
 
- 
-  
   owner.playerHand.addChild(handle)
   owner.weapon = handle
-  // owner.weapon.rotation = -0.25
   owner.weapon.rotation = owner.weaponRotation
 
-  if (!rifle) owner.laser = laser1
-  
-  // debugShape(o)
-  // return handle
+  if (rifle) {
+    const gunFlash = flash()
+    handle.addChild(gunFlash)
+    handle.flash = gunFlash
+    gunFlash.x = 108
+    gunFlash.y = 42
+  } else {
+    var laser1 = tempLaser()
+    handle.addChild(laser1)
+    laser1.x = 82.5
+    laser1.y = 17
+    owner.laser = laser1
+  }
+ 
 }
 
 const tempEarth = (d, x, y) => {
@@ -705,7 +659,7 @@ const newMakeEnemyEyes = () => {
       c.fill()
     }
   }
-  newmMakeGeneralObject(o, 50, 50, 0, 0)
+  newmMakeGeneralObject(o, 0, 0)
   return o
 }
 

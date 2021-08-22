@@ -2,7 +2,7 @@ import { randomNum, removeItem, tempAngle } from './functions.js'
 import { moveCamera, movePlayer } from './keyboard.js'
 import { createSelectionBox, beginSelection, pointerDown, pointerUp } from './mouse.js'
 import { centerCam, moveMazeCamera } from './camera.js'
-import { mainPlayer, makeEnemy, makeText, newMakeEnemy, newVillager } from './unitObject.js'
+import { makeText, newMainPlayer, newMakeEnemy, newVillager } from './unitObject.js'
 import { makeRectangle, makeCircle, HQ, moonGround, laser, tempDrawing, tempEarth, tempDrawing_2, gun } from './drawings.js'
 import { moveSpeed } from './keyboard.js'
 import { GA } from './ga_minTest.js'
@@ -79,7 +79,6 @@ const moveUnits = () => {
   }
 }
 
-
 const runScanners = () => {
   scanFor(armedUnits, enemies, readyToScanE)
   scanFor(enemies, playerUnits, readyToScanP)
@@ -97,81 +96,6 @@ const scanFor = (scanners, scannees, ready) => {
     g.wait(4000, () => ready = true)
   }
 }
-
-
-
-// const scanForAllies = () => {
-//   if (!enemiesScanned) {
-//     enemiesScanned = true
-
-//     enemies.forEach(e => {
-//       if (!e.target) {
-//         playerUnits.forEach(u => {
-//           if(g.gDistance(u, e) < 500) {
-//             e.target = u
-//             attackingTarget.push(e)
-//           }
-//         })
-//       }
-//     })
-
-
-//     g.wait(3321, () => enemiesScanned = false)
-
-
-//   }
-
-
-// }
-
-
-
-// const moveEnemies = () => {
-//     if (!moveCycle) {
-//         moveCycle = true
-//         g.wait(2500, () => {
-//             for (const enemy of enemies) {
-//                 if (enemy.readyToMove) {
-//                     if (Math.random() <= 0.075)
-//                         continue
-//                     const cell = Math.floor(enemy.x / cellWidth)
-//                     const row = Math.floor(enemy.y / cellHeight)
-//                     let vertical = 1
-//                     let direction = 1
-//                     if (Math.random() >= 0.5)
-//                         direction = -1
-//                     if (Math.random() >= 0.5)
-//                         vertical = 0
-//                     let i = 0
-//                     let gamma
-//                     while (i <= 10) {
-//                         i++
-//                         gamma = i * direction
-//                         if (maze.grid[row + gamma * vertical][cell + gamma * Math.pow(0, vertical)] != 0)
-//                             continue
-//                         break
-//                     }
-//                     if (i == 1)
-//                         continue
-//                     enemy.destinationX = (cell + (gamma - direction) * Math.pow(0, vertical)) * cellWidth + randomNum(5, cellWidth - enemy.width - 5)
-//                     enemy.destinationY = (row + (gamma - direction) * vertical) * cellHeight + randomNum(5, cellHeight - enemy.height - 5)
-//                     // tempIndicator(enemy.destinationX, enemy.destinationY)
-//                     const mag = Math.sqrt(Math.pow((enemy.destinationX - enemy.x), 2) + Math.pow((enemy.destinationY - enemy.y), 2))
-//                     enemy.vx = (enemy.destinationX - enemy.x) / mag
-//                     enemy.vy = (enemy.destinationY - enemy.y) / mag
-//                     enemy.readyToMove = false
-//                     enemy.isMoving = true
-//                     enemy.steps = 500
-//                     movingEnemies.push(enemy)
-//                 }
-//             }
-//             if (enemies.length > 0) {
-//                 moveCycle = false
-//             }
-//         })
-//     }
-// }
-
 
 const animatePlayer = () => {
   units.forEach(u => {
@@ -370,7 +294,7 @@ const setup = () => {
   }
 
 
-  player = mainPlayer(100, 300)
+  player = newMainPlayer(200, 180)
   objLayer.addChild(player)
   playerUnits.push(player)
   units.push(player)
@@ -383,7 +307,7 @@ const setup = () => {
     armedUnits.push(tempVill)
   }
 
-  const tempVill = newVillager(375, 250)
+  const tempVill = newVillager(875, 250, true)
   objLayer.addChild(tempVill)
   playerUnits.push(tempVill)
   units.push(tempVill)
@@ -391,14 +315,11 @@ const setup = () => {
 
 
   for (let i = 0; i < 4; i++) {
-    // const tempEnemy = makeEnemy(700 + i * 50, 350)
-    const tempEnemy = newMakeEnemy(700 + i * 50, 350)
+
+    const tempEnemy = newMakeEnemy(1400 + i * 50, 350)
     objLayer.addChild(tempEnemy)
     units.push(tempEnemy)
     enemies.push(tempEnemy)
-    // armedUnits.push(tempEnemy)
-    // console.log(tempEnemy)
-    // tempEnemy.speed = 2
   }
 
 

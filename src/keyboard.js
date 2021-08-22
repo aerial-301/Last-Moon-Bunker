@@ -1,6 +1,6 @@
 import { g, world, objLayer, surfaceWidth, surfaceHeight, switchMode, MK, enemies, currentPlayer } from './main.js'
 import { checkCollisions, randomNum } from './functions.js'
-import { makeEnemy } from './unitObject.js'
+// import { makeEnemy } from './unitObject.js'
 // import { debugShape, tempIndicator } from '../extra/debug.js'
 
 

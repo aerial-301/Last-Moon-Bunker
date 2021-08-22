@@ -256,6 +256,7 @@ const scan = (u, delay = 400, distance = OBSDIST_UNDERGROUND) => {
           continue
         }
       }
+      // console.log(u)
       removeItem(u.obstacles, obj)
     }
     g.wait(delay, () => u.scaned = false)

@@ -1,10 +1,10 @@
 import { armedUnits, alertedEnemies, bloodSplats, C, enemies, floorLayer, g, PI, selectedUnits, uiLayer, MK, world, shots, movingUnits, attackingTarget, playerUnits, units, objLayer, currentPlayer } from './main.js'
 import { newMoveTest, randomNum, removeItem, roll, scan, tempAngle } from './functions.js'
 import { gun, makeEnemyEyes, makeLeg, makeCircle, makeHeadDetails, makeBorder, makeRectangle, makeTwoEyes, makeThirdEye, makeSlash, shotHit, laser, makeHead, newMakeEnemyEyes } from './drawings.js'
-// import { debugShape } from '../extra/debug.js'
+import { debugShape } from '../extra/debug.js'
 // import { gun, makeEnemyEyes } from '../extra/Drawing-Test.js'
 
-function newmMakeGeneralObject(o, w = 1, h = 1, x = 0, y = 0) {
+function newmMakeGeneralObject(o, x = 0, y = 0, w = 50, h = 50) {
   o.x= x
   o.y= y
   o.width= w
@@ -22,10 +22,6 @@ function newmMakeGeneralObject(o, w = 1, h = 1, x = 0, y = 0) {
   o.children = []
   o.parent= undefined
   o.blendMode= undefined
-  o.putCenter = (b, xOff = 0, yOff = 0, a = this) => {
-    b.x = a.x + a.halfWidth - b.width + xOff
-    b.y = a.y + a.halfHeight - b.halfHeight + yOff
-  }
   o.addChild = (c) => {
     if (c.parent) c.parent.removeChild(c)
     c.parent = o
@@ -41,21 +37,19 @@ function newmMakeGeneralObject(o, w = 1, h = 1, x = 0, y = 0) {
   })
 }
 
-
 const newMoreUnitsProperties = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
-  newmMakeGeneralObject(o, w, h, x, y)
+  newMakeMovableObject(o, x, y)
   o.speed = 2
-  o.obstacles = []
   o.leftLeg = makeLeg(5)
   o.rightLeg = makeLeg(30)
   o.head = makeHead()
   if (n) {
     o.headDetails = makeHeadDetails(n)
     o.head.addChild(o.headDetails)
-    o.head.putCenter(o.headDetails, 0, -24)
   }
   o.playerHand = {}
-  newmMakeGeneralObject(o.playerHand)
+  newmMakeGeneralObject(o.playerHand, 0, 0, 1, 1)
+  o.playerHand.alwaysVisible = true
 
   o.weapon = o.playerHand
   o.attacked = false,
@@ -98,8 +92,8 @@ const newMoreUnitsProperties = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
         o.offsetCounter = 0
         o.idleOffset = 1
       }
-      if (o.type == 'main') o.thirdEye.y = o.twoEyes.y - 10
-      o.twoEyes.y = o.head.y + 10
+      if (o.type == 'main') o.thirdEye.y = o.twoEyes.y
+      o.twoEyes.y = o.head.y + (o.type=='villager'?8:0)
       o.head.y += o.idleOffset
       o.offsetCounter += o.idleOffset
       if (o.offsetCounter >= 2) o.idleOffset -= 1
@@ -127,8 +121,8 @@ const newMoreUnitsProperties = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
       o.leftLeg.y -= o.legOffset
       o.rightLeg.y = o.oldLegOffset3
       o.head.y = -Math.abs(o.legOffset) - 7
-      o.twoEyes.y = o.head.y + 10
-      if (o.type == 'main') o.thirdEye.y = o.twoEyes.y - 10
+      o.twoEyes.y = o.head.y + (o.type == 'villager'? 10:0)
+      if (o.type == 'main') o.thirdEye.y = o.twoEyes.y
       if (o.moveCounter >= 15) o.legOffset -= 5
       else if (o.moveCounter <= 15) o.legOffset += 5
       g.wait(20, () => o.moveAnimated = false)
@@ -170,8 +164,6 @@ const newMoreUnitsProperties = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
   }
 }
 
-
-
 const moreProperties = (o) => {
     // o.yOffset = 0
     Object.defineProperties(o, {
@@ -189,20 +181,19 @@ const moreProperties = (o) => {
     }
     o.removeChild = (c) => { if (c.parent === o) o.children.splice(o.children.indexOf(c), 1) }
 }
+
 const moreUnitsProperties = (o, n = 0) => {
   moreProperties(o)
   o.speed = 2
   o.obstacles = []
   o.leftLeg = makeLeg(5)
   o.rightLeg = makeLeg(30)
-
   o.head = makeHead()
   if (n) {
     o.headDetails = makeHeadDetails(n)
     o.head.addChild(o.headDetails)
     o.head.putCenter(o.headDetails, 0, -24)
   }
-  
   o.playerHand = makeGeneralObject(1, 1)
   moreProperties(o.playerHand)
   // o.playerHand.visible = false
@@ -337,6 +328,8 @@ const moreUnitsProperties = (o, n = 0) => {
     } else o.isDamaged = false
   }
 }
+
+
 const morePlayerProperties = (o, n = 1) => {
   moreUnitsProperties(o, n)
   // o.autoPilot = true
@@ -357,6 +350,81 @@ const morePlayerProperties = (o, n = 1) => {
     o.yellowHB.visible = false
   }
 }
+
+
+const newMorePlayerProperties = (o, n = 1, x = 0, y = 0, w = 50, h = 50) => {
+  newMoreUnitsProperties(o, n, x, y, w, h)
+  o.border = makeBorder(w, h)
+  o.addChild(o.border)
+  o.border.x -= o.halfWidth
+  o.border.y -= o.halfHeight
+  o.border.visible = false
+  o.select = () => {
+    selectedUnits.push(o)
+    o.border.visible = true
+    o.HB.visible = true
+    o.yellowHB.visible = true
+  }
+  o.deselect = () => {
+    o.border.visible = false
+    o.HB.visible = false
+    o.yellowHB.visible = false
+  }
+}
+
+
+
+const newMakeMovableObject = (o, x = 0, y = 0, w = 50, h = 50) => {
+  o.speed = 2
+  o.vx = 0
+  o.vy = 0
+  o.destinationX = x
+  o.destinationY = y
+  o.scaned = false
+  o.isMoving = false
+  o.obstacles = []
+  o.isCollided = false
+  o.isColliding = false
+  o.isCollidingH = false
+  o.isCollidingV = false
+  o.stillCheck = false
+  o.xChanged = false
+  o.yChanged = false
+  o.changedDirection = false
+  o.collidedWith = null
+  o.collisionSide = null
+  o.move = () => newMoveTest(o)
+  o.scan = () => scan(o)
+  newmMakeGeneralObject(o, x, y, w, h)
+}
+
+const makeMovableObject = (w, h, x = 0, y = 0) => {
+  const g = makeGeneralObject(w, h, x, y)
+  const o = {
+    ...g,
+    speed: 3, 
+    vx: 0, 
+    vy: 0, 
+    destinationX: x, 
+    destinationY: y, 
+    scaned: false, 
+    isMoving: false, 
+    isCollided: false, 
+    isColliding: false, 
+    isCollidingH: false, 
+    isCollidingV: false,
+    stillCheck: false,
+    xChanged: false,
+    yChanged: false,
+    changedDirection: false,
+    collidedWith: null,
+    collisionSide: null, 
+    move() { newMoveTest(this) },
+    scan() { scan(this) } 
+  }
+  return o
+}
+
 const makeGeneralObject = (w, h, x = 0, y = 0) => {
   const o = {
     x: x,
@@ -411,39 +479,12 @@ const makeText = (content, font, fillStyle, x, y) => {
   uiLayer.addChild(o)
   return o
 }
-const makeMovableObject = (w, h, x = 0, y = 0) => {
-  const g = makeGeneralObject(w, h, x, y)
-  const o = {
-    ...g,
-    speed: 3, 
-    vx: 0, 
-    vy: 0, 
-    destinationX: x, 
-    destinationY: y, 
-    scaned: false, 
-    isMoving: false, 
-    isCollided: false, 
-    isColliding: false, 
-    isCollidingH: false, 
-    isCollidingV: false,
-    stillCheck: false,
-    xChanged: false,
-    yChanged: false,
-    changedDirection: false,
-    collidedWith: null,
-    collisionSide: null, 
-    move() { newMoveTest(this) },
-    scan() { scan(this) } 
-  }
-  return o
-}
+
 const mainPlayer = (x = 0, y = 0) => {
   let handPointerAngle
-  // const health = 100
   const twoEyes = makeTwoEyes()
   const thirdEye = makeThirdEye()
   const sword = makeRectangle(2, 140, '#FFF', 0, 0)
-  
   const swordHandle = makeRectangle(4, 40, '#0F0')
   const slash1 = makeSlash(1)
   const slash2 = makeSlash(0)
@@ -606,11 +647,140 @@ const mainPlayer = (x = 0, y = 0) => {
   p.y = y
   return p
 }
-const newVillager = (x = 0, y = 0, armed = false) => {
-  const twoEyes = makeTwoEyes(1, -17, -10)
-  const m = makeMovableObject(50, 50)
+
+const newMainPlayer = (x = 0, y = 0) => {
+  let handPointerAngle
+  const twoEyes = makeTwoEyes()
+  const thirdEye = makeThirdEye()
+  const sword = makeRectangle(2, 140, '#FFF', 0, 0)
+  const swordHandle = makeRectangle(4, 40, '#0F0')
+  const slash1 = makeSlash(1)
+  const slash2 = makeSlash(0)
+  const hitRange = 175
   const o = {
-    ...m, 
+    type: 'main',
+    health: 500,
+    baseHealth: 500,
+    damage: 0,
+    twoEyes: twoEyes,
+    thirdEye: thirdEye, 
+    swordHandle: swordHandle,
+    sword: sword,
+    slash1: slash1,
+    slash2: slash2,
+    weaponRotation: 3,
+    weaponAngle: C.idleSwordAngle,
+    rollDistance: 10, 
+    rollCounter: 10, 
+    alertSent: false,
+  }
+    
+  o.attack = () => {
+    handPointerAngle = -tempAngle(o.playerHand, g.pointer)
+    if (!o.attacked && !o.attacked2) {
+      o.attacked = true
+      o.swordHandle.rotation = handPointerAngle + C.attackSwordAngle
+      o.rotation = 0
+      o.attackHit(randomNum(14, 25))
+      o.slash1.visible = true
+      g.wait(40, () => o.slash1.visible = false)
+      g.wait(150, () => o.attacked = false)
+    }
+    else if (!o.attacked2) {
+      o.attacked2 = true
+      o.swordHandle.rotation = handPointerAngle + C.idleSwordAngle
+      o.attackHit(randomNum(23, 36))
+      o.slash2.visible = true
+      g.wait(40, () => o.slash2.visible = false)
+      g.wait(70, () => o.attacked2 = false)
+    }
+  }
+  o.attackHit = (damage) => {
+    for (const enemy of enemies) {
+      // Check distance between each enemy and playerHand
+      const distance = g.gDistance(o.playerHand, enemy)
+      // If in range of the player attack than check if in direction of the sword slash arc thing
+      if (distance <= hitRange) {
+        // angle between playerHand and mouse pointer
+        let angleToPointer = -tempAngle(o.playerHand, g.pointer)
+        angleToPointer += 2 * PI * (angleToPointer < 0)
+        // angle between playerHand and the enemy
+        let angleToEnemy = -tempAngle(o.playerHand, enemy)
+        angleToEnemy += 2 * PI * (angleToEnemy < 0)
+        // Get the difference between those two angles
+        const difference = angleToPointer - angleToEnemy
+        // If difference is greater than 180 degrees subtract it from 360
+        const smallest = difference > PI ? 2 * PI - difference : difference < -PI ? 2 * PI + difference : difference
+        //  Calculated angles are all in Radians. 1.14 Radians is around 65 Degrees
+        if (Math.abs(smallest) <= 1.14) {
+          // enemy should get hit if within the slash arc
+          const hitResult = enemy.getHit(damage)
+          if (hitResult === 'dead') {
+            removeItem(enemies, enemy)
+            enemy.isDead = true
+            const r = randomNum(2, 6)
+            for (let i = 0; i < r; i++) {
+              const b = makeCircle(15, '#900', 0)
+              floorLayer.addChild(b)
+              b.x = enemy.x + randomNum(-50, 50)
+              b.y = enemy.y + randomNum(-50, 50)
+              b.health = 3
+              b.limit = randomNum(7, 17)
+              bloodSplats.push(b)
+            }
+            
+          }
+          // else {
+          //   for (let i = 0 i < 1 i++) {
+          //     const b = makeCircle(10, '#f00', 0)
+          //     // b.blendMode = 'luminosity'
+          //     objLayer.addChild(b)
+          //     b.x = enemy.x
+          //     b.y = enemy.y
+          //     b.xd = randomNum(-3, 3)
+          //     b.yd = randomNum(-3, 3)
+          //     b.health = 13
+          //     bloods.push(b)
+          //   }
+          // }
+        }
+      }
+    }
+  }
+  o.roll = () => roll(o, o.vx, o.vy)
+  
+  newMorePlayerProperties(o, 1, x, y)
+  const playerHand = o.playerHand
+  o.addChild(twoEyes)
+  o.addChild(thirdEye)
+  thirdEye.addChild(playerHand)
+  playerHand.addChild(swordHandle)
+  swordHandle.x = -1
+  swordHandle.y = -21
+  swordHandle.addChild(sword)
+  sword.x = swordHandle.halfWidth - sword.halfWidth
+  sword.y = swordHandle.height
+  playerHand.alwaysVisible = true
+  swordHandle.alwaysVisible = true
+  sword.alwaysVisible = true
+  o.alwaysVisible = true
+  sword.addChild(slash1)
+  slash1.x = -24.5
+  slash1.y = -25.5
+  sword.addChild(slash2)
+  slash2.x = -23.5
+  slash2.y = -25.5
+  sword.scaleY *= -1
+  swordHandle.rotation = o.weaponRotation
+  o.weapon = swordHandle
+  playerHand.x = -1
+  playerHand.y = 28
+  return o
+}
+
+const newVillager = (x = 0, y = 0, armed = false) => {
+  const twoEyes = makeTwoEyes(0, 8)
+  const o = {
     type: 'villager',
     health: 100,
     baseHealth: 100,
@@ -620,13 +790,15 @@ const newVillager = (x = 0, y = 0, armed = false) => {
     weaponAngle: (PI / 2) + 0.1,
     weaponRotation: 0.4,
     target: null,
-    attack(target = g.pointer) {
+  }
+    
+  o.attack = (target = g.pointer) => {
       if (armed) {
-        if (!this.attacked) {
+        if (!o.attacked) {
           const r = 5
-          this.attacked = true
+          o.attacked = true
           let rx, ry, targetX, targetY, rate
-          if (this == currentPlayer) {
+          if (o == currentPlayer) {
             rx = randomNum(-40, 40)
             ry = randomNum(-35, 35)
             rate = 10
@@ -635,7 +807,7 @@ const newVillager = (x = 0, y = 0, armed = false) => {
             ry = randomNum(-60, 60)
             rate = 500
             
-            this.weapon.rotation = -tempAngle(this.playerHand, target, this.angleOffX, this.angleOffY) + this.weaponAngle
+            o.weapon.rotation = -tempAngle(o.playerHand, target, o.angleOffX, o.angleOffY) + o.weaponAngle
           }
 
           targetX = target.centerX - r + rx + (-world.x)
@@ -644,13 +816,13 @@ const newVillager = (x = 0, y = 0, armed = false) => {
           const shot = shotHit(targetX, targetY)
           world.addChild(shot)
           shots.push(shot)
-          this.weapon.fire()
-          if (this == currentPlayer) {
+          o.weapon.fire()
+          if (o == currentPlayer) {
             if (enemies.length > 0) {
               enemies.forEach(enemy => {
                 if (g.gDistance(shot, enemy) < enemy.halfWidth + r) {
                   // console.log('e hit')
-                  enemy.getHit(this.damage)
+                  enemy.getHit(o.damage)
                 }
               })
             }
@@ -666,91 +838,30 @@ const newVillager = (x = 0, y = 0, armed = false) => {
             g.remove(shot)
             removeItem(shots, shot)
           })
-          g.wait(rate, () => { this.attacked = false })
+          g.wait(rate, () => { o.attacked = false })
         }
       }
-    }
   }
-  morePlayerProperties(o, 0)
+  
+  // morePlayerProperties(o, 0)
+  newMorePlayerProperties(o, 0, x, y)
   o.addChild(twoEyes)
-  o.twoEyes.width = 50
-  o.twoEyes.height = 50
-  o.putCenter(twoEyes, 25, -25)
+  // twoEyes.y = 5
   const playerHand = o.playerHand
   o.twoEyes.addChild(playerHand)
-  playerHand.width = 50
-  playerHand.height = 50
-  o.x = x
-  o.y = y
+  // playerHand.width = 50
+  // playerHand.height = 50
+  // o.x = x
+  // o.y = y
   if (armed) gun(o)
   o.angleOffX = -25
   o.angleOffY = -40
-  return o
-}
-const makeEnemy = (x = 0, y = 0) => {
-  const m = makeMovableObject(50, 50, x, y)
-  const eye = makeEnemyEyes()
-  const o = {
-    ...m,
-    type: 'invader',
-    baseHealth: 100,
-    health: 100,
-    damage: 10,
-    range: 400,
-    twoEyes: eye,
-    weaponAngle: (PI / 2),// + 0.06,
-    weaponRotation: PI,
-    target: null,
-    attack(target) {
-      if(!this.attacked) {
-        // console.log('e attacked')
-        if (g.gDistance(this, target) > this.range) {
-          this.target = null
-          return
-        }
-        this.attacked = true
 
-        this.weapon.rotation = -tempAngle(this.playerHand, target, this.angleOffX, this.angleOffY) + this.weaponAngle
-        // const laser1 = laser(this.centerX, this.centerY, target.centerX, target.centerY)
-        // const laser1 = laser(this.weapon.gx - world.x + 50, this.weapon.gy - world.y + 100, target.gx - world.x, target.gy - world.y)
-        // this.weapon.addChild(laser1)
-        // laser1.x = 0
-        // laser1.y = 0
-
-        // this.weapon.laser.visible = false
-
-
-        this.laser.setLength(g.gDistance(this, target))
-        this.laser.visible = true
-        target.getHit(this.damage)
-
-        g.wait(100, () => {
-          this.laser.visible = false
-
-          
-
-
-        })
-        
-        // g.wait(100, () => g.remove(laser1))
-        g.wait(800, () => this.attacked = false)
-      }
-    }
-  }
-  moreUnitsProperties(o)
-  o.addChild(eye)
-  o.twoEyes.addChild(o.playerHand)
-
-  o.playerHand.width = 50
-  o.playerHand.height = 50
-  gun(o, false)
-
-  o.angleOffX = -23
-  o.angleOffY = -40
+  playerUnits.alwaysVisible = true
   // debugShape(o.twoEyes)
-
   return o
 }
+
 
 
 const newMakeEnemy = (x = 0, y = 0) => {
@@ -759,24 +870,49 @@ const newMakeEnemy = (x = 0, y = 0) => {
     baseHealth: 100,
     health: 100,
     damage: 10,
-    range: 400,
+    range: 700,
     weaponAngle: (PI / 2),
     weaponRotation: PI,
-    target: null,
-    attack(target) {
-      if(!this.attacked) {
-        if (g.gDistance(this, target) > this.range) {
-          this.target = null
-          return
-        }
-        this.attacked = true
-        this.weapon.rotation = -tempAngle(this.playerHand, target, this.angleOffX, this.angleOffY) + this.weaponAngle
-        this.laser.setLength(g.gDistance(this, target))
-        this.laser.visible = true
-        target.getHit(this.damage)
-        g.wait(100, () => this.laser.visible = false)
-        g.wait(800, () => this.attacked = false)
+    target: null
+  }
+  o.attack = (target) => {
+    if(!o.attacked) {
+      if (g.gDistance(o, target) > o.range) {
+        o.target = null
+        return
       }
+      o.attacked = true
+      o.weapon.rotation = -tempAngle(o.playerHand, target, o.angleOffX, o.angleOffY) + o.weaponAngle
+      o.laser.setLength(g.gDistance(o, target))
+
+      // o.laser.visible = true
+
+      o.laser.alwaysVisible = true
+
+      // o.alwaysVisible = true
+      // handle.alwaysVisible = true
+
+      o.alwaysVisible = true
+      o.playerHand.alwaysVisible = true
+      o.twoEyes.alwaysVisible = true
+
+
+
+
+      target.getHit(o.damage)
+      // target.getHit(0)
+      g.wait(100, () => {
+        
+      o.laser.alwaysVisible = false
+
+      // o.alwaysVisible = false
+      // handle.alwaysVisible = false
+
+      o.alwaysVisible = false
+      o.playerHand.alwaysVisible = false
+      o.twoEyes.alwaysVisible = false
+      })
+      g.wait(800, () => o.attacked = false)
     }
   }
   newMoreUnitsProperties(o, 0, x, y)
@@ -789,17 +925,16 @@ const newMakeEnemy = (x = 0, y = 0) => {
   o.angleOffX = -23
   o.angleOffY = -40
   return o
+
 }
+
 export { 
-  mainPlayer, 
+  newMainPlayer, 
   newVillager, 
   makeMovableObject, 
   moreProperties, 
   makeGeneralObject, 
   makeText, 
-  makeEnemy,
-
-
   newMakeEnemy,
   newmMakeGeneralObject
 }
