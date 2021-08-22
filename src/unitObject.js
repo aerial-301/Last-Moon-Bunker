@@ -1,9 +1,9 @@
 import { armedUnits, alertedEnemies, bloodSplats, C, enemies, floorLayer, g, PI, selectedUnits, uiLayer, MK, world, shots, movingUnits, attackingTarget, playerUnits, units, objLayer, currentPlayer } from './main.js'
 import { newMoveTest, randomNum, removeItem, roll, scan, tempAngle } from './functions.js'
 import { gun, makeEnemyEyes, makeLeg, makeCircle, makeHeadDetails, makeBorder, makeRectangle, makeTwoEyes, makeThirdEye, makeSlash, shotHit, laser, makeHead, newMakeEnemyEyes } from './drawings.js'
-import { debugShape } from '../extra/debug.js'
+import { debugShape } from './debug.js'
 
-function makeBasicObject(o, x = 0, y = 0, w = 50, h = 50) {
+const makeBasicObject = (o, x = 0, y = 0, w = 50, h = 50) => {
   o.x= x
   o.y= y
   o.width= w
@@ -36,8 +36,8 @@ function makeBasicObject(o, x = 0, y = 0, w = 50, h = 50) {
   })
 }
 
-const addUnitProperties = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
-  addMovableProperties(o, x, y)
+const makeUnitObject = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
+  makeMovableObject(o, x, y)
   o.speed = 2
   o.leftLeg = makeLeg(5)
   o.rightLeg = makeLeg(30)
@@ -163,8 +163,8 @@ const addUnitProperties = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
   }
 }
 
-const addPlayerUnitProperties = (o, n = 1, x = 0, y = 0, w = 50, h = 50) => {
-  addUnitProperties(o, n, x, y, w, h)
+const makePlayerUnitObject = (o, n = 1, x = 0, y = 0, w = 50, h = 50) => {
+  makeUnitObject(o, n, x, y, w, h)
   o.border = makeBorder(w, h)
   o.addChild(o.border)
   o.border.x -= o.halfWidth
@@ -183,7 +183,7 @@ const addPlayerUnitProperties = (o, n = 1, x = 0, y = 0, w = 50, h = 50) => {
   }
 }
 
-const addMovableProperties = (o, x = 0, y = 0, w = 50, h = 50) => {
+const makeMovableObject = (o, x = 0, y = 0, w = 50, h = 50) => {
   o.speed = 2
   o.vx = 0
   o.vy = 0
@@ -331,7 +331,7 @@ const newMainPlayer = (x = 0, y = 0) => {
   }
   o.roll = () => roll(o, o.vx, o.vy)
   
-  addPlayerUnitProperties(o, 1, x, y)
+  makePlayerUnitObject(o, 1, x, y)
   const playerHand = o.playerHand
   o.addChild(twoEyes)
   o.addChild(thirdEye)
@@ -426,7 +426,7 @@ const createPlayerUnit = (x = 0, y = 0, armed = false) => {
   }
   
   // morePlayerProperties(o, 0)
-  addPlayerUnitProperties(o, 0, x, y)
+  makePlayerUnitObject(o, 0, x, y)
   o.addChild(twoEyes)
   // twoEyes.y = 5
   const playerHand = o.playerHand
@@ -481,7 +481,7 @@ const createEnemyUnit = (x = 0, y = 0) => {
       g.wait(800, () => o.attacked = false)
     }
   }
-  addUnitProperties(o, 0, x, y)
+  makeUnitObject(o, 0, x, y)
   o.twoEyes = newMakeEnemyEyes()
   o.addChild(o.twoEyes)
   o.twoEyes.addChild(o.playerHand)
@@ -500,5 +500,5 @@ export {
   makeText, 
   createEnemyUnit,
   makeBasicObject,
-  addMovableProperties,  
+  makeMovableObject,  
 }

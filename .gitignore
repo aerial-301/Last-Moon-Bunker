@@ -2,7 +2,6 @@ oldStuff
 node_modules
 js
 dist
-extra
 
-webpack.config.js
-package-lock.json
+# webpack.config.js
+# package-lock.json

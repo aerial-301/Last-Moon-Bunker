@@ -5,7 +5,7 @@ import { initUnitCamera, centerUnitCamera } from './camera.js'
 import { makeText, newMainPlayer, createEnemyUnit, createPlayerUnit } from './unitObject.js'
 import { makeRectangle, makeCircle, HQ, moonGround, laser, tempDrawing, tempEarth, tempDrawing_2, gun } from './drawings.js'
 import { GA } from './ga_minTest.js'
-import { debugShape } from '../extra/debug.js'
+import { debugShape } from './debug.js'
 // import { tempIndicator } from '../extra/debug.js'
 
 const moveSpeed = 8

@@ -1,6 +1,6 @@
-import { debugShape } from "../extra/debug.js"
+import { debugShape } from "./debug.js"
 import { surfaceHeight, surfaceWidth, world, floorLayer, objLayer, solids, g } from "./main.js"
-import { addMovableProperties, makeBasicObject } from "./unitObject.js"
+import { makeMovableObject, makeBasicObject } from "./unitObject.js"
 import { randomNum } from "./functions.js"
 
 const PI = Math.PI
@@ -22,7 +22,7 @@ const makeCircle = (d, k, l, movable = false, x = 0, y = 0) => {
   }
 
   if (!movable) makeBasicObject(o, d, d, x, y)
-  else addMovableProperties(o, d, d, x, y)
+  else makeMovableObject(o, d, d, x, y)
   return o
 }
 const makeRectangle = (w, h, k, s = 1, x = 0, y = 0) => {
