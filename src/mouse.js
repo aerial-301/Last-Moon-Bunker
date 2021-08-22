@@ -1,9 +1,11 @@
-import { g, uiLayer, playerUnits, selectedUnits, movingUnits, MK, currentPlayer, enemies, world, attackingTarget } from './main.js'
+import { floorLayer, currentAction, g, uiLayer, playerUnits, selectedUnits, movingUnits, MK, currentPlayer, enemies, world, attackingTarget, buttons, placingBuilding, objLayer, surfaceHeight, cellSize, solids, gridMap, setCantBuildArea } from './main.js'
 import { getUnitVector, removeItem, sortUnits } from './functions.js'
-import { actionMark, makeRectangle, makeSelectionBox } from './drawings.js'
+import { actionMark, makeRectangle, makeSelectionBox, turret } from './drawings.js'
 let selectionBox
 let selectionStarted
 let boxSet
+
+
 const initSelectionBox = () => {
   selectionStarted = false
   boxSet = false
@@ -20,33 +22,92 @@ const pointerUp = (e) => {
   if (e.button === 0) leftMouseUp()
   else if (e.button === 2) rightMouseUp()
 }
+
+
+const clickedBottomPanel = () => {
+  if (g.pointer.y > g.stage.height - 100) return true
+}
+
+
 const leftMouseDown = () => {
   if (!MK) {
-    selectionStarted = true
-    selectionBox.alpha = 1
-  }
-  else currentPlayer.attack()
+    if (clickedBottomPanel()) {
+
+      buttons.forEach(button => {
+        if (g.hitTestPoint(g.pointer, button)) {
+          button.action()
+        }
+      })
+
+    } else {
+      if (currentAction.placingBuilding) {
+        currentAction.placingBuilding = false
+        
+        const cel = Math.floor((g.pointer.x - world.x) / cellSize) //* cellSize
+        const row = Math.floor((g.pointer.y - world.y) / cellSize) //* cellSize
+        // const row = Math.floor(g.pointer.y)
+
+        console.log(row, cel)
+        const currentCell = gridMap[row][cel]
+        // console.log(currentCell)
+
+        if (currentCell) {
+          console.log('cant build here')
+        } else {
+          gridMap[row][cel] = 4
+          setCantBuildArea(row, cel)
+
+          // const building = makeRectangle(cellSize, cellSize, '#321', 3, cel * cellSize, row * cellSize)
+          // objLayer.addChild(building)
+          // solids.push(building)
+
+          const T = turret(cel * cellSize, row * cellSize)
+          floorLayer.addChild(T)
+          solids.push(T)
+          console.log('construction complete')
+          // gridMap.forEach(c => console.log(c.join('') ))
+        }
+        
+        // const building = makeRectangle(100, 100, '#321', 3, g.pointer.x - world.x, g.pointer.y - world.y)
+
+        
+      } else {
+        selectionStarted = true
+        selectionBox.alpha = 1
+      }
+    }
+  } else currentPlayer.attack()
 }
 const rightMouseDown = () => {
   if (!MK) {
-    if (selectedUnits.length > 0) {
-      if (enemies.length > 0) {
-        for (const enemy of enemies) {
-          if (g.GlobalDistance(enemy, g.pointer) <= 25) {
-            const a = actionMark(0, 0, true)
-            enemy.addChild(a)
-            g.wait(300, () => g.remove(a))
-            selectedUnits.forEach(unit => {
-              unit.isMoving = false
-              unit.target = enemy
-              attackingTarget.push(unit)
-            })
-            return
+
+    if (clickedBottomPanel()) {
+
+      
+
+    } else {
+
+      
+      
+      if (selectedUnits.length > 0) {
+        if (enemies.length > 0) {
+          for (const enemy of enemies) {
+            if (g.GlobalDistance(enemy, g.pointer) <= 25) {
+              const a = actionMark(0, 0, true)
+              enemy.addChild(a)
+              g.wait(300, () => g.remove(a))
+              selectedUnits.forEach(unit => {
+                unit.isMoving = false
+                unit.target = enemy
+                attackingTarget.push(unit)
+              })
+              return
+            }   
           }
         }
+        sortUnits(selectedUnits, g.pointer.x - world.x, g.pointer.y - world.y, movingUnits)
       }
-      // sortUnits(selectedUnits, g.pointer.x + pointerOffsetX, g.pointer.y + pointerOffsetY, movingUnits)
-      sortUnits(selectedUnits, g.pointer.x - world.x, g.pointer.y - world.y, movingUnits)
+
     }
   } else {
     // if (!g.state) return false
@@ -96,8 +157,18 @@ const beginSelection = () => {
       selectionBox.y = g.pointer.y
       boxSet = true
     }
-    selectionBox.WIDTH = g.pointer.x - selectionBox.x
-    selectionBox.HEIGHT = g.pointer.y - selectionBox.y
+
+    // if (g.pointer.y > g.stage.height - 100) return
+
+
+    const x = g.pointer.x - selectionBox.x
+    const y = g.pointer.y - selectionBox.y
+
+
+    selectionBox.WIDTH = x
+    selectionBox.HEIGHT = y
+    // selectionBox.WIDTH = g.pointer.x - selectionBox.x
+    // selectionBox.HEIGHT = g.pointer.y - selectionBox.y
   }
 }
 const rightMouseUp = () => {

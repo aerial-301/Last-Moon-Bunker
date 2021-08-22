@@ -1,5 +1,5 @@
 import { debugShape } from "./debug.js"
-import { surfaceHeight, surfaceWidth, world, floorLayer, objLayer, solids, g } from "./main.js"
+import { surfaceHeight, surfaceWidth, world, floorLayer, objLayer, solids, g, cellSize, C } from "./main.js"
 import { makeMovableObject, makeBasicObject } from "./unitObject.js"
 import { randomNum } from "./functions.js"
 
@@ -10,7 +10,6 @@ const makeCircle = (d, k, l, movable = false, x = 0, y = 0) => {
     fillStyle: k,
     radius: d / 2 
   }
-
   o.render = (c) => {
     c.strokeStyle = 'black'
     c.lineWidth = l
@@ -20,11 +19,11 @@ const makeCircle = (d, k, l, movable = false, x = 0, y = 0) => {
     if (l) c.stroke()
     c.fill()
   }
-
-  if (!movable) makeBasicObject(o, d, d, x, y)
-  else makeMovableObject(o, d, d, x, y)
+  if (!movable) makeBasicObject(o, x, y, d, d)
+  else makeMovableObject(o, x, y, d, d)
   return o
 }
+
 const makeRectangle = (w, h, k, s = 1, x = 0, y = 0) => {
   const o = {
     x: x,
@@ -337,17 +336,52 @@ const HQ = (x, y) => {
       c.clip()
 
       c.fillStyle = gradTop
-      c.fillRect(-35, -50, 70, 50)
+      // c.fillRect(-35, -50, 70, 50)
+      c.fillRect(-cellSize * .35, -cellSize / 2, cellSize * .7, cellSize / 2)
       
       c.fillStyle = grad
-      c.fillRect(-50, 0, 100, 50)
+      // c.fillRect(-50, 0, 100, 50)
+      c.fillRect(-cellSize / 2, 0, cellSize, cellSize / 2)
 
       c.fillStyle = '#00F'
-      c.fillRect(-20,20, 40, 30)
+      // c.fillRect(-20,20, 40, 30)
+      c.fillRect(-cellSize * .2, cellSize * .2, cellSize * .4, cellSize * .3)
 
     }
   }
-  makeBasicObject(o, x, y, 100, 100)
+  makeBasicObject(o, x, y, cellSize, cellSize)
+  return o
+}
+
+const turret = (x, y, w = cellSize * .8) => {
+  const o = {
+    render(c) {
+      const grad = c.createLinearGradient(w, 0, 0, w)
+      grad.addColorStop(.3, '#666')
+      grad.addColorStop(1, '#000')
+      c.fillStyle = grad
+      c.lineWidth = 2
+      c.beginPath()
+      c.ellipse(0, w * 0.3, w/2, w/2, 0, 0, PI, true)
+      c.closePath()
+      c.fill()
+      c.stroke()
+    }
+  }
+  const top = {
+    render(c) {
+      c.lineWidth = 1
+      c.strokeStyle = '#aaa'
+      c.fillStyle = '#000'
+      c.beginPath()
+      c.arc(0, 0, 4, 0, 2*PI)
+      c.fill()
+      c.stroke()
+    }
+  }
+  makeBasicObject(top, 0, 0, w, w * .6)
+  makeBasicObject(o, x, y, w, w *.6)
+  o.addChild(top)
   return o
 }
 
@@ -442,8 +476,8 @@ const tempDrawing_2 = (w, h, x, y, lineWidth = 2, yOff = 0) => {
       c.stroke()
     }
   }
-  o.alpha = 1 - (lineWidth / 3)
   makeBasicObject(o, x, y, w, h)
+  o.alpha -= (lineWidth * 0.3)
   floorLayer.addChild(o)
   o.rotation = randomNum(-0.15, 0.15, 0)
   return o
@@ -627,4 +661,5 @@ export {
   makeEnemyEyes,
   gun,
   newMakeEnemyEyes,
+  turret
  }

@@ -19,7 +19,7 @@ const debugShape = (shape) => {
 
 const tempIndicator = (spotX, spotY, d = 700, color = 'white', dia = 20) => {
   // console.log(spotX, spotY)
-  const i = newmake(dia, dia, color, 0, spotX, spotY)
+  const i = makeBasicObject(dia, dia, color, 0, spotX, spotY)
   i.alpha = .2
   // moreProperties(i)
   g.stage.addChild(i)

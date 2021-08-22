@@ -207,7 +207,7 @@ const makeMovableObject = (o, x = 0, y = 0, w = 50, h = 50) => {
   makeBasicObject(o, x, y, w, h)
 }
 
-const makeText = (content, font, fillStyle, x, y) => {
+const makeText = (parent, content, font, fillStyle, x, y) => {
   const o = {
     content: content,
     font: font || "12px sans-serif",
@@ -226,8 +226,8 @@ const makeText = (content, font, fillStyle, x, y) => {
     } 
   }
   makeBasicObject(o, x, y, content.length, 20)
-  uiLayer.addChild(o)
-  return o
+  parent.addChild(o)
+  // return o
 }
 
 const newMainPlayer = (x = 0, y = 0) => {
@@ -492,6 +492,14 @@ const createEnemyUnit = (x = 0, y = 0) => {
   o.angleOffY = -40
   return o
 
+}
+
+
+const createBuilding = (x, y) => {
+const o = {}
+
+makeBasicObject(o, x, y, 100, 100)
+return o
 }
 
 export { 

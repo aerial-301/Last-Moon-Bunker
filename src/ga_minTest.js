@@ -15,7 +15,7 @@ export var GA = {
     g._lag = 0
     g.interpolate = true
 
-    let scaleToFit = Math.min(window.innerWidth / g.canvas.width, window.innerHeight / g.canvas.height)
+    let scaleToFit = Math.min(window.innerWidth / g.canvas.width,( window.innerHeight - 300) / g.canvas.height)
     // g.canvas.style.transformOrigin = "0 0";
     // g.canvas.style.transform = "scale(" + scaleToFit + ")";
     // g.scale = scaleToFit
@@ -253,37 +253,9 @@ export var GA = {
         //`hit` will be either `true` or `false`
         return hit
     }
-    g.hitTestPoint = function (point, sprite) {
-        var shape, left, right, top, bottom, vx, vy, magnitude, hit
-        if (sprite.radius) {
-            shape = "circle"
-        }
-        else {
-            shape = "rectangle"
-        }
-        //Rectangle
-        if (shape === "rectangle") {
-            //Get the position of the sprite's edges
-            left = sprite.gx
-            right = sprite.gx + sprite.width
-            top = sprite.gy
-            bottom = sprite.gy + sprite.height
-            //Find out if the point is intersecting the rectangle
-            hit = point.x > left && point.x < right && point.y > top && point.y < bottom
-        }
-        //Circle
-        if (shape === "circle") {
-            //Find the distance between the point and the
-            //center of the circle
-            vx = point.x - sprite.centerX,
-                vy = point.y - sprite.centerY,
-                magnitude = Math.sqrt(vx * vx + vy * vy)
-            //The point is intersecting the circle if the magnitude
-            //(distance) is less than the circle's radius
-            hit = magnitude < sprite.radius
-        }
-        //`hit` will be either `true` or `false`
-        return hit
+    g.hitTestPoint = function (p, s) {
+      if (p.x < s.gx || p.x > s.gx + s.width || p.y < s.gy || p.y > s.gy + s.height) return false
+      return true
     }
     g.GlobalDistance = (a, b, aOffX = 0, aOffY = 0) => {return Math.sqrt(Math.pow(((b.centerX) - (a.centerX + aOffX)), 2) + Math.pow(((b.centerY) - (a.centerY + aOffY)), 2))}
     return g

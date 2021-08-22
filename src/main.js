@@ -1,15 +1,19 @@
-import { randomNum, removeItem, tempAngle } from './functions.js'
+import { randomNum, removeItem, simpleButton, tempAngle } from './functions.js'
 import { moveCamera, movePlayer } from './keyboard.js'
 import { initSelectionBox, beginSelection, pointerDown, pointerUp } from './mouse.js'
 import { initUnitCamera, centerUnitCamera } from './camera.js'
 import { makeText, newMainPlayer, createEnemyUnit, createPlayerUnit } from './unitObject.js'
-import { makeRectangle, makeCircle, HQ, moonGround, laser, tempDrawing, tempEarth, tempDrawing_2, gun } from './drawings.js'
+import { makeRectangle, makeCircle, HQ, moonGround, laser, tempDrawing, tempEarth, tempDrawing_2, gun, turret } from './drawings.js'
 import { GA } from './ga_minTest.js'
 import { debugShape } from './debug.js'
 // import { tempIndicator } from '../extra/debug.js'
 
 const moveSpeed = 8
 
+
+export const currentAction = {
+  placingBuilding: false,
+}
 
 
 const RAD_DEG = Math.PI / 180
@@ -45,6 +49,9 @@ let bloods = []
 let bloodSplats = []
 let shots = []
 let attackingTarget = []
+
+let buttons = []
+
 let moved = false
 let moveCycle = false
 
@@ -58,9 +65,24 @@ let blackHB, yellowHB, HB
 let ground
 let gridMap = []
 let sun, earth
+
+let bottomPanel
+let lowerUI
+let upperUI
+
+
+
 const surfaceWidth = 2400
 const surfaceHeight = 1000
-const cellSize = 100
+const cellSize = 73
+
+
+
+
+
+
+
+let placingBuilding = false
 
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -185,66 +207,91 @@ const initCanvasEvents = () => {
   c.addEventListener('contextmenu', (e) => e.preventDefault())
   c.addEventListener('pointerdown', (e) => pointerDown(e))
   c.addEventListener('pointerup', (e) => pointerUp(e))
+  // const test = document.createElement('p')
+  // test.style.fontSize = '90pt'
+  // test.innerHTML = 'ajsldkjf;laksdjfalewinflkn'
+  // document.body.appendChild(test)
+  // console.log(test)
+}
+
+const addVectors = (a, b) => {return [a[0] + b[0], a[1] + b[1]]}
+
+const directions = [
+  [1, 0],
+  [1, 1],
+  [0, 1],
+  [-1, 1],
+  [-1, 0],
+  [-1, -1],
+  [0, -1],
+  [1, -1]
+]
+
+
+const setCantBuildArea = (row, col) => {
+  let n
+  directions.forEach(d => {
+    n = addVectors([row, col], d)
+    try {
+      gridMap[n[0]][n[1]] = 3
+    } catch (e) {}
+  })
 }
 
 const initMap = () => {
   let maxPlayerUnits = 4
-  const rows = ground.height / cellSize
-  const cols = ground.width / cellSize
+  const rows = Math.floor(surfaceHeight / cellSize)
+  const cols = Math.floor(surfaceWidth / cellSize)
+
+
+  
+  for (let i = 0; i < rows; i++) {
+    gridMap[i] = Array(cols).fill(0)
+  }
+
+  const tempHQ = HQ(cellSize * cols / 2, 0)
+  floorLayer.addChild(tempHQ)
+  solids.push(tempHQ)
+
+  const empty = makeRectangle(cellSize, cellSize, '#321', 2, cellSize * cols / 2, 0)
+  empty.alpha = 0.4
+  floorLayer.addChild(empty)
+
+  gridMap[0][cols / 2] = 4
+  setCantBuildArea(0, cols / 2)
+
 
   for (let row = 0; row < rows; row++) {
-    gridMap.push([])
-    for (let cell = 0; cell < cols; cell++) {
-      const cellCenterX = cellSize * cell + cellSize / 2
+    for (let cel = 0; cel < cols; cel++) {
+      const cellCenterX = cellSize * cel + cellSize / 2
       const cellCenterY = cellSize * row + cellSize / 2
-      if (row < 2) {
-        if (cell > 8) {
-          if (cell < 12) {
-            if (row == 0 && cell == 10) {
-              gridMap[row].push([7, cellCenterX, cellCenterY])
-              // const tempHQ = HQ(400, 380)
-              const empty = makeRectangle(cellSize, cellSize, '#321', 2, cellCenterX - cellSize / 2, cellCenterY - cellSize / 2)
-              floorLayer.addChild(empty)
-              const tempHQ = HQ(cell * cellSize, row * cellSize)
-              objLayer.addChild(tempHQ)
-              solids.push(tempHQ)
-              empty.alpha = 0.5
-              continue
-            }
-          }
-        }
-      } else {
 
-        if (Math.random() <= 0.20) {
-          gridMap[row].push([0, cellCenterX, cellCenterY])
-          // const empty = makeRectangle(cellSize, cellSize, '#321', 2, cellCenterX - cellSize / 2, cellCenterY - cellSize / 2)
-          // floorLayer.addChild(empty)
-          if (Math.random() <= 0.2) {
-            if (maxPlayerUnits) {
-              const v = createPlayerUnit(cellCenterX - 25, cellCenterX - 25)
-              objLayer.addChild(v)
-              playerUnits.push(v)
-              units.push(v)
-              v.speed = 2
-              maxPlayerUnits -= 1
-            }
-          }
-        } else {
-          if (row % 2 == 1) {
-            if (Math.random() > 0.5) {
-              tempDrawing_2(randomNum(10, 170, 0), 10, cell * cellSize, row * cellSize + randomNum(-100, 100), randomNum(1, 4), randomNum(0, 5, 0))
-              continue
-            }
-            if (cell % 2 == 0) {
-              gridMap[row].push([3, cellCenterX, cellCenterY])
+      // const empty = makeRectangle(cellSize, cellSize, '#321', 2, cellCenterX - cellSize / 2, cellCenterY - cellSize / 2)
+      // empty.alpha = 0.4
+      // floorLayer.addChild(empty)
+
+      if (row % 2 == 1) {
+        if (Math.random() < 0.5) {
+          tempDrawing_2(randomNum(10, 170, 0), 10, cel * cellSize, row * cellSize + randomNum(-cellSize, cellSize), randomNum(1, 4), randomNum(0, 5, 0))
+        }
+
+        if (Math.random() < 0.3) {
+          if (cel % 2 == 0) {
+            if (gridMap[row][cel] === 0) {
+              gridMap[row][cel] = 4
+              setCantBuildArea(row, cel)
               const d = randomNum(5, cellSize * 0.25)
-              tempDrawing(d, cell * cellSize + d * 1.5 + randomNum(-35, 35), row * cellSize + d * 1.5 + randomNum(-35, 35))
+              // tempDrawing(d, cel * cellSize + d * 1.5 + randomNum(-35, 35), row * cellSize + d * 1.5 + randomNum(-35, 35))
+              tempDrawing(d, cel * cellSize + d, row * cellSize + d)
             }
           }
         }
-      } 
+      }
+
     }
   }
+
+  // gridMap.forEach(c => console.log(c.join('') ))
 }
 
 const initUIHealthBar = () => {
@@ -265,6 +312,8 @@ const initLayers = () => {
   floorLayer = g.group()
   objLayer = g.group()
   world = g.group(sun, earth, ground, floorLayer, objLayer)
+  // lowerUI = g.group()
+  // uiLayer = g.group(lowerUI, bottomPanel)
   uiLayer = g.group()
 }
 
@@ -272,6 +321,26 @@ const setup = () => {
   initCanvasEvents()
   initLayers()
   initMap()
+  
+  const panelHeight = 100
+  bottomPanel = makeRectangle(g.stage.width, panelHeight, '#533', 10, 0, g.stage.height - panelHeight)
+  uiLayer.addChild(bottomPanel)
+  
+  const b1 = simpleButton('Wall', 10, 10, 28, 13)
+  const b2 = simpleButton('Unit', 200, 10, 30, 13)
+
+  b1.action = () => {
+    currentAction.placingBuilding = true
+  }
+  buttons.push(b1, b2)
+  bottomPanel.addChild(b1)
+  bottomPanel.addChild(b2)
+
+
+
+  // const T = turret(300, 100)
+  // floorLayer.addChild(T)
+  // solids.push(T)
 
   player = newMainPlayer(200, 180)
   objLayer.addChild(player)
@@ -299,7 +368,12 @@ const setup = () => {
   // units.push(tempVill)
 
   initSelectionBox()
+
+
   initUIHealthBar()
+
+  
+  // uiLayer.addChild(bottomPanel)
   
   // debugText = makeText(' ', '12px arial', 'white', 0, 100)
   
@@ -313,4 +387,8 @@ g.start()
 
 
 export { g, world, floorLayer, uiLayer, objLayer, units, enemies, alertedEnemies, shots, selectedUnits, movingUnits, solids, playerUnits,
-C, bloods, bloodSplats, maze, gridMap, cellSize, PI, surfaceWidth, surfaceHeight, switchMode, MK, currentPlayer, attackingTarget, armedUnits }
+C, bloods, bloodSplats, maze, gridMap, cellSize, PI, surfaceWidth, surfaceHeight, switchMode, MK, currentPlayer, attackingTarget, armedUnits,
+buttons,
+placingBuilding,
+setCantBuildArea
+}

@@ -1,5 +1,5 @@
 import { makeRectangle } from './drawings.js'
-import { g, movingUnits, solids, MK, currentPlayer, world, objLayer } from './main.js'
+import { g, movingUnits, solids, MK, currentPlayer, world, objLayer, buttons } from './main.js'
 import { makeText } from './unitObject.js'
 // import { tempIndicator } from '../extra/debug.js'
 
@@ -10,13 +10,21 @@ const tempAngle = (a, b, bOffsetX = 0, bOffsetY = 0) => {return Math.atan2((b.ce
 const xDistance = (a, b) => Math.abs(b.centerX - a.centerX)
 const yDistance = (a, b) => Math.abs(b.centerY - a.centerY)
 
-const simpleButton = (text, action = () => console.log(text), textX = -56, textY = -20, yPos = 130, xPos = g.stage.width / 2 - 140, color = '#444444', width = 280, height = 120) => {
+const simpleButton = (
+  text, 
+  xPos = 10, 
+  yPos = 10, 
+  textX = 10, 
+  textY = 10, 
+  action = () => console.log(text), 
+  width = 170, 
+  height = 80,
+  color = '#0F0', 
+  ) => {
   const button = makeRectangle(width, height, color, 1, xPos, yPos)
   button.action = action
-  const tSize = 90 - (text.length * 5)
-  const t = makeText(text, `${tSize}px arial`, '#00ff00', 0, 0)
-  button.addChild(t)
-  button.putCenter(t, textX, textY)
+  const tSize = 90 - (text.length * 8)
+  makeText(button, text, `${tSize}px arial`, '#FFF', textX, textY)
   return button
 }
 const aroundAll = (collider, H) => {
