@@ -4,7 +4,7 @@ import { actionMark, makeRectangle, makeSelectionBox } from './drawings.js'
 let selectionBox
 let selectionStarted
 let boxSet
-const createSelectionBox = () => {
+const initSelectionBox = () => {
   selectionStarted = false
   boxSet = false
   selectionBox = makeSelectionBox()
@@ -32,7 +32,7 @@ const rightMouseDown = () => {
     if (selectedUnits.length > 0) {
       if (enemies.length > 0) {
         for (const enemy of enemies) {
-          if (g.gDistance(enemy, g.pointer) <= 25) {
+          if (g.GlobalDistance(enemy, g.pointer) <= 25) {
             const a = actionMark(0, 0, true)
             enemy.addChild(a)
             g.wait(300, () => g.remove(a))
@@ -103,4 +103,4 @@ const beginSelection = () => {
 const rightMouseUp = () => {
     // rightClicked = false
 }
-export { createSelectionBox, beginSelection, pointerDown, pointerUp, }
+export { initSelectionBox, beginSelection, pointerDown, pointerUp, }

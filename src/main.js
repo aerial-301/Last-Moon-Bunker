@@ -1,12 +1,11 @@
 import { randomNum, removeItem, tempAngle } from './functions.js'
 import { moveCamera, movePlayer } from './keyboard.js'
-import { createSelectionBox, beginSelection, pointerDown, pointerUp } from './mouse.js'
-import { centerCam, moveMazeCamera } from './camera.js'
-import { makeText, newMainPlayer, newMakeEnemy, newVillager } from './unitObject.js'
+import { initSelectionBox, beginSelection, pointerDown, pointerUp } from './mouse.js'
+import { initUnitCamera, centerUnitCamera } from './camera.js'
+import { makeText, newMainPlayer, createEnemyUnit, createPlayerUnit } from './unitObject.js'
 import { makeRectangle, makeCircle, HQ, moonGround, laser, tempDrawing, tempEarth, tempDrawing_2, gun } from './drawings.js'
 import { GA } from './ga_minTest.js'
 import { debugShape } from '../extra/debug.js'
-// import { tempDrawing, tempEarth, tempDrawing_2, gun } from '../extra/Drawing-Test.js'
 // import { tempIndicator } from '../extra/debug.js'
 
 const moveSpeed = 8
@@ -56,21 +55,19 @@ let enemiesScanned = false
 let currentScanner = -1
 let blackHB, yellowHB, HB
 
+let ground
+let gridMap = []
+let sun, earth
+const surfaceWidth = 2400
+const surfaceHeight = 1000
+const cellSize = 100
+
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////
-const canvasSetup = () => {
-  if (c) return
-  c = document.getElementById('c')
-  c.addEventListener('contextmenu', (e) => e.preventDefault())
-  c.addEventListener('pointerdown', (e) => pointerDown(e))
-  c.addEventListener('pointerup', (e) => pointerUp(e))
-}
-
-
 
 const playerInput = () => {
   if (MK) {
     if (currentPlayer.isDead) switchMode()
-    moveMazeCamera()
+    centerUnitCamera()
     if (!currentPlayer.attacked) {
       if (!currentPlayer.attacked2) {
         if (!currentPlayer.isRolling) {
@@ -84,6 +81,13 @@ const playerInput = () => {
     beginSelection()
     moveCamera()
   }
+}
+
+const animatePlayer = () => {
+  units.forEach(u => {
+    if (u.isMoving) u.moveAnimation()
+    else u.idleAnimation()
+  })
 }
 
 const moveUnits = () => {
@@ -112,12 +116,7 @@ const scanFor = (scanners, scannees, ready) => {
   }
 }
 
-const animatePlayer = () => {
-  units.forEach(u => {
-    if (u.isMoving) u.moveAnimation()
-    else u.idleAnimation()
-  })
-}
+
 
 const switchMode = () => {
   if (!MK) {
@@ -178,33 +177,21 @@ const play = () => {
   // world.xy = ${world.x}, ${world.y}\n\n
   // pointer = ${g.pointer.x + world.x}, ${g.pointer.y + world.y}
   // `
-    
 }
 
-let ground
-let gridMap = []
-let cellSize
-let sun, earth
-const surfaceWidth = 2400
-const surfaceHeight = 1000
+const initCanvasEvents = () => {
+  if (c) return
+  c = document.getElementById('c')
+  c.addEventListener('contextmenu', (e) => e.preventDefault())
+  c.addEventListener('pointerdown', (e) => pointerDown(e))
+  c.addEventListener('pointerup', (e) => pointerUp(e))
+}
 
-
-
-const setup = () => {
-  canvasSetup()
-  floorLayer = g.group()
-  objLayer = g.group()
-  sun = makeCircle(130, 'orange', 0, false, 500, -250)
-  earth = tempEarth(150, 260, -200)
-  ground = moonGround()
-
-  world = g.group(sun, earth, ground, floorLayer, objLayer)
-  uiLayer = g.group()
+const initMap = () => {
   let maxPlayerUnits = 4
-  cellSize = 100
   const rows = ground.height / cellSize
   const cols = ground.width / cellSize
-  // Map Objects
+
   for (let row = 0; row < rows; row++) {
     gridMap.push([])
     for (let cell = 0; cell < cols; cell++) {
@@ -234,7 +221,7 @@ const setup = () => {
           // floorLayer.addChild(empty)
           if (Math.random() <= 0.2) {
             if (maxPlayerUnits) {
-              const v = newVillager(cellCenterX - 25, cellCenterX - 25)
+              const v = createPlayerUnit(cellCenterX - 25, cellCenterX - 25)
               objLayer.addChild(v)
               playerUnits.push(v)
               units.push(v)
@@ -258,50 +245,9 @@ const setup = () => {
       } 
     }
   }
+}
 
-
-  player = newMainPlayer(200, 180)
-  objLayer.addChild(player)
-  playerUnits.push(player)
-  units.push(player)
-
-  for (let i = 0; i < 4; i++) {
-    const tempVill = newVillager(100, 400 + i * 55, true)
-    objLayer.addChild(tempVill)
-    playerUnits.push(tempVill)
-    units.push(tempVill)
-    armedUnits.push(tempVill)
-  }
-
-  const tempVill = newVillager(875, 250, true)
-  objLayer.addChild(tempVill)
-  playerUnits.push(tempVill)
-  units.push(tempVill)
-
-
-
-  for (let i = 0; i < 4; i++) {
-
-    const tempEnemy = newMakeEnemy(1400 + i * 50, 350)
-    objLayer.addChild(tempEnemy)
-    units.push(tempEnemy)
-    enemies.push(tempEnemy)
-  }
-
-
-
-
-
-
-
-  // console.log(units)
-  createSelectionBox()
-
-
-  // const blackHB = makeRectangle((p.health / p.baseHealth) * 100 * p.HBscale, 5, 'black', 8, 100, 20)
-  // blackHB.strokeStyle = 'darkgray'
-  // const yellowHB = makeRectangle((p.health / p.baseHealth) * 100 * p.HBscale, 5, 'Yellow', 0, 100, 20)
-  // const HB = makeRectangle((p.health / p.baseHealth) * 100 * p.HBscale, 5, 'red', 0, 100, 20)
+const initUIHealthBar = () => {
   blackHB = makeRectangle(400, 5, 'black', 8, 100, 20)
   blackHB.strokeStyle = 'darkgray'
   yellowHB = makeRectangle(400, 5, 'Yellow', 0, 100, 20)
@@ -310,20 +256,58 @@ const setup = () => {
   uiLayer.addChild(yellowHB)
   uiLayer.addChild(HB);
   [blackHB, yellowHB, HB].forEach(i => i.visible = false)
+}
 
+const initLayers = () => {
+  sun = makeCircle(130, 'orange', 0, false, 500, -250)
+  earth = tempEarth(150, 260, -200)
+  ground = moonGround()
+  floorLayer = g.group()
+  objLayer = g.group()
+  world = g.group(sun, earth, ground, floorLayer, objLayer)
+  uiLayer = g.group()
+}
+
+const setup = () => {
+  initCanvasEvents()
+  initLayers()
+  initMap()
+
+  player = newMainPlayer(200, 180)
+  objLayer.addChild(player)
+  playerUnits.push(player)
+  units.push(player)
+
+  for (let i = 0; i < 4; i++) {
+    const tempVill = createPlayerUnit(100, 400 + i * 55, true)
+    objLayer.addChild(tempVill)
+    playerUnits.push(tempVill)
+    units.push(tempVill)
+    armedUnits.push(tempVill)
+  }
+  for (let i = 0; i < 4; i++) {
+
+    const tempEnemy = createEnemyUnit(1400 + i * 50, 350)
+    objLayer.addChild(tempEnemy)
+    units.push(tempEnemy)
+    enemies.push(tempEnemy)
+  }
+
+  // const tempVill = createPlayerUnit(875, 250, true)
+  // objLayer.addChild(tempVill)
+  // playerUnits.push(tempVill)
+  // units.push(tempVill)
+
+  initSelectionBox()
+  initUIHealthBar()
   
-
-
-
-
-  debugText = makeText(' ', '12px arial', 'white', 0, 100)
+  // debugText = makeText(' ', '12px arial', 'white', 0, 100)
+  
   objLayer.children.sort((a, b) => a.bottom - b.bottom)
-  centerCam()
-
-
-  // solids.forEach(s => debugShape(s))
+  initUnitCamera()
   g.state = play
 }
+
 g = GA.create(setup)
 g.start()
 

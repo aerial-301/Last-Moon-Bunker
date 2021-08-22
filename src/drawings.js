@@ -1,6 +1,6 @@
 import { debugShape } from "../extra/debug.js"
 import { surfaceHeight, surfaceWidth, world, floorLayer, objLayer, solids, g } from "./main.js"
-import { newMakeMovableObject, newMakeGeneralObject } from "./unitObject.js"
+import { addMovableProperties, makeBasicObject } from "./unitObject.js"
 import { randomNum } from "./functions.js"
 
 const PI = Math.PI
@@ -21,8 +21,8 @@ const makeCircle = (d, k, l, movable = false, x = 0, y = 0) => {
     c.fill()
   }
 
-  if (!movable) newMakeGeneralObject(o, d, d, x, y)
-  else newMakeMovableObject(o, d, d, x, y)
+  if (!movable) makeBasicObject(o, d, d, x, y)
+  else addMovableProperties(o, d, d, x, y)
   return o
 }
 const makeRectangle = (w, h, k, s = 1, x = 0, y = 0) => {
@@ -44,7 +44,7 @@ const makeRectangle = (w, h, k, s = 1, x = 0, y = 0) => {
     c.fill()
     if (s) c.stroke()
   }
-  newMakeGeneralObject(o, x, y, w, h)
+  makeBasicObject(o, x, y, w, h)
   return o
 }
 const makeSelectionBox = () => {
@@ -59,7 +59,7 @@ const makeSelectionBox = () => {
       c.stroke()
     } 
   }
-  newMakeGeneralObject(o, 0, 0, 1, 1)
+  makeBasicObject(o, 0, 0, 1, 1)
   return o
 }
 const makeSlash = (n) => {
@@ -79,7 +79,7 @@ const makeSlash = (n) => {
       }
     } 
   }
-  newMakeGeneralObject(o, 0, 0)
+  makeBasicObject(o, 0, 0)
   o.visible = false
   return o
 }
@@ -105,7 +105,7 @@ const makeTwoEyes = (x = 0, y = 0) => {
       c.stroke()
     } 
   }
-  newMakeGeneralObject(o, x, y)
+  makeBasicObject(o, x, y)
   return o
 }
 const makeThirdEye = () => {
@@ -123,7 +123,7 @@ const makeThirdEye = () => {
       c.stroke()
     } 
   }
-  newMakeGeneralObject(o)
+  makeBasicObject(o)
   return o
 }
 const makeLeg = (x) => {
@@ -142,7 +142,7 @@ const makeLeg = (x) => {
       c.stroke()
     } 
   }
-  newMakeGeneralObject(o, x, 0, 7, 5)
+  makeBasicObject(o, x, 0, 7, 5)
   return o
 }
 const makeBorder = (w, h) => {
@@ -167,7 +167,7 @@ const makeBorder = (w, h) => {
       c.stroke()
     } 
   }
-  newMakeGeneralObject(o, 0, 0, w, h)
+  makeBasicObject(o, 0, 0, w, h)
   return o
 }
 
@@ -187,7 +187,7 @@ const makeHeadDetails = () => {
       c.stroke()
     } 
   }
-  newMakeGeneralObject(o, 0, 0)
+  makeBasicObject(o, 0, 0)
   return o
 }
 
@@ -207,7 +207,7 @@ const makeHead = () => {
       c.fill()
     } 
   }
-  newMakeGeneralObject(o)
+  makeBasicObject(o)
   return o
 }
 
@@ -223,7 +223,7 @@ const shotHit = (x, y) => {
       c.fill()
     } 
   }
-  newMakeGeneralObject(o, x, y, 4, 4)
+  makeBasicObject(o, x, y, 4, 4)
   return o
 }
 const flash = (x = 0, y = 0) => {
@@ -240,7 +240,7 @@ const flash = (x = 0, y = 0) => {
       c.fill()
     } 
   }
-  newMakeGeneralObject(o, x, y)
+  makeBasicObject(o, x, y)
   o.visible = false
   return o
 }
@@ -257,7 +257,7 @@ const laser = (shooterX, shooterY, targetX, targetY) => {
       c.stroke()
     },
   }
-  newMakeGeneralObject(o, 0, 0, 1, 1)
+  makeBasicObject(o, 0, 0, 1, 1)
   return o
 }
 
@@ -280,7 +280,7 @@ const actionMark = (x = 0, y = 0, attack = true) => {
       }
     } 
   }
-  newMakeGeneralObject(o, x, y, 10, 10)
+  makeBasicObject(o, x, y, 10, 10)
   return o
 }
 
@@ -294,7 +294,7 @@ const moonSurface1 = (w, h) => {
       c.stroke()
     }
   }
-  newMakeGeneralObject(o, 0, 0, w, h)
+  makeBasicObject(o, 0, 0, w, h)
   return o
 }
 
@@ -316,7 +316,7 @@ const moonGround = (w = surfaceWidth, h = surfaceHeight ) => {
       c.fill()
     }
   }
-  newMakeGeneralObject(o, 0, 0, w, h)
+  makeBasicObject(o, 0, 0, w, h)
   return o
 }
 
@@ -347,7 +347,7 @@ const HQ = (x, y) => {
 
     }
   }
-  newMakeGeneralObject(o, x, y)
+  makeBasicObject(o, x, y, 100, 100)
   return o
 }
 
@@ -414,8 +414,8 @@ const tempDrawing = (d, x, y) => {
     }
   }
 
-  newMakeGeneralObject(b, x, y, d, d)
-  newMakeGeneralObject(o, x, y, d, d)
+  makeBasicObject(b, x, y, d, d)
+  makeBasicObject(o, x, y, d, d)
 
   floorLayer.addChild(o)
   floorLayer.addChild(b)
@@ -424,7 +424,7 @@ const tempDrawing = (d, x, y) => {
   b.rotation = PI
 
   const base = {}
-  newMakeGeneralObject(base, Math.floor(x - d / 1.8), Math.floor(y - d * 0.1), Math.floor(d * 2.2), Math.floor(d * 1.2))
+  makeBasicObject(base, Math.floor(x - d / 1.8), Math.floor(y - d * 0.1), Math.floor(d * 2.2), Math.floor(d * 1.2))
   objLayer.addChild(base)
   solids.push(base)
   return o
@@ -443,7 +443,7 @@ const tempDrawing_2 = (w, h, x, y, lineWidth = 2, yOff = 0) => {
     }
   }
   o.alpha = 1 - (lineWidth / 3)
-  newMakeGeneralObject(o, x, y, w, h)
+  makeBasicObject(o, x, y, w, h)
   floorLayer.addChild(o)
   o.rotation = randomNum(-0.15, 0.15, 0)
   return o
@@ -462,7 +462,7 @@ const tempLaser = (x = 0, y = 0) => {
     },
     setLength(l) {this.length = l -40}
   }
-  newMakeGeneralObject(o, x, y, 100, 100)
+  makeBasicObject(o, x, y, 100, 100)
   o.visible = false
   return o
 }
@@ -481,7 +481,7 @@ const gun = (owner, rifle = true, x = -50, y = -35, w = 70, h = 5) => {
       c.fill()
     },
   }
-  newMakeGeneralObject(o, x, y, 150, 150)
+  makeBasicObject(o, x, y, 150, 150)
   const handle = {
     render(c) {
       c.lineWidth = 2
@@ -497,7 +497,7 @@ const gun = (owner, rifle = true, x = -50, y = -35, w = 70, h = 5) => {
     handle.flash.alwaysVisible = true
     g.wait(50, () => handle.flash.alwaysVisible = false)
   }
-  newMakeGeneralObject(handle, x, y, 150, 150)
+  makeBasicObject(handle, x, y, 150, 150)
   handle.alwaysVisible = true
   handle.addChild(o)
   o.y = -8
@@ -563,8 +563,8 @@ const tempEarth = (d, x, y) => {
       c.fill()
     }
   }
-  newMakeGeneralObject(l, x, y, d ,d)
-  newMakeGeneralObject(b, x, y, d, d)
+  makeBasicObject(l, x, y, d ,d)
+  makeBasicObject(b, x, y, d, d)
   b.addChild(l)
   l.x = -120
   l.y = -50
@@ -584,7 +584,7 @@ const makeEnemyEyes = () => {
       c.fill()
     }
   }
-  newMakeGeneralObject(o)
+  makeBasicObject(o)
   return o
 }
 
@@ -600,7 +600,7 @@ const newMakeEnemyEyes = () => {
       c.fill()
     }
   }
-  newMakeGeneralObject(o, 0, 0)
+  makeBasicObject(o, 0, 0)
   return o
 }
 

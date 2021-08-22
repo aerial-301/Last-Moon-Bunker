@@ -1,6 +1,5 @@
 export var GA = {
   create(setup) {
-
     var g = {}
     g.canvas = document.getElementById('c')
     g.canvas.style.backgroundColor = "black"
@@ -21,6 +20,36 @@ export var GA = {
     // g.canvas.style.transform = "scale(" + scaleToFit + ")";
     // g.scale = scaleToFit
     g.scale = 1
+
+    g.render = (canvas, lagOffset) => {
+      let ctx = canvas.ctx
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      g.stage.children.forEach(c => displaySprite(c))
+      function displaySprite(s) {
+        if (s.alwaysVisible || s.visible && s.gx < canvas.width + s.width && s.gx + s.width >= -s.width && s.gy < canvas.height + s.height && s.gy + s.height >= -s.height) {
+          ctx.save()
+          if (g.interpolate) {
+            if (s._previousX !== undefined) s.renderX = (s.x - s._previousX) * lagOffset + s._previousX
+            else s.renderX = s.x
+            if (s._previousY !== undefined) s.renderY = (s.y - s._previousY) * lagOffset + s._previousY
+            else s.renderY = s.y
+          } else {
+            s.renderX = s.x
+            s.renderY = s.y
+          }
+          ctx.translate(s.renderX + (s.width * s.pivotX), s.renderY + (s.height * s.pivotY))
+          ctx.globalAlpha = s.alpha
+          ctx.rotate(s.rotation)
+          ctx.scale(s.scaleX, s.scaleY)
+          if (s.render) s.render(ctx)
+          if (s.children && s.children.length > 0) {
+            ctx.translate(-s.width * s.pivotX, -s.height * s.pivotY)
+            s.children.forEach(c => displaySprite(c))
+          }
+          ctx.restore()
+        }
+      }
+    }
 
     function gameLoop() {
       requestAnimationFrame(gameLoop, g.canvas)
@@ -67,7 +96,7 @@ export var GA = {
       }
     })
     g.remove = function (s) {
-      var sprites = Array.prototype.slice.call(arguments)
+      let sprites = Array.prototype.slice.call(arguments)
       if (!(sprites[0] instanceof Array)) {
         if (sprites.length > 1) sprites.forEach(s => s.parent.removeChild(s))
         else sprites[0].parent.removeChild(sprites[0])
@@ -80,30 +109,37 @@ export var GA = {
         })
       }
     }
-    function makeGeneralObject(w = 0, h = 0, x = 0, y = 0) {
-      const o = {
-        x: x,
-        y: y,
-        width: w,
-        height: h,
-        halfWidth: w / 2,
-        halfHeight: h / 2,
-        scaleX: 1,
-        scaleY: 1,
-        pivotX: 0.5,
-        pivotY: 0.5,
-        rotation: 0,
-        visible: true,
-        parent: undefined,
-        stage: false,
-        blendMode: undefined,
-        alpha: 1,
-        putCenter(b, xOff = 0, yOff = 0, a = this) {
-          b.x = a.x + a.halfWidth - b.width + xOff
-          b.y = a.y + a.halfHeight - b.halfHeight + yOff
-        },
+    function makeBasicObject(o, x = 0, y = 0, w = 50, h = 50) {
+      o.x= x
+      o.y= y
+      o.width= w
+      o.height= h
+      o.halfWidth= w / 2
+      o.halfHeight= h / 2
+      o.scaleX= 1
+      o.scaleY= 1
+      o.pivotX= 0.5
+      o.pivotY= 0.5
+      o.rotation= 0
+      o.alpha= 1
+      o.stage= false
+      o.visible= true
+      o.children = []
+      o.parent= undefined
+      o.blendMode= undefined
+      o.addChild = (c) => {
+        if (c.parent) c.parent.removeChild(c)
+        c.parent = o
+        o.children.push(c)
       }
-      return o
+      o.removeChild = (c) => { if (c.parent === o) o.children.splice(o.children.indexOf(c), 1) }
+      Object.defineProperties(o, {
+        gx: { get: () => { return (o.x + (o.parent? o.parent.gx : 0) ) } },
+        gy: { get: () => { return (o.y + (o.parent? o.parent.gy : 0) ) } },
+        centerX: { get: () => { return o.gx + o.halfWidth } },
+        centerY: { get: () => { return o.gy + o.halfHeight } },
+        bottom: { get: () => { return o.y + o.parent.gy} }
+      })
     }
     function moreProperties(o) {
       o.yOffset = 0
@@ -121,86 +157,47 @@ export var GA = {
       o.removeChild = (c) => remC(c, o)
     }
     function makeStage() {
-      const z = makeGeneralObject(g.canvas.width, g.canvas.height, 0, 0)
-      // console.log('canvas size = ', g.canvas.width, g.canvas.height)
-      var o = Object.assign({}, z)
-      moreProperties(o)
+      const o = {}
+      makeBasicObject(o, 0, 0, g.canvas.width, g.canvas.height)
       o.stage = true
       o.parent = undefined
       return o
     }
     const addC = (c, o) => {
-        if (c.parent)
-            c.parent.removeChild(c)
-        c.parent = o
-        o.children.push(c)
+      if (c.parent) c.parent.removeChild(c)
+      c.parent = o
+      o.children.push(c)
     }
     const remC = (c, o) => c.parent == o ? o.children.splice(o.children.indexOf(c), 1) : 0
-    g.group = function (spritesToGroup) {
-        const z = makeGeneralObject()
-        var o = Object.assign({}, z)
-        moreProperties(o)
-        o.addChild = (c) => {
-            addC(c, o)
-            o.calculateSize()
-        }
-        o.removeChild = (c) => {
-            remC(c, o)
-            o.calculateSize()
-        }
-        o.calculateSize = () => {
-            if (o.children.length > 0) {
-                o._newWidth = 0
-                o._newHeight = 0
-                o.children.forEach(function (c) {
-                    if (c.x + c.width > o._newWidth) {
-                        o._newWidth = c.x + c.width
-                    }
-                    if (c.y + c.height > o._newHeight) {
-                        o._newHeight = c.y + c.height
-                    }
-                })
-                o.width = o._newWidth
-                o.height = o._newHeight
-            }
-        }
-        g.stage.addChild(o)
-        if (spritesToGroup) {
-            var sprites = Array.prototype.slice.call(arguments)
-            sprites.forEach(function (s) {
-                o.addChild(s)
-            })
-        }
-        return o
-    }
-    g.render = function (canvas, lagOffset) {
-      let ctx = canvas.ctx
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-      g.stage.children.forEach(c => displaySprite(c))
-      function displaySprite(s) {
-        if (s.alwaysVisible || s.visible && s.gx < canvas.width + s.width && s.gx + s.width >= -s.width && s.gy < canvas.height + s.height && s.gy + s.height >= -s.height) {
-          ctx.save()
-          if (g.interpolate) {
-            if (s._previousX !== undefined) s.renderX = (s.x - s._previousX) * lagOffset + s._previousX
-            else s.renderX = s.x
-            if (s._previousY !== undefined) s.renderY = (s.y - s._previousY) * lagOffset + s._previousY
-            else s.renderY = s.y
-          } else {
-            s.renderX = s.x
-            s.renderY = s.y
-          }
-          ctx.translate(s.renderX + (s.width * s.pivotX), s.renderY + (s.height * s.pivotY))
-          ctx.globalAlpha = s.alpha
-          ctx.rotate(s.rotation)
-          ctx.scale(s.scaleX, s.scaleY)
-          if (s.render) s.render(ctx)
-          if (s.children && s.children.length > 0) {
-            ctx.translate(-s.width * s.pivotX, -s.height * s.pivotY)
-            s.children.forEach(c => displaySprite(c))
-          }
-          ctx.restore()
+    g.group = function (s){
+      const o = {}
+      makeBasicObject(o)
+      o.addChild = (c) => {
+          addC(c, o)
+          o.calculateSize()
+      }
+      o.removeChild = (c) => {
+          remC(c, o)
+          o.calculateSize()
+      }
+      o.calculateSize = () => {
+        if (o.children.length > 0) {
+          o._newWidth = 0
+          o._newHeight = 0
+          o.children.forEach(c => {
+            if (c.x + c.width > o._newWidth) o._newWidth = c.x + c.width
+            if (c.y + c.height > o._newHeight) o._newHeight = c.y + c.height
+          })
+          o.width = o._newWidth
+          o.height = o._newHeight
         }
       }
+      g.stage.addChild(o)
+      if (s) {
+        var sprites = Array.prototype.slice.call(arguments)
+        sprites.forEach(s => o.addChild(s))
+      }
+      return o
     }
     function makePointer() {
       let o = {}
@@ -288,10 +285,7 @@ export var GA = {
         //`hit` will be either `true` or `false`
         return hit
     }
-    g.gDistance = (a, b, aOffX = 0, aOffY = 0) => {
-        // return Math.sqrt( ((b.gx + b.halfWidth) - (a.gx + a.halfWidth + aOffX)) ** 2 + ((b.gy + b.halfHeight) - (a.gy + a.halfHeight + aOffY)) ** 2 )
-        return Math.sqrt(Math.pow(((b.centerX) - (a.centerX + aOffX)), 2) + Math.pow(((b.centerY) - (a.centerY + aOffY)), 2))
-    }
+    g.GlobalDistance = (a, b, aOffX = 0, aOffY = 0) => {return Math.sqrt(Math.pow(((b.centerX) - (a.centerX + aOffX)), 2) + Math.pow(((b.centerY) - (a.centerY + aOffY)), 2))}
     return g
   }
 }

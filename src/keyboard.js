@@ -1,11 +1,7 @@
 import { g, world, objLayer, surfaceWidth, surfaceHeight, switchMode, MK, enemies, currentPlayer } from './main.js'
 import { checkCollisions, randomNum } from './functions.js'
-// import { makeEnemy } from './unitObject.js'
 // import { debugShape, tempIndicator } from '../extra/debug.js'
 
-
-
-let shapes = []
 let paused = false
 const keys = {
   'w': false,
@@ -69,25 +65,17 @@ window.addEventListener('keyup', (k) => {
 
 const moveCamera = () => {
   if (keys.w) {
-    if (world.y >= 300) return
-    world.y += 10
+    if (world.y < 300) world.y += 10
   }
   if (keys.s) {
-    if (world.y <= g.stage.height - surfaceHeight) return
-    world.y -= 10
+    if (world.y > g.stage.height - surfaceHeight) world.y -= 10
   }
   if (keys.a) {
-    if (world.x >= 0) return
-    world.x += 10
+    if (world.x < 0) world.x += 10
   }
   if (keys.d) {
-    if (world.x <= g.stage.width - surfaceWidth) return
-    world.x -= 10
+    if (world.x > g.stage.width - surfaceWidth) world.x -= 10
   }
-  // if (keys.y) addUnit()
-  // else if (keys.t) removeUnit()
-
-  
 }
 const movePlayer = () => {
   if (keys.w) {

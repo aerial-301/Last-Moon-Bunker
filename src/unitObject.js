@@ -3,7 +3,7 @@ import { newMoveTest, randomNum, removeItem, roll, scan, tempAngle } from './fun
 import { gun, makeEnemyEyes, makeLeg, makeCircle, makeHeadDetails, makeBorder, makeRectangle, makeTwoEyes, makeThirdEye, makeSlash, shotHit, laser, makeHead, newMakeEnemyEyes } from './drawings.js'
 import { debugShape } from '../extra/debug.js'
 
-function newMakeGeneralObject(o, x = 0, y = 0, w = 50, h = 50) {
+function makeBasicObject(o, x = 0, y = 0, w = 50, h = 50) {
   o.x= x
   o.y= y
   o.width= w
@@ -36,8 +36,8 @@ function newMakeGeneralObject(o, x = 0, y = 0, w = 50, h = 50) {
   })
 }
 
-const newMoreUnitsProperties = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
-  newMakeMovableObject(o, x, y)
+const addUnitProperties = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
+  addMovableProperties(o, x, y)
   o.speed = 2
   o.leftLeg = makeLeg(5)
   o.rightLeg = makeLeg(30)
@@ -47,7 +47,7 @@ const newMoreUnitsProperties = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
     o.head.addChild(o.headDetails)
   }
   o.playerHand = {}
-  newMakeGeneralObject(o.playerHand, 0, 0, 1, 1)
+  makeBasicObject(o.playerHand, 0, 0, 1, 1)
   o.playerHand.alwaysVisible = true
 
   o.weapon = o.playerHand
@@ -73,7 +73,7 @@ const newMoreUnitsProperties = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
   o.yellowHB.visible = false
   o.scanForTargets = (targets) => {
     targets.forEach(target => {
-      if (g.gDistance(o, target) < o.range) {
+      if (g.GlobalDistance(o, target) < o.range) {
         o.target = target
         attackingTarget.push(o)
       }
@@ -163,8 +163,8 @@ const newMoreUnitsProperties = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
   }
 }
 
-const newMorePlayerProperties = (o, n = 1, x = 0, y = 0, w = 50, h = 50) => {
-  newMoreUnitsProperties(o, n, x, y, w, h)
+const addPlayerUnitProperties = (o, n = 1, x = 0, y = 0, w = 50, h = 50) => {
+  addUnitProperties(o, n, x, y, w, h)
   o.border = makeBorder(w, h)
   o.addChild(o.border)
   o.border.x -= o.halfWidth
@@ -183,7 +183,7 @@ const newMorePlayerProperties = (o, n = 1, x = 0, y = 0, w = 50, h = 50) => {
   }
 }
 
-const newMakeMovableObject = (o, x = 0, y = 0, w = 50, h = 50) => {
+const addMovableProperties = (o, x = 0, y = 0, w = 50, h = 50) => {
   o.speed = 2
   o.vx = 0
   o.vy = 0
@@ -204,7 +204,7 @@ const newMakeMovableObject = (o, x = 0, y = 0, w = 50, h = 50) => {
   o.collisionSide = null
   o.move = () => newMoveTest(o)
   o.scan = () => scan(o)
-  newMakeGeneralObject(o, x, y, w, h)
+  makeBasicObject(o, x, y, w, h)
 }
 
 const makeText = (content, font, fillStyle, x, y) => {
@@ -225,7 +225,7 @@ const makeText = (content, font, fillStyle, x, y) => {
       c.fillText(o.content, 0, 0)
     } 
   }
-  newMakeGeneralObject(o, x, y, content.length, 20)
+  makeBasicObject(o, x, y, content.length, 20)
   uiLayer.addChild(o)
   return o
 }
@@ -280,7 +280,7 @@ const newMainPlayer = (x = 0, y = 0) => {
   o.attackHit = (damage) => {
     for (const enemy of enemies) {
       // Check distance between each enemy and playerHand
-      const distance = g.gDistance(o.playerHand, enemy)
+      const distance = g.GlobalDistance(o.playerHand, enemy)
       // If in range of the player attack than check if in direction of the sword slash arc thing
       if (distance <= hitRange) {
         // angle between playerHand and mouse pointer
@@ -331,7 +331,7 @@ const newMainPlayer = (x = 0, y = 0) => {
   }
   o.roll = () => roll(o, o.vx, o.vy)
   
-  newMorePlayerProperties(o, 1, x, y)
+  addPlayerUnitProperties(o, 1, x, y)
   const playerHand = o.playerHand
   o.addChild(twoEyes)
   o.addChild(thirdEye)
@@ -360,7 +360,7 @@ const newMainPlayer = (x = 0, y = 0) => {
   return o
 }
 
-const newVillager = (x = 0, y = 0, armed = false) => {
+const createPlayerUnit = (x = 0, y = 0, armed = false) => {
   const twoEyes = makeTwoEyes(0, 8)
   const o = {
     type: 'villager',
@@ -402,7 +402,7 @@ const newVillager = (x = 0, y = 0, armed = false) => {
           if (o == currentPlayer) {
             if (enemies.length > 0) {
               enemies.forEach(enemy => {
-                if (g.gDistance(shot, enemy) < enemy.halfWidth + r) {
+                if (g.GlobalDistance(shot, enemy) < enemy.halfWidth + r) {
                   // console.log('e hit')
                   enemy.getHit(o.damage)
                 }
@@ -411,7 +411,7 @@ const newVillager = (x = 0, y = 0, armed = false) => {
           }
           else {
 
-            if (g.gDistance(shot, target) < target.halfWidth + r) {
+            if (g.GlobalDistance(shot, target) < target.halfWidth + r) {
               // console.log('ally hit enenmy')
               target.getHit(24)
             }
@@ -426,7 +426,7 @@ const newVillager = (x = 0, y = 0, armed = false) => {
   }
   
   // morePlayerProperties(o, 0)
-  newMorePlayerProperties(o, 0, x, y)
+  addPlayerUnitProperties(o, 0, x, y)
   o.addChild(twoEyes)
   // twoEyes.y = 5
   const playerHand = o.playerHand
@@ -444,7 +444,7 @@ const newVillager = (x = 0, y = 0, armed = false) => {
   return o
 }
 
-const newMakeEnemy = (x = 0, y = 0) => {
+const createEnemyUnit = (x = 0, y = 0) => {
   const o = {
     type: 'invader',
     baseHealth: 100,
@@ -457,13 +457,13 @@ const newMakeEnemy = (x = 0, y = 0) => {
   }
   o.attack = (target) => {
     if(!o.attacked) {
-      if (g.gDistance(o, target) > o.range) {
+      if (g.GlobalDistance(o, target) > o.range) {
         o.target = null
         return
       }
       o.attacked = true
       o.weapon.rotation = -tempAngle(o.playerHand, target, o.angleOffX, o.angleOffY) + o.weaponAngle
-      o.laser.setLength(g.gDistance(o, target))
+      o.laser.setLength(g.GlobalDistance(o, target))
 
       o.laser.alwaysVisible = true
       o.alwaysVisible = true
@@ -481,7 +481,7 @@ const newMakeEnemy = (x = 0, y = 0) => {
       g.wait(800, () => o.attacked = false)
     }
   }
-  newMoreUnitsProperties(o, 0, x, y)
+  addUnitProperties(o, 0, x, y)
   o.twoEyes = newMakeEnemyEyes()
   o.addChild(o.twoEyes)
   o.twoEyes.addChild(o.playerHand)
@@ -496,9 +496,9 @@ const newMakeEnemy = (x = 0, y = 0) => {
 
 export { 
   newMainPlayer, 
-  newVillager, 
+  createPlayerUnit, 
   makeText, 
-  newMakeEnemy,
-  newMakeGeneralObject,
-  newMakeMovableObject,  
+  createEnemyUnit,
+  makeBasicObject,
+  addMovableProperties,  
 }

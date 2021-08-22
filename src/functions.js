@@ -5,6 +5,11 @@ import { makeText } from './unitObject.js'
 
 const OBSDIST = 250
 const OBSDIST_UNDERGROUND = 400
+
+const tempAngle = (a, b, bOffsetX = 0, bOffsetY = 0) => {return Math.atan2((b.centerX + bOffsetX - a.centerX), (b.centerY + bOffsetY - a.centerY))}
+const xDistance = (a, b) => Math.abs(b.centerX - a.centerX)
+const yDistance = (a, b) => Math.abs(b.centerY - a.centerY)
+
 const simpleButton = (text, action = () => console.log(text), textX = -56, textY = -20, yPos = 130, xPos = g.stage.width / 2 - 140, color = '#444444', width = 280, height = 120) => {
   const button = makeRectangle(width, height, color, 1, xPos, yPos)
   button.action = action
@@ -14,51 +19,23 @@ const simpleButton = (text, action = () => console.log(text), textX = -56, textY
   button.putCenter(t, textX, textY)
   return button
 }
-
 const aroundAll = (collider, H) => {
   collider.obstacles.forEach(obst => {
     if (g.hitTestRectangle(collider, obst)) {
       const desX = collider.destinationX + world.x
       const desY = collider.destinationY + world.y
-
       const obCx = obst.centerX
       const obCY = obst.centerY
-      const collX = collider.centerX
-      const collY = collider.centerY
-      // collider.destinationX += world.x
-      // collider.destinationY += world.y
-      // console.log(`
-      // diffX = ${Math.abs(desX - obCx)}
-      // diffY = ${Math.abs(desY - obCY)}
-      // `)
-
-
+      
       if (collider.collidedWith == undefined) {
         collider.collidedWith = obst
-        if (Math.abs(desX - obCx) <= (obst.halfWidth + 60)) {
-          if (Math.abs(desY - obCY) <= (obst.halfHeight + 60)) {
-            // tempIndicator(collider.x, collider.y, 20, 'green', 80)
-            // tempIndicator(obCx, obCY, 10, 'red', 20)
-
-            // tempIndicator(desX, desY, 100, '#33F', 40)
-
-
-
-            // collider.destinationX = collider.x
-            // collider.destinationY = collider.y
-            collider.destinationX = collider.x// - collider.speed * collider.vx * 1 //+ world.x
-            collider.destinationY = collider.y// - collider.speed * collider.vy * 1//+ world.y
-            // console.log('new dests = ', collider.destinationX, collider.destinationY)
-            // setDirection(collider)
-            // collider.collidedWith = undefined
-            // return
+        if (Math.abs(desX - obCx) <= (obst.halfWidth + 50)) {
+          if (Math.abs(desY - obCY) <= (obst.halfHeight + 50)) {
+            collider.destinationX = collider.x
+            collider.destinationY = collider.y
           }
         }
       }
-
-      // tempIndicator(desX, desY, 50, 'white', 30)
-      // tempIndicator(obCx, obCY, 40, 'red', 20)
-
 
       if (H) {
         collider.isCollidingH = true
@@ -93,26 +70,23 @@ const checkCollisions = (side, collider = currentPlayer) => {
       collider.collisionSide = side
       switch (side) {
         case 'top':
-            collider.y = obst.y - collider.height - 1
-            break
+          collider.y = obst.y - collider.height - 1
+          break
         case 'bot':
-            collider.y = obst.y + obst.height + 1
-            break
+          collider.y = obst.y + obst.height + 1
+          break
         case 'left':
-            collider.x = obst.x - collider.width - 1
-            break
+          collider.x = obst.x - collider.width - 1
+          break
         case 'right':
-            collider.x = obst.x + obst.width + 1
-            break
+          collider.x = obst.x + obst.width + 1
+          break
         default:
-            console.log('side not found !')
-            break
+          break
       }
     }
   })
 }
-const xDistance = (a, b) => Math.abs(b.centerX - a.centerX)
-const yDistance = (a, b) => Math.abs(b.centerY - a.centerY)
 const randomNum = (min, max, int = 1) => {
     const r = Math.random() * (max - min) + min
     return int ? Math.floor(r) : r
@@ -121,13 +95,6 @@ const removeItem = (array, item) => {
     const index = array.indexOf(item)
     if (index !== -1) array.splice(index, 1)
 }
-const getDistance = (a, b) => {
-    if (a.gx === undefined) return Math.sqrt(Math.pow((a.x - b.x), 2) + Math.pow((a.y - b.y), 2))
-    return Math.sqrt(Math.pow((a.gx - b.gx), 2) + Math.pow((a.gy - b.gy), 2))
-}
-
-
-
 const getUnitVector = (a, b, toPointer = false) => {
   let xv, yv
   xv = b.centerX - a.centerX
@@ -135,29 +102,6 @@ const getUnitVector = (a, b, toPointer = false) => {
   const mag = Math.sqrt( (xv**2) + (yv**2) )
   return { x: xv / mag, y: yv / mag }
 }
-// const getUnitVector = (a, b, toPointer = false) => {
-//   let xv, yv
-//   if (toPointer) {
-//     xv = b.x - (a.gx + a.halfWidth)
-//     yv = b.y - (a.gy + a.halfHeight)
-//   } else {
-//     !b.halfWidth? b.halfWidth = 0 : 0
-//     !b.halfHeight? b.halfHeight = 0 : 0
-//     xv = (b.gx + b.halfWidth) - (a.gx + a.halfWidth)
-//     yv = (b.gy + b.halfHeight) - (a.gy + a.halfHeight)
-//   }
-//   const mag = Math.sqrt((Math.pow(xv, 2)) + (Math.pow(yv, 2)))
-//   const uv = { x: xv / mag, y: yv / mag }
-//   return uv
-// }
-
-
-
-
-const globalAngle = (a, b) => {return Math.atan2((b.gx + b.halfWidth - a.gx + a.halfWidth), (b.gy + b.halfHeight - a.gy + a.halfHeight))}
-
-const tempAngle = (a, b, bOffsetX = 0, bOffsetY = 0) => {return Math.atan2((b.centerX + bOffsetX - a.centerX), (b.centerY + bOffsetY - a.centerY))}
-
 const sortUnits = (array, x, y, moveArray) => {
   const len = array.length
   if (len == 0) return
@@ -256,7 +200,6 @@ const scan = (u, delay = 400, distance = OBSDIST_UNDERGROUND) => {
           continue
         }
       }
-      // console.log(u)
       removeItem(u.obstacles, obj)
     }
     g.wait(delay, () => u.scaned = false)
@@ -283,8 +226,4 @@ const roll = (t, vx, vy) => {
   }
 }
 
-// const cancelAttack = (attacker) => {
-//   attacker.target = null
-//   removeItem(attack)
-// }
-export { simpleButton, checkCollisions, removeItem, randomNum, getDistance, getUnitVector, globalAngle, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle }
+export { simpleButton, checkCollisions, removeItem, randomNum, getUnitVector, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle }
