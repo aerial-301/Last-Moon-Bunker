@@ -4,10 +4,14 @@ import { createSelectionBox, beginSelection, pointerDown, pointerUp } from './mo
 import { centerCam, moveMazeCamera } from './camera.js'
 import { makeText, newMainPlayer, newMakeEnemy, newVillager } from './unitObject.js'
 import { makeRectangle, makeCircle, HQ, moonGround, laser, tempDrawing, tempEarth, tempDrawing_2, gun } from './drawings.js'
-import { moveSpeed } from './keyboard.js'
 import { GA } from './ga_minTest.js'
+import { debugShape } from '../extra/debug.js'
 // import { tempDrawing, tempEarth, tempDrawing_2, gun } from '../extra/Drawing-Test.js'
 // import { tempIndicator } from '../extra/debug.js'
+
+const moveSpeed = 8
+
+
 
 const RAD_DEG = Math.PI / 180
 const initialAngle = -60
@@ -50,29 +54,45 @@ let readyToScanE = true
 let readyToScanP = true
 let enemiesScanned = false
 let currentScanner = -1
-
-
 let blackHB, yellowHB, HB
+
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////
 const canvasSetup = () => {
-    if (c)
-        return
-    c = document.getElementById('c')
-    c.addEventListener('contextmenu', (e) => e.preventDefault())
-    c.addEventListener('pointerdown', (e) => pointerDown(e))
-    c.addEventListener('pointerup', (e) => pointerUp(e))
+  if (c) return
+  c = document.getElementById('c')
+  c.addEventListener('contextmenu', (e) => e.preventDefault())
+  c.addEventListener('pointerdown', (e) => pointerDown(e))
+  c.addEventListener('pointerup', (e) => pointerUp(e))
+}
+
+
+
+const playerInput = () => {
+  if (MK) {
+    if (currentPlayer.isDead) switchMode()
+    moveMazeCamera()
+    if (!currentPlayer.attacked) {
+      if (!currentPlayer.attacked2) {
+        if (!currentPlayer.isRolling) {
+          movePlayer()
+          currentPlayer.weapon.rotation = -tempAngle(currentPlayer.playerHand, g.pointer, currentPlayer.angleOffX, currentPlayer.angleOffY) + currentPlayer.weaponAngle
+        }
+      }
+    }
+  }
+  else {
+    beginSelection()
+    moveCamera()
+  }
 }
 
 const moveUnits = () => {
   if (movingUnits.length > 0) {
     if (!moved) {
       moved = true
-      // for (let i in movingUnits) {
       movingUnits.forEach(unit => {
         if (unit.isMoving) unit.move()
-        else {
-          removeItem(movingUnits, unit)
-        }
+        else removeItem(movingUnits, unit)
       })
       g.wait(moveSpeed, () => moved = false)
     }
@@ -87,24 +107,18 @@ const runScanners = () => {
 const scanFor = (scanners, scannees, ready) => {
   if (ready) {
     ready = false
-    scanners.forEach(unit => {
-      // console.log(unit.range)
-      if (!unit.target) {
-        unit.scanForTargets(scannees)
-      }
-    })
+    scanners.forEach(unit => {if (!unit.target) unit.scanForTargets(scannees)})
     g.wait(4000, () => ready = true)
   }
 }
 
 const animatePlayer = () => {
   units.forEach(u => {
-    // if (!u.attacked && !u.attacked2) {
     if (u.isMoving) u.moveAnimation()
     else u.idleAnimation()
-    // }
   })
 }
+
 const switchMode = () => {
   if (!MK) {
     if (selectedUnits.length === 1) {
@@ -116,104 +130,56 @@ const switchMode = () => {
       currentPlayer.deselect()
       selectedUnits = []
       ;[blackHB, yellowHB, HB].forEach(i => i.visible = true)
-
     }
   }
   else {
     MK = false
     ;[blackHB, yellowHB, HB].forEach(i => i.visible = false)
-
     if (!currentPlayer.isDead) {
       currentPlayer.isMoving = false
       currentPlayer.weapon.rotation = currentPlayer.weaponRotation
       currentPlayer = null
-
     }
   }
 }
-
-const stopAttack = () => {
-
-}
-
-
 
 const play = () => {
-  moveUnits()
+  playerInput()
   animatePlayer()
-  if (MK) {
-    if (currentPlayer.isDead) switchMode()
-    moveMazeCamera()
-    if (!currentPlayer.attacked) {
-      if (!currentPlayer.attacked2) {
-        if (!currentPlayer.isRolling) {
-          movePlayer()
-          // currentPlayer.weapon.rotation = -globalAngle(currentPlayer.playerHand, g.pointer) + currentPlayer.weaponAngle
-          currentPlayer.weapon.rotation = -tempAngle(currentPlayer.playerHand, g.pointer, currentPlayer.angleOffX, currentPlayer.angleOffY) + currentPlayer.weaponAngle
-          // debugText.content = `
-          // a = ${currentPlayer.playerHand.centerX}  ${currentPlayer.playerHand.centerY}
-          // b = ${g.pointer.centerX}  ${g.pointer.centerY}
-          // `
-          // player.swordHandle.rotation = -globalAngle(player.playerHand, g.pointer) + C.idleSwordAngle
-          // tempVill.gun.rotation = -globalAngle(tempVill.playerHand, g.pointer)
-        }
-      }
-    }
-  }
-  else {
-    beginSelection()
-    moveCamera()
-  }
+  moveUnits()
+
   if (shots.length > 0) {
     shots.forEach(shot => {
       shot.scaleX += 0.1
       shot.scaleY += 0.1
     })
   }
+
   if (attackingTarget.length > 0) {
     attackingTarget.forEach(unit => {
       if (!unit.target || unit.isDead || unit.target.isDead) {
         removeItem(attackingTarget, unit)
         unit.target = null
-        unit.weapon.rotation = unit.weaponRotation
-      }
-      else {
-        unit.attack(unit.target)
-      }
+        g.wait(200, () => unit.weapon.rotation = unit.weaponRotation)
+      } else unit.attack(unit.target)
     })
   }
 
   runScanners()
 
-  // scanForEnemies()
-  // scanForAllies()
+  // if (moveSun) {
+  //   moveSun = false
+  //   sun.x += 0.8
+  //   sun.y += 0.15
+  //   g.wait(100, () => moveSun = true)
+  // }
 
-
-
-
-    // if (moveSun) {
-    //   moveSun = false
-    //   sun.x += 0.8
-    //   sun.y += 0.15
-    //   g.wait(100, () => moveSun = true)
-    // }
-    // debugText.content = `
-    // world.xy = ${world.x}, ${world.y}\n\n
-    // pointer = ${g.pointer.x + world.x}, ${g.pointer.y + world.y}
-    // `
-    // if( selectedUnits.length > 0) {
-    //   current = selectedUnits[0]
-    //   if (current.collidedWith) {
-    //     console.log(`
-    //     destX - obstCX = ${Math.abs(current.destinationX + world.x - current.collidedWith.centerX)}\n
-    //     destY - obstCY = ${Math.abs(current.destinationY + world.y - current.collidedWith.centerY)}\n
-    //     `)
-    //   }
-    // }
+  // debugText.content = `
+  // world.xy = ${world.x}, ${world.y}\n\n
+  // pointer = ${g.pointer.x + world.x}, ${g.pointer.y + world.y}
+  // `
     
 }
-let current
-
 
 let ground
 let gridMap = []
@@ -221,16 +187,16 @@ let cellSize
 let sun, earth
 const surfaceWidth = 2400
 const surfaceHeight = 1000
+
+
+
 const setup = () => {
   canvasSetup()
   floorLayer = g.group()
   objLayer = g.group()
   sun = makeCircle(130, 'orange', 0, false, 500, -250)
   earth = tempEarth(150, 260, -200)
-
-  // ground = makeRectangle(surfaceWidth, surfaceHeight, '#555')
   ground = moonGround()
-
 
   world = g.group(sun, earth, ground, floorLayer, objLayer)
   uiLayer = g.group()
@@ -353,10 +319,14 @@ const setup = () => {
   debugText = makeText(' ', '12px arial', 'white', 0, 100)
   objLayer.children.sort((a, b) => a.bottom - b.bottom)
   centerCam()
+
+
+  // solids.forEach(s => debugShape(s))
   g.state = play
 }
 g = GA.create(setup)
 g.start()
-export { g, world, floorLayer, uiLayer, objLayer, units, enemies, alertedEnemies, shots, selectedUnits, movingUnits, solids, playerUnits, 
-// player,
+
+
+export { g, world, floorLayer, uiLayer, objLayer, units, enemies, alertedEnemies, shots, selectedUnits, movingUnits, solids, playerUnits,
 C, bloods, bloodSplats, maze, gridMap, cellSize, PI, surfaceWidth, surfaceHeight, switchMode, MK, currentPlayer, attackingTarget, armedUnits }

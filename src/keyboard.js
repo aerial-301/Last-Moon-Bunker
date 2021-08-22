@@ -4,9 +4,6 @@ import { checkCollisions, randomNum } from './functions.js'
 // import { debugShape, tempIndicator } from '../extra/debug.js'
 
 
-export var moveSpeed = 0
-
-
 
 let shapes = []
 let paused = false
