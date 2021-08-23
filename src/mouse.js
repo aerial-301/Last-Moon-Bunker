@@ -1,4 +1,4 @@
-import { floorLayer, currentAction, g, uiLayer, playerUnits, selectedUnits, movingUnits, MK, currentPlayer, enemies, world, attackingTarget, buttons, placingBuilding, objLayer, surfaceHeight, cellSize, solids, gridMap, setCantBuildArea } from './main.js'
+import { floorLayer, currentAction, g, uiLayer, playerUnits, selectedUnits, movingUnits, MK, currentPlayer, enemies, world, attackingTarget, buttons, placingBuilding, objLayer, surfaceHeight, cellSize, solids, gridMap, setCantBuildArea, bluePrint } from './main.js'
 import { getUnitVector, removeItem, sortUnits } from './functions.js'
 import { actionMark, makeRectangle, makeSelectionBox, turret } from './drawings.js'
 let selectionBox
@@ -22,11 +22,9 @@ const pointerUp = (e) => {
   if (e.button === 0) leftMouseUp()
   else if (e.button === 2) rightMouseUp()
 }
-
 const clickedBottomPanel = () => {
   if (g.pointer.y > g.stage.height - 100) return true
 }
-
 const leftMouseDown = () => {
   if (!MK) {
     if (clickedBottomPanel()) {
@@ -39,31 +37,25 @@ const leftMouseDown = () => {
 
     } else {
       if (currentAction.placingBuilding) {
-        currentAction.placingBuilding = false
         
-        const cel = Math.floor((g.pointer.x - world.x) / cellSize) //* cellSize
-        const row = Math.floor((g.pointer.y - world.y) / cellSize) //* cellSize
-        // const row = Math.floor(g.pointer.y)
-
-        console.log(row, cel)
+        const cel = Math.floor((g.pointer.x - world.x) / cellSize)
+        const row = Math.floor((g.pointer.y - world.y) / cellSize)
         const currentCell = gridMap[row][cel]
-        // console.log(currentCell)
 
         if (currentCell) {
-          console.log('cant build here')
+          // console.log('cant build here')
         } else {
+          currentAction.placingBuilding = false
           gridMap[row][cel] = 4
           setCantBuildArea(row, cel)
-
-          // const building = makeRectangle(cellSize, cellSize, '#321', 3, cel * cellSize, row * cellSize)
-          // objLayer.addChild(building)
-          // solids.push(building)
-
+          
           const T = turret(cel * cellSize, row * cellSize)
+          T.x += T.halfWidth / 4
+          T.y += T.halfHeight
           floorLayer.addChild(T)
           solids.push(T)
-          console.log('construction complete')
-          // gridMap.forEach(c => console.log(c.join('') ))
+          // console.log('construction complete')
+          bluePrint.visible = false
         }
         
         // const building = makeRectangle(100, 100, '#321', 3, g.pointer.x - world.x, g.pointer.y - world.y)

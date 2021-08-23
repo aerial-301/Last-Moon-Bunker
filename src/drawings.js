@@ -1,6 +1,6 @@
 import { debugShape } from "./debug.js"
-import { surfaceHeight, surfaceWidth, world, floorLayer, objLayer, solids, g, cellSize, C } from "./main.js"
-import { makeMovableObject, makeBasicObject } from "./unitObject.js"
+import { surfaceHeight, surfaceWidth, world, floorLayer, objLayer, solids, g, cellSize, C, playerUnits } from "./main.js"
+import { makeMovableObject, makeBasicObject, moreProperties } from "./unitObject.js"
 import { randomNum } from "./functions.js"
 
 const PI = Math.PI
@@ -23,7 +23,6 @@ const makeCircle = (d, k, l, movable = false, x = 0, y = 0) => {
   else makeMovableObject(o, x, y, d, d)
   return o
 }
-
 const makeRectangle = (w, h, k, s = 1, x = 0, y = 0) => {
   const o = {
     x: x,
@@ -169,7 +168,6 @@ const makeBorder = (w, h) => {
   makeBasicObject(o, 0, 0, w, h)
   return o
 }
-
 const makeHeadDetails = () => {
   const o = {
     render(c) {
@@ -189,27 +187,27 @@ const makeHeadDetails = () => {
   makeBasicObject(o, 0, 0)
   return o
 }
-
 const makeHead = () => {
   const o = {
-    fillStyle: '#555',
-    render(c) {
-      const grad = c.createRadialGradient(2, -3, 27, 10, -20,0)
-      grad.addColorStop(0, '#222')
-      grad.addColorStop(0.1, this.fillStyle)
-      c.strokeStyle = '#000'
-      c.fillStyle = grad
-      c.lineWidth = 2
-      c.beginPath()
-      c.arc(0, 0, 25, 0, 2 * PI, false)
-      c.stroke()
-      c.fill()
-    } 
+    c1: '#222',
+    c2: '#555',
   }
+  o.render = (c) => {
+    const grad = c.createRadialGradient(2, -3, 27, 10, -20,0)
+    grad.addColorStop(0, o.c1)
+    grad.addColorStop(0.1, o.c2)
+    c.strokeStyle = '#000'
+    c.fillStyle = grad
+    c.lineWidth = 2
+    c.beginPath()
+    c.arc(0, 0, 25, 0, 2 * PI, false)
+    c.stroke()
+    c.fill()
+  } 
   makeBasicObject(o)
+  o.head = o
   return o
 }
-
 const shotHit = (x, y) => {
   const o = {
     render(c) {
@@ -243,7 +241,6 @@ const flash = (x = 0, y = 0) => {
   o.visible = false
   return o
 }
-
 const laser = (shooterX, shooterY, targetX, targetY) => {
   const o = {
     alwaysVisible: true,
@@ -259,7 +256,6 @@ const laser = (shooterX, shooterY, targetX, targetY) => {
   makeBasicObject(o, 0, 0, 1, 1)
   return o
 }
-
 const actionMark = (x = 0, y = 0, attack = true) => {
   const o = {
     render(c) {
@@ -282,7 +278,6 @@ const actionMark = (x = 0, y = 0, attack = true) => {
   makeBasicObject(o, x, y, 10, 10)
   return o
 }
-
 const moonSurface1 = (w, h) => {
   const o = {
     render(c) {
@@ -296,7 +291,6 @@ const moonSurface1 = (w, h) => {
   makeBasicObject(o, 0, 0, w, h)
   return o
 }
-
 const moonGround = (w = surfaceWidth, h = surfaceHeight ) => {
   const o = {
     render(c) {
@@ -318,7 +312,6 @@ const moonGround = (w = surfaceWidth, h = surfaceHeight ) => {
   makeBasicObject(o, 0, 0, w, h)
   return o
 }
-
 const HQ = (x, y) => {
   const o = {
     render(c) {
@@ -352,23 +345,8 @@ const HQ = (x, y) => {
   makeBasicObject(o, x, y, cellSize, cellSize)
   return o
 }
-
 const turret = (x, y, w = cellSize * .8) => {
-  const o = {
-    render(c) {
-      const grad = c.createLinearGradient(w, 0, 0, w)
-      grad.addColorStop(.3, '#666')
-      grad.addColorStop(1, '#000')
-      c.fillStyle = grad
-      c.lineWidth = 2
-      c.beginPath()
-      c.ellipse(0, w * 0.3, w/2, w/2, 0, 0, PI, true)
-      c.closePath()
-      c.fill()
-      c.stroke()
-    }
-  }
-  const top = {
+  const barrel = {
     render(c) {
       c.lineWidth = 1
       c.strokeStyle = '#aaa'
@@ -379,12 +357,42 @@ const turret = (x, y, w = cellSize * .8) => {
       c.stroke()
     }
   }
-  makeBasicObject(top, 0, 0, w, w * .6)
+  const o = {
+    health: 100,
+    // baseHealth: 
+    c1: '#333',
+    c2: '#111',
+  }
+  o.render = (c) => {
+    const grad = c.createLinearGradient(w, 0, 0, w)
+    grad.addColorStop(0, o.c1)
+    grad.addColorStop(1, o.c2)
+    c.fillStyle = grad
+    c.lineWidth = 2
+    c.beginPath()
+    c.ellipse(0, w * 0.3, w/2, w/2, 0, 0, PI, true)
+    c.closePath()
+    c.fill()
+    c.stroke()
+  },
+  makeBasicObject(barrel, 0, 0, w, w * .6)
   makeBasicObject(o, x, y, w, w *.6)
-  o.addChild(top)
+  moreProperties(o)
+  o.select = () => {}
+  o.deselect = () => {}
+  o.originalColor = '#333'
+  o.changeColor = () => {
+    o.c1 = o.c2 = '#FFF'
+    g.wait(80, () => {
+      o.c1 = '#333'
+      o.c2 = '#111'
+    })
+  }
+  o.addChild(barrel)
+  o.head = o
+  playerUnits.push(o)
   return o
 }
-
 const makeBluePrint = (x = 0, y = 0, w = cellSize) => {
   const o = {
     f: '#FFF'
@@ -396,10 +404,10 @@ const makeBluePrint = (x = 0, y = 0, w = cellSize) => {
     c.beginPath()
     c.fillRect(0, 0, w, w)
   }
-  o.alpha = .5
+  o.alpha = .4
+  o.visible = false
   return o
 }
-
 const tempDrawing = (d, x, y) => {
 
   // const b = {
@@ -478,7 +486,6 @@ const tempDrawing = (d, x, y) => {
   solids.push(base)
   return o
 }
-
 const tempDrawing_2 = (w, h, x, y, lineWidth = 2, yOff = 0) => {
   const o = {
     render(c) {
@@ -497,7 +504,6 @@ const tempDrawing_2 = (w, h, x, y, lineWidth = 2, yOff = 0) => {
   o.rotation = randomNum(-0.15, 0.15, 0)
   return o
 }
-
 const tempLaser = (x = 0, y = 0) => {
   const o = {
     length: 10,
@@ -515,7 +521,6 @@ const tempLaser = (x = 0, y = 0) => {
   o.visible = false
   return o
 }
-
 const gun = (owner, rifle = true, x = -50, y = -35, w = 70, h = 5) => {
   const o = {
     render(c) {
@@ -571,7 +576,6 @@ const gun = (owner, rifle = true, x = -50, y = -35, w = 70, h = 5) => {
   }
  
 }
-
 const tempEarth = (d, x, y) => {
   const b = {
     render(c) {
@@ -620,7 +624,6 @@ const tempEarth = (d, x, y) => {
 
   return b
 }
-
 const makeEnemyEyes = () => {
   const o = {
     render(c) {
@@ -636,7 +639,6 @@ const makeEnemyEyes = () => {
   makeBasicObject(o)
   return o
 }
-
 const newMakeEnemyEyes = () => {
   const o = {
     render(c) {

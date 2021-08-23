@@ -204,10 +204,10 @@ const play = () => {
 
     if (bluePrintMoved) {
       bluePrintMoved = false
-      console.log('row col = ', row, col)
+      // console.log('row col = ', row, col)
       // console.log('cellValue = ', gridMap[row][col])
-      console.log(canBuildHere(row, col))
-      console.log(' ')
+      // console.log(canBuildHere(row, col))
+      // console.log(' ')
       if (canBuildHere(row, col)) {
         bluePrint.f = '#FFF'
       } else {
@@ -367,6 +367,7 @@ const setup = () => {
 
   b1.action = () => {
     currentAction.placingBuilding = true
+    bluePrint.visible = true
 
   }
   buttons.push(b1, b2)

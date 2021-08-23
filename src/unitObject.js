@@ -36,6 +36,58 @@ const makeBasicObject = (o, x = 0, y = 0, w = 50, h = 50) => {
   })
 }
 
+const moreProperties = (o) => {
+  o.yellowHB = makeRectangle((o.health / o.baseHealth) * 100 * o.HBscale, 5, 'Yellow')
+  o.addChild(o.yellowHB)
+  o.yellowHB.y = -10
+  o.HB = makeRectangle((o.health / o.baseHealth) * 100 * o.HBscale, 5, 'green')
+  o.addChild(o.HB)
+  o.HB.y = -10
+  o.HB.visible = false
+  o.yellowHB.visible = false
+  o.scanForTargets = (targets) => {
+    targets.forEach(target => {
+      if (g.GlobalDistance(o, target) < o.range) {
+        o.target = target
+        attackingTarget.push(o)
+      }
+    })
+  }
+  o.getHit = (damage) => {
+    o.health -= damage
+    if (o.health <= 0) {
+      o.isDead = true
+      g.remove(o)
+      removeItem(units, o)
+      removeItem(attackingTarget, o)
+      if (o.type == 'invader') removeItem(enemies, o)
+      else {
+        removeItem(playerUnits, o)
+        removeItem(armedUnits, o)
+      }
+    }
+    else {
+      o.damagedAmount += damage * o.HBscale
+      o.HB.width = (o.health / o.baseHealth) * 100 * o.HBscale
+      if (MK) o.HB.width = (o.health / o.baseHealth) * 100 * o.HBscale
+      if (!o.isDamaged) {
+        o.isDamaged = true
+        o.decreaseHB()
+      }
+      o.changeColor()
+    }
+  }
+  o.decreaseHB = () => {
+    if (o.damagedAmount > 0) {
+      g.wait(2, () => {
+        o.yellowHB.width -= 1 * 100 / o.baseHealth
+        o.damagedAmount -= 1
+        o.decreaseHB()
+      })
+    } else o.isDamaged = false
+  }
+}
+
 const makeUnitObject = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
   makeMovableObject(o, x, y)
   o.speed = 2
@@ -49,7 +101,6 @@ const makeUnitObject = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
   o.playerHand = {}
   makeBasicObject(o.playerHand, 0, 0, 1, 1)
   o.playerHand.alwaysVisible = true
-
   o.weapon = o.playerHand
   o.attacked = false,
   o.damagedAmount = 0
@@ -63,14 +114,6 @@ const makeUnitObject = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
   o.addChild(o.rightLeg)
   o.rightLeg.y = o.height - o.rightLeg.height
   o.addChild(o.head)
-  o.yellowHB = makeRectangle((o.health / o.baseHealth) * 100 * o.HBscale, 5, 'Yellow')
-  o.addChild(o.yellowHB)
-  o.yellowHB.y = -10
-  o.HB = makeRectangle((o.health / o.baseHealth) * 100 * o.HBscale, 5, 'green')
-  o.addChild(o.HB)
-  o.HB.y = -10
-  o.HB.visible = false
-  o.yellowHB.visible = false
   o.scanForTargets = (targets) => {
     targets.forEach(target => {
       if (g.GlobalDistance(o, target) < o.range) {
@@ -127,40 +170,14 @@ const makeUnitObject = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
       g.wait(20, () => o.moveAnimated = false)
     }
   }
-  o.getHit = (damage) => {
-    o.health -= damage
-    if (o.health <= 0) {
-      o.isDead = true
-      g.remove(o)
-      removeItem(units, o)
-      removeItem(attackingTarget, o)
-      if (o.type == 'invader') removeItem(enemies, o)
-      else {
-        removeItem(playerUnits, o)
-        removeItem(armedUnits, o)
-      }
-    }
-    else {
-      o.damagedAmount += damage * o.HBscale
-      o.HB.width = (o.health / o.baseHealth) * 100 * o.HBscale
-      if (MK) o.HB.width = (o.health / o.baseHealth) * 100 * o.HBscale
-      if (!o.isDamaged) {
-        o.isDamaged = true
-        o.decreaseHB()
-      }
-      o.head.fillStyle = '#FFF'
-      g.wait(80, () => o.head.fillStyle = '#555')
-    }
+  o.changeColor = () => {
+    o.head.c1 = o.head.c2 = '#FFF'
+    g.wait(80, () => {
+      o.head.c1 = '#222'
+      o.head.c2 = '#555'
+    })
   }
-  o.decreaseHB = () => {
-    if (o.damagedAmount > 0) {
-      g.wait(2, () => {
-        o.yellowHB.width -= 1 * 100 / o.baseHealth
-        o.damagedAmount -= 1
-        o.decreaseHB()
-      })
-    } else o.isDamaged = false
-  }
+  moreProperties(o)
 }
 
 const makePlayerUnitObject = (o, n = 1, x = 0, y = 0, w = 50, h = 50) => {
@@ -214,8 +231,6 @@ const makeText = (parent, content, font, fillStyle, x, y) => {
     fillStyle: fillStyle || "white",
     textBaseline: "top",
     render(c) {
-      // c.strokeStyle = o.strokeStyle
-      // c.lineWidth = o.lineWidth
       c.fillStyle = this.fillStyle
       if (o.width === 0) o.width = c.measureText(o.content).width
       if (o.height === 0) o.height = c.measureText("M").width
@@ -227,7 +242,6 @@ const makeText = (parent, content, font, fillStyle, x, y) => {
   }
   makeBasicObject(o, x, y, content.length, 20)
   parent.addChild(o)
-  // return o
 }
 
 const newMainPlayer = (x = 0, y = 0) => {
@@ -373,7 +387,6 @@ const createPlayerUnit = (x = 0, y = 0, armed = false) => {
     weaponRotation: 0.4,
     target: null,
   }
-    
   o.attack = (target = g.pointer) => {
       if (armed) {
         if (!o.attacked) {
@@ -424,23 +437,13 @@ const createPlayerUnit = (x = 0, y = 0, armed = false) => {
         }
       }
   }
-  
-  // morePlayerProperties(o, 0)
   makePlayerUnitObject(o, 0, x, y)
   o.addChild(twoEyes)
-  // twoEyes.y = 5
   const playerHand = o.playerHand
   o.twoEyes.addChild(playerHand)
-  // playerHand.width = 50
-  // playerHand.height = 50
-  // o.x = x
-  // o.y = y
   if (armed) gun(o)
   o.angleOffX = -25
   o.angleOffY = -40
-
-  playerUnits.alwaysVisible = true
-  // debugShape(o.twoEyes)
   return o
 }
 
@@ -491,15 +494,6 @@ const createEnemyUnit = (x = 0, y = 0) => {
   o.angleOffX = -23
   o.angleOffY = -40
   return o
-
-}
-
-
-const createBuilding = (x, y) => {
-const o = {}
-
-makeBasicObject(o, x, y, 100, 100)
-return o
 }
 
 export { 
@@ -508,5 +502,6 @@ export {
   makeText, 
   createEnemyUnit,
   makeBasicObject,
-  makeMovableObject,  
+  makeMovableObject,
+  moreProperties
 }
