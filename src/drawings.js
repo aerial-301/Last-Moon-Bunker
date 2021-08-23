@@ -385,6 +385,21 @@ const turret = (x, y, w = cellSize * .8) => {
   return o
 }
 
+const makeBluePrint = (x = 0, y = 0, w = cellSize) => {
+  const o = {
+    f: '#FFF'
+  }
+  makeBasicObject(o, x, y, w, w)
+  o.render = (c) => {
+    c.fillStyle = o.f
+    c.lineWidth = 2
+    c.beginPath()
+    c.fillRect(0, 0, w, w)
+  }
+  o.alpha = .5
+  return o
+}
+
 const tempDrawing = (d, x, y) => {
 
   // const b = {
@@ -661,5 +676,6 @@ export {
   makeEnemyEyes,
   gun,
   newMakeEnemyEyes,
-  turret
+  turret,
+  makeBluePrint
  }

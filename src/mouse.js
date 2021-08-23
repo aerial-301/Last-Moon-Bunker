@@ -23,11 +23,9 @@ const pointerUp = (e) => {
   else if (e.button === 2) rightMouseUp()
 }
 
-
 const clickedBottomPanel = () => {
   if (g.pointer.y > g.stage.height - 100) return true
 }
-
 
 const leftMouseDown = () => {
   if (!MK) {

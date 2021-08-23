@@ -3,18 +3,16 @@ import { moveCamera, movePlayer } from './keyboard.js'
 import { initSelectionBox, beginSelection, pointerDown, pointerUp } from './mouse.js'
 import { initUnitCamera, centerUnitCamera } from './camera.js'
 import { makeText, newMainPlayer, createEnemyUnit, createPlayerUnit } from './unitObject.js'
-import { makeRectangle, makeCircle, HQ, moonGround, laser, tempDrawing, tempEarth, tempDrawing_2, gun, turret } from './drawings.js'
+import { makeRectangle, makeCircle, HQ, moonGround, laser, tempDrawing, tempEarth, tempDrawing_2, gun, turret, makeBluePrint } from './drawings.js'
 import { GA } from './ga_minTest.js'
 import { debugShape } from './debug.js'
 // import { tempIndicator } from '../extra/debug.js'
 
 const moveSpeed = 8
 
-
 export const currentAction = {
   placingBuilding: false,
 }
-
 
 const RAD_DEG = Math.PI / 180
 const initialAngle = -60
@@ -55,7 +53,6 @@ let buttons = []
 let moved = false
 let moveCycle = false
 
-
 let readyToScanE = true
 let readyToScanP = true
 let enemiesScanned = false
@@ -70,19 +67,12 @@ let bottomPanel
 let lowerUI
 let upperUI
 
-
-
 const surfaceWidth = 2400
 const surfaceHeight = 1000
 const cellSize = 73
 
-
-
-
-
-
-
 let placingBuilding = false
+let bluePrint
 
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -138,8 +128,6 @@ const scanFor = (scanners, scannees, ready) => {
   }
 }
 
-
-
 const switchMode = () => {
   if (!MK) {
     if (selectedUnits.length === 1) {
@@ -162,6 +150,15 @@ const switchMode = () => {
       currentPlayer = null
     }
   }
+}
+
+let oldCol = -1, oldRow = -1
+let bluePrintMoved = false
+
+const canBuildHere = (r, c) => {
+  try {if (!gridMap[r][c]) return true}
+  catch (e) {}
+  return false
 }
 
 const play = () => {
@@ -187,6 +184,39 @@ const play = () => {
   }
 
   runScanners()
+
+  if (currentAction.placingBuilding) {
+
+    const col = Math.floor((g.pointer.shiftedX) / cellSize)
+    const row = Math.floor((g.pointer.shiftedY) / cellSize)
+
+    if (col != oldCol) {
+      bluePrint.x = col * cellSize - cellSize / 2
+      oldCol = col
+      bluePrintMoved = true
+    }
+    
+    if (row != oldRow) {
+      bluePrint.y = row * cellSize - cellSize / 2
+      oldRow = row
+      bluePrintMoved = true
+    }
+
+    if (bluePrintMoved) {
+      bluePrintMoved = false
+      console.log('row col = ', row, col)
+      // console.log('cellValue = ', gridMap[row][col])
+      console.log(canBuildHere(row, col))
+      console.log(' ')
+      if (canBuildHere(row, col)) {
+        bluePrint.f = '#FFF'
+      } else {
+        bluePrint.f = '#F00'
+      }
+
+    }
+
+  }
 
   // if (moveSun) {
   //   moveSun = false
@@ -323,6 +353,12 @@ const setup = () => {
   initMap()
   
   const panelHeight = 100
+
+
+  bluePrint = makeBluePrint()
+  world.addChild(bluePrint)
+
+
   bottomPanel = makeRectangle(g.stage.width, panelHeight, '#533', 10, 0, g.stage.height - panelHeight)
   uiLayer.addChild(bottomPanel)
   
@@ -331,6 +367,7 @@ const setup = () => {
 
   b1.action = () => {
     currentAction.placingBuilding = true
+
   }
   buttons.push(b1, b2)
   bottomPanel.addChild(b1)
@@ -390,5 +427,6 @@ export { g, world, floorLayer, uiLayer, objLayer, units, enemies, alertedEnemies
 C, bloods, bloodSplats, maze, gridMap, cellSize, PI, surfaceWidth, surfaceHeight, switchMode, MK, currentPlayer, attackingTarget, armedUnits,
 buttons,
 placingBuilding,
-setCantBuildArea
+setCantBuildArea,
+bluePrint
 }

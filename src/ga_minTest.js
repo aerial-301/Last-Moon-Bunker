@@ -1,3 +1,5 @@
+import { world } from "./main.js"
+
 export var GA = {
   create(setup) {
     var g = {}
@@ -212,6 +214,8 @@ export var GA = {
         halfHeight: { get: () => 0 },
         centerX: { get: () => o.x },
         centerY: { get: () => o.y },
+        shiftedX: {get: () => o._x - world.x},
+        shiftedY: {get: () => o._y - world.y}
       })
       o.moveHandler = function (e) {
         o._x = (e.pageX - e.target.offsetLeft)
