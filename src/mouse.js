@@ -1,6 +1,7 @@
-import { floorLayer, currentAction, g, uiLayer, playerUnits, selectedUnits, movingUnits, MK, currentPlayer, enemies, world, attackingTarget, buttons, placingBuilding, objLayer, surfaceHeight, cellSize, solids, gridMap, setCantBuildArea, bluePrint } from './main.js'
+import { floorLayer, currentAction, g, uiLayer, playerUnits, selectedUnits, movingUnits, MK, currentPlayer, enemies, world, attackingTarget, buttons, placingBuilding, objLayer, surfaceHeight, cellSize, solids, gridMap, setCellValue, bluePrint } from './main.js'
 import { getUnitVector, removeItem, sortUnits } from './functions.js'
 import { actionMark, makeRectangle, makeSelectionBox, turret } from './drawings.js'
+import { debugShape } from './debug.js'
 let selectionBox
 let selectionStarted
 let boxSet
@@ -47,15 +48,16 @@ const leftMouseDown = () => {
         } else {
           currentAction.placingBuilding = false
           gridMap[row][cel] = 4
-          setCantBuildArea(row, cel)
+          setCellValue(row, cel, 3)
           
-          const T = turret(cel * cellSize, row * cellSize)
+          const T = turret(cel, row)
           T.x += T.halfWidth / 4
           T.y += T.halfHeight
           floorLayer.addChild(T)
           solids.push(T)
           // console.log('construction complete')
           bluePrint.visible = false
+          // debugShape(T)
         }
         
         // const building = makeRectangle(100, 100, '#321', 3, g.pointer.x - world.x, g.pointer.y - world.y)
@@ -72,13 +74,15 @@ const rightMouseDown = () => {
   if (!MK) {
 
     if (clickedBottomPanel()) {
-
-      
-
+      // nothing
     } else {
 
-      
-      
+      if (currentAction.placingBuilding) {
+        currentAction.placingBuilding = false
+        bluePrint.visible = false
+      }
+
+
       if (selectedUnits.length > 0) {
         if (enemies.length > 0) {
           for (const enemy of enemies) {
@@ -99,10 +103,11 @@ const rightMouseDown = () => {
       }
 
     }
+
   } else {
     // if (!g.state) return false
     // if (g.state.name !== 'play') return false
-    if (currentPlayer.type == 'main') {
+    if (currentPlayer.type == 'MK') {
       if (currentPlayer.rollOnCooldown) return false
       currentPlayer.rollOnCooldown = true
       const uv = getUnitVector(currentPlayer, g.pointer, true)
@@ -128,7 +133,6 @@ const leftMouseUp = () => {
     const h = selectionBox.HEIGHT
     const tempBox = makeRectangle(w ? Math.abs(w) : 1, h ? Math.abs(h) : 1, '#FFF', 0, w < 0 ? selectionBox.gx + w : selectionBox.gx, h < 0 ? selectionBox.gy + h : selectionBox.gy)
     g.stage.addChild(tempBox)
-    // for (const unit of playerUnits) {
     playerUnits.forEach(unit => {
       if (g.hitTestRectangle(tempBox, unit, true)) {
         if (selectedUnits.findIndex((value) => value == unit) == -1) unit.select()

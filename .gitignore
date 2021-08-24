@@ -1,7 +1,6 @@
 oldStuff
 node_modules
-js
-dist
-
+out
+test.js
 # webpack.config.js
 # package-lock.json

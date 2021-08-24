@@ -1,7 +1,9 @@
 import { armedUnits, alertedEnemies, bloodSplats, C, enemies, floorLayer, g, PI, selectedUnits, uiLayer, MK, world, shots, movingUnits, attackingTarget, playerUnits, units, objLayer, currentPlayer } from './main.js'
-import { newMoveTest, randomNum, removeItem, roll, scan, tempAngle } from './functions.js'
-import { gun, makeEnemyEyes, makeLeg, makeCircle, makeHeadDetails, makeBorder, makeRectangle, makeTwoEyes, makeThirdEye, makeSlash, shotHit, laser, makeHead, newMakeEnemyEyes } from './drawings.js'
+import { playerDie, newMoveTest, randomNum, removeItem, roll, scan, tempAngle } from './functions.js'
+import { gun, makeEnemyEyes, makeLeg, makeCircle, makeHeadDetails, makeBorder, makeRectangle, makeTwoEyes, makeThirdEye, makeSlash, bulletImpact, laser, makeHead, newMakeEnemyEyes, bloodDrop } from './drawings.js'
 import { debugShape } from './debug.js'
+
+let hit = false
 
 const makeBasicObject = (o, x = 0, y = 0, w = 50, h = 50) => {
   o.x= x
@@ -37,6 +39,12 @@ const makeBasicObject = (o, x = 0, y = 0, w = 50, h = 50) => {
 }
 
 const moreProperties = (o) => {
+  o.target = null
+  o.attacked = false,
+  o.isDamaged = false
+  o.isDead = false
+  o.damagedAmount = 0
+  o.HBscale = 0.5
   o.yellowHB = makeRectangle((o.health / o.baseHealth) * 100 * o.HBscale, 5, 'Yellow')
   o.addChild(o.yellowHB)
   o.yellowHB.y = -10
@@ -46,30 +54,32 @@ const moreProperties = (o) => {
   o.HB.visible = false
   o.yellowHB.visible = false
   o.scanForTargets = (targets) => {
-    targets.forEach(target => {
-      if (g.GlobalDistance(o, target) < o.range) {
-        o.target = target
-        attackingTarget.push(o)
-      }
+    if (o == currentPlayer) return
+    g.wait(randomNum(50, 500), () => {
+      targets.forEach(target => {
+        if (g.GlobalDistance(o, target) < o.range) {
+          o.target = target
+          attackingTarget.push(o)
+        }
+      })
     })
   }
   o.getHit = (damage) => {
     o.health -= damage
+    if (o.canBleed) bloodDrop(o.x, o.y)
+
     if (o.health <= 0) {
       o.isDead = true
       g.remove(o)
       removeItem(units, o)
       removeItem(attackingTarget, o)
-      if (o.type == 'invader') removeItem(enemies, o)
-      else {
-        removeItem(playerUnits, o)
-        removeItem(armedUnits, o)
-      }
+      o.die()
     }
     else {
+      o.HB.alwaysVisible = true
+      o.yellowHB.alwaysVisible = true
       o.damagedAmount += damage * o.HBscale
       o.HB.width = (o.health / o.baseHealth) * 100 * o.HBscale
-      if (MK) o.HB.width = (o.health / o.baseHealth) * 100 * o.HBscale
       if (!o.isDamaged) {
         o.isDamaged = true
         o.decreaseHB()
@@ -79,17 +89,23 @@ const moreProperties = (o) => {
   }
   o.decreaseHB = () => {
     if (o.damagedAmount > 0) {
-      g.wait(2, () => {
+      g.wait(30, () => {
         o.yellowHB.width -= 1 * 100 / o.baseHealth
         o.damagedAmount -= 1
         o.decreaseHB()
       })
-    } else o.isDamaged = false
+    } else {
+      o.isDamaged = false
+      o.HB.alwaysVisible = false
+      o.yellowHB.alwaysVisible = false
+    }
   }
+  o.die = () => playerDie(o)
 }
 
 const makeUnitObject = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
   makeMovableObject(o, x, y)
+  
   o.speed = 2
   o.leftLeg = makeLeg(5)
   o.rightLeg = makeLeg(30)
@@ -102,11 +118,6 @@ const makeUnitObject = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
   makeBasicObject(o.playerHand, 0, 0, 1, 1)
   o.playerHand.alwaysVisible = true
   o.weapon = o.playerHand
-  o.attacked = false,
-  o.damagedAmount = 0
-  o.isDamaged = false
-  o.isDead = false
-  o.HBscale = 0.5
   o.firstStep = true
   o.justStoped = true
   o.addChild(o.leftLeg)
@@ -114,14 +125,7 @@ const makeUnitObject = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
   o.addChild(o.rightLeg)
   o.rightLeg.y = o.height - o.rightLeg.height
   o.addChild(o.head)
-  o.scanForTargets = (targets) => {
-    targets.forEach(target => {
-      if (g.GlobalDistance(o, target) < o.range) {
-        o.target = target
-        attackingTarget.push(o)
-      }
-    })
-  }
+  o.canBleed = true
   o.idleAnimation = () => {
     if (!o.idleAnimated) {
       o.idleAnimated = true
@@ -134,8 +138,8 @@ const makeUnitObject = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
         o.offsetCounter = 0
         o.idleOffset = 1
       }
-      if (o.type == 'main') o.thirdEye.y = o.twoEyes.y
-      o.twoEyes.y = o.head.y + (o.type=='villager'?8:0)
+      if (o.type == 'MK') o.thirdEye.y = o.twoEyes.y
+      o.twoEyes.y = o.head.y + (o.type=='Pleb'?8:0)
       o.head.y += o.idleOffset
       o.offsetCounter += o.idleOffset
       if (o.offsetCounter >= 2) o.idleOffset -= 1
@@ -163,8 +167,8 @@ const makeUnitObject = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
       o.leftLeg.y -= o.legOffset
       o.rightLeg.y = o.oldLegOffset3
       o.head.y = -Math.abs(o.legOffset) - 7
-      o.twoEyes.y = o.head.y + (o.type == 'villager'? 10:0)
-      if (o.type == 'main') o.thirdEye.y = o.twoEyes.y
+      o.twoEyes.y = o.head.y + (o.type == 'Pleb'? 10:0)
+      if (o.type == 'MK') o.thirdEye.y = o.twoEyes.y
       if (o.moveCounter >= 15) o.legOffset -= 5
       else if (o.moveCounter <= 15) o.legOffset += 5
       g.wait(20, () => o.moveAnimated = false)
@@ -254,9 +258,8 @@ const newMainPlayer = (x = 0, y = 0) => {
   const slash2 = makeSlash(0)
   const hitRange = 175
   const o = {
-    type: 'main',
+    type: 'MK',
     health: 500,
-    baseHealth: 500,
     damage: 0,
     twoEyes: twoEyes,
     thirdEye: thirdEye, 
@@ -270,7 +273,9 @@ const newMainPlayer = (x = 0, y = 0) => {
     rollCounter: 10, 
     alertSent: false,
   }
-    
+  o.baseHealth = o.health
+  makePlayerUnitObject(o, 1, x, y)
+  
   o.attack = () => {
     handPointerAngle = -tempAngle(o.playerHand, g.pointer)
     if (!o.attacked && !o.attacked2) {
@@ -344,8 +349,9 @@ const newMainPlayer = (x = 0, y = 0) => {
     }
   }
   o.roll = () => roll(o, o.vx, o.vy)
+
   
-  makePlayerUnitObject(o, 1, x, y)
+  
   const playerHand = o.playerHand
   o.addChild(twoEyes)
   o.addChild(thirdEye)
@@ -374,90 +380,109 @@ const newMainPlayer = (x = 0, y = 0) => {
   return o
 }
 
-const createPlayerUnit = (x = 0, y = 0, armed = false) => {
-  const twoEyes = makeTwoEyes(0, 8)
-  const o = {
-    type: 'villager',
-    health: 100,
-    baseHealth: 100,
-    damage: 20,
-    range: 400,
-    twoEyes: twoEyes,
-    weaponAngle: (PI / 2) + 0.1,
-    weaponRotation: 0.4,
-    target: null,
-  }
+const makeArmed = (o) => {
   o.attack = (target = g.pointer) => {
-      if (armed) {
-        if (!o.attacked) {
-          const r = 5
-          o.attacked = true
-          let rx, ry, targetX, targetY, rate
-          if (o == currentPlayer) {
-            rx = randomNum(-40, 40)
-            ry = randomNum(-35, 35)
-            rate = 10
-          } else {
-            rx = randomNum(-60, 60)
-            ry = randomNum(-60, 60)
-            rate = 500
-            
-            o.weapon.rotation = -tempAngle(o.playerHand, target, o.angleOffX, o.angleOffY) + o.weaponAngle
-          }
+    if (!o.attacked) {
+      const r = 5
+      o.attacked = true
+      let rate
 
-          targetX = target.centerX - r + rx + (-world.x)
-          targetY = target.centerY - r + ry + (-world.y)
-
-          const shot = shotHit(targetX, targetY)
-          world.addChild(shot)
-          shots.push(shot)
-          o.weapon.fire()
-          if (o == currentPlayer) {
-            if (enemies.length > 0) {
-              enemies.forEach(enemy => {
-                if (g.GlobalDistance(shot, enemy) < enemy.halfWidth + r) {
-                  // console.log('e hit')
-                  enemy.getHit(o.damage)
-                }
-              })
+      if (o == currentPlayer) {
+        rate = 10
+        if (enemies.length > 0) {
+          hit = false
+          for (const enemy of enemies) {
+            if (g.GlobalDistance(target, enemy) < enemy.halfWidth + r) {
+              enemy.getHit(o.damage)
+              shotHit(1)
+              hit = true
+              break
             }
           }
-          else {
-
-            if (g.GlobalDistance(shot, target) < target.halfWidth + r) {
-              // console.log('ally hit enenmy')
-              target.getHit(24)
-            }
-          }
-          g.wait(170, () => {
-            g.remove(shot)
-            removeItem(shots, shot)
-          })
-          g.wait(rate, () => { o.attacked = false })
         }
+        if (!hit) shotHit(0)
       }
+      else {
+        rate = o.attackRate
+        o.weapon.rotation = -tempAngle(o.playerHand, target, o.angleOffX, o.angleOffY) + o.weaponAngle
+        target.getHit(o.damage)
+      }
+
+      o.weapon.fire()
+
+      g.soundEffect(
+        220,      //The sound's fequency pitch in Hertz
+        0,              //The time, in seconds, to fade the sound in
+        .15,               //The time, in seconds, to fade the sound out
+        'sine',                //waveform type: "sine", "triangle", "square", "sawtooth"
+        .15,         //The sound's maximum volume
+        0,            //The speaker pan. left: -1, middle: 0, right: 1
+        0,                //The time, in seconds, to wait before playing the sound
+        180,     //The number of Hz in which to bend the sound's pitch down
+        false,             //If `reverse` is true the pitch will bend up
+        20,         //A range, in Hz, within which to randomize the pitch
+        2,          //A value in Hz. It creates 2 dissonant frequencies above and below the target pitch
+        [0.09, 0.1, 350],                //An array: [delayTimeInSeconds, feedbackTimeInSeconds, filterValueInHz]
+        // [.8, 0.5, false]             //An array: [durationInSeconds, decayRateInSeconds, reverse]
+      )
+
+      g.wait(rate, () => o.attacked = false)
+    }
   }
-  makePlayerUnitObject(o, 0, x, y)
+  o.type = 'armedPleb'
+  // o.health = 100
+  // o.baseHealth = 100
+  o.damage = 21
+  o.range = 700
+  o.attackRate = 500
+  o.targets = enemies
+  o.weaponAngle = (PI / 2) + 0.1
+  o.weaponRotation = 0.4
+  gun(o)
+  o.angleOffX = -25
+  o.angleOffY = -40
+}
+
+const makePleb = (o, x, y) => {
+  const twoEyes = makeTwoEyes(0, 8)
+  o.type = 'Pleb'
+  o.twoEyes = twoEyes
   o.addChild(twoEyes)
   const playerHand = o.playerHand
   o.twoEyes.addChild(playerHand)
-  if (armed) gun(o)
-  o.angleOffX = -25
-  o.angleOffY = -40
+}
+
+const createArmedPleb = (x = 0, y = 0, armed = false) => {
+  const o = {}
+  o.health = 100
+  o.baseHealth = o.health
+  makePlayerUnitObject(o, 0, x, y)
+  makePleb(o, x, y)
+  makeArmed(o)
   return o
+}
+
+const createPleb = (x, y) => {
+ const o = {}
+ o.health = 50
+ o.baseHealth = o.health
+ makePlayerUnitObject(o, 0, x, y)
+ makePleb(o, x, y)
+ return o
 }
 
 const createEnemyUnit = (x = 0, y = 0) => {
   const o = {
     type: 'invader',
-    baseHealth: 100,
     health: 100,
-    damage: 10,
+    damage: 9,
     range: 700,
     weaponAngle: (PI / 2),
-    weaponRotation: PI,
-    target: null
+    weaponRotation: 0.4,
+    targets: playerUnits,
   }
+  o.baseHealth = o.health
+  makeUnitObject(o, 0, x, y)
   o.attack = (target) => {
     if(!o.attacked) {
       if (g.GlobalDistance(o, target) > o.range) {
@@ -473,9 +498,28 @@ const createEnemyUnit = (x = 0, y = 0) => {
       o.playerHand.alwaysVisible = true
       o.twoEyes.alwaysVisible = true
 
+
+      g.soundEffect(
+        4000,      //The sound's fequency pitch in Hertz
+        0,              //The time, in seconds, to fade the sound in
+        .1,               //The time, in seconds, to fade the sound out
+        'square',                //waveform type: "sine", "triangle", "square", "sawtooth"
+        .3,         //The sound's maximum volume
+        0,            //The speaker pan. left: -1, middle: 0, rdight: 1
+        0,                //The time, in seconds, to wait before playing the sound
+        3500,     //The number of Hz in which to bend the sound's pitch down
+        false,             //If `reverse` is true the pitch will bend up
+        0,         //A range, in Hz, within which to randomize the pitch
+        0,          //A value in Hz. It creates 2 dissonant frequencies above and below the target pitch
+        [0.1, .24, 4000],                //An array: [delayTimeInSeconds, feedbackTimeInSeconds, filterValueInHz]
+        // [.1, .1, true]             //An array: [durationInSeconds, decayRateInSeconds, reverse]
+      )
+
+
+
       target.getHit(o.damage)
 
-      g.wait(50, () => {    
+      g.wait(25, () => {    
       o.laser.alwaysVisible = false
       o.alwaysVisible = false
       o.playerHand.alwaysVisible = false
@@ -484,7 +528,9 @@ const createEnemyUnit = (x = 0, y = 0) => {
       g.wait(800, () => o.attacked = false)
     }
   }
-  makeUnitObject(o, 0, x, y)
+
+  
+  o.die = () => removeItem(enemies, o)
   o.twoEyes = newMakeEnemyEyes()
   o.addChild(o.twoEyes)
   o.twoEyes.addChild(o.playerHand)
@@ -496,12 +542,30 @@ const createEnemyUnit = (x = 0, y = 0) => {
   return o
 }
 
+
+const shotHit = (hit = 1, tx = g.pointer.x - world.x, ty = g.pointer.y - world.y) => {
+  if (hit) {
+
+  } else {
+    const shot = bulletImpact(tx, ty)
+    floorLayer.addChild(shot)
+    shots.push(shot)
+
+    g.wait(170, () => {
+      g.remove(shot)
+      removeItem(shots, shot)
+    })
+  }
+}
+
+
 export { 
-  newMainPlayer, 
-  createPlayerUnit, 
-  makeText, 
-  createEnemyUnit,
   makeBasicObject,
   makeMovableObject,
-  moreProperties
+  makeText,
+  moreProperties,
+  createEnemyUnit,
+  newMainPlayer,
+  createPleb,
+  createArmedPleb,
 }

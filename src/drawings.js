@@ -1,7 +1,7 @@
 import { debugShape } from "./debug.js"
-import { surfaceHeight, surfaceWidth, world, floorLayer, objLayer, solids, g, cellSize, C, playerUnits } from "./main.js"
+import { surfaceHeight, surfaceWidth, world, floorLayer, objLayer, solids, g, cellSize, C, playerUnits, armedUnits, gridMap, setCellValue, enemies, bloodDrops, bloodLakes } from "./main.js"
 import { makeMovableObject, makeBasicObject, moreProperties } from "./unitObject.js"
-import { randomNum } from "./functions.js"
+import { playerDie, randomNum, removeItem } from "./functions.js"
 
 const PI = Math.PI
 
@@ -208,7 +208,7 @@ const makeHead = () => {
   o.head = o
   return o
 }
-const shotHit = (x, y) => {
+const bulletImpact = (x, y) => {
   const o = {
     render(c) {
       c.strokeStyle = '#F00'
@@ -312,34 +312,21 @@ const moonGround = (w = surfaceWidth, h = surfaceHeight ) => {
   makeBasicObject(o, 0, 0, w, h)
   return o
 }
-const HQ = (x, y) => {
+const makeHQ = (x, y) => {
   const o = {
     render(c) {
-      c.lineWidth = 3
+      c.lineWidth = 5
+      c.fillStyle = '#900'
       c.beginPath()
-      const grad = c.createLinearGradient(30, -100,-100, 100)
-      const gradTop = c.createLinearGradient(50, -30, 0, 40)
-      grad.addColorStop(0, '#999')
-      grad.addColorStop(0.5, '#444')
-      grad.addColorStop(1, '#000')
-      gradTop.addColorStop(0, '#777')
-      gradTop.addColorStop(1, '#000')
-
-      c.arc(0, 7, 60, 0, 2*PI, false)
-      c.clip()
-
-      c.fillStyle = gradTop
-      // c.fillRect(-35, -50, 70, 50)
-      c.fillRect(-cellSize * .35, -cellSize / 2, cellSize * .7, cellSize / 2)
-      
-      c.fillStyle = grad
-      // c.fillRect(-50, 0, 100, 50)
-      c.fillRect(-cellSize / 2, 0, cellSize, cellSize / 2)
-
-      c.fillStyle = '#00F'
-      // c.fillRect(-20,20, 40, 30)
-      c.fillRect(-cellSize * .2, cellSize * .2, cellSize * .4, cellSize * .3)
-
+      c.rect(-cellSize/2, -cellSize/2, cellSize, cellSize)
+      c.stroke()
+      c.fill()
+      c.fillStyle = '#000'
+      c.fillRect(-32, -32, 64, 64)
+      c.fillStyle = '#888'
+      c.fillRect(30, 30, -21,  -52)
+      c.fillRect(8, 30, -21,  -42)
+      c.fillRect(-14, 30, -16,  -32)
     }
   }
   makeBasicObject(o, x, y, cellSize, cellSize)
@@ -347,22 +334,36 @@ const HQ = (x, y) => {
 }
 const turret = (x, y, w = cellSize * .8) => {
   const barrel = {
+    muz: 4,
+    color: '#000',
     render(c) {
       c.lineWidth = 1
-      c.strokeStyle = '#aaa'
-      c.fillStyle = '#000'
+      c.strokeStyle = '#999'
+      c.fillStyle = this.color
       c.beginPath()
-      c.arc(0, 0, 4, 0, 2*PI)
+      c.arc(0, 0, this.muz, 0, 2*PI)
       c.fill()
       c.stroke()
     }
   }
   const o = {
+    row: y,
+    cel: x,
     health: 100,
-    // baseHealth: 
+    baseHealth: 100,
+    range: 1000,
+    damage: 37,
+    type: 'Building',
     c1: '#333',
     c2: '#111',
+    originalColor: '#333',
+    weapon: {rotation:0},
+    weaponRotation:0,
+    targets: enemies,
   }
+  makeBasicObject(barrel, 0, 0, w, w * .6)
+  makeBasicObject(o, x * cellSize, y * cellSize, w, w *.6)
+
   o.render = (c) => {
     const grad = c.createLinearGradient(w, 0, 0, w)
     grad.addColorStop(0, o.c1)
@@ -375,12 +376,47 @@ const turret = (x, y, w = cellSize * .8) => {
     c.fill()
     c.stroke()
   },
-  makeBasicObject(barrel, 0, 0, w, w * .6)
-  makeBasicObject(o, x, y, w, w *.6)
+  o.attack = (target) => {
+    if(!o.attacked) {
+      if (g.GlobalDistance(o, target) > o.range) {
+        o.target = null
+        return
+      }
+      o.attacked = true
+      barrel.muz = 8
+      barrel.color = '#ff0'
+
+      target.getHit(o.damage)
+
+
+      // g.soundEffect(
+      //   120,      //The sound's fequency pitch in Hertz
+      //   0,              //The time, in seconds, to fade the sound in
+      //   .15,               //The time, in seconds, to fade the sound out
+      //   'square',                //waveform type: "sine", "triangle", "square", "sawtooth"
+      //   .4,         //The sound's maximum volume
+      //   0,            //The speaker pan. left: -1, middle: 0, right: 1
+      //   0,                //The time, in seconds, to wait before playing the sound
+      //   50,     //The number of Hz in which to bend the sound's pitch down
+      //   false,             //If `reverse` is true the pitch will bend up
+      //   1,         //A range, in Hz, within which to randomize the pitch
+      //   1.5,          //A value in Hz. It creates 2 dissonant frequencies above and below the target pitch
+      //   // undefined,                //An array: [delayTimeInSeconds, feedbackTimeInSeconds, filterValueInHz]
+      //   // [.8, 0.5, false]             //An array: [durationInSeconds, decayRateInSeconds, reverse]
+      // )
+
+      g.wait(50, () => {
+        barrel.muz = 4
+        barrel.color = '#000'
+      })
+      g.wait(500, () => o.attacked = false)
+    }
+  }
+
+
   moreProperties(o)
   o.select = () => {}
   o.deselect = () => {}
-  o.originalColor = '#333'
   o.changeColor = () => {
     o.c1 = o.c2 = '#FFF'
     g.wait(80, () => {
@@ -388,9 +424,16 @@ const turret = (x, y, w = cellSize * .8) => {
       o.c2 = '#111'
     })
   }
+  o.die = () => {
+    playerDie(o)
+    removeItem(solids, o)
+    gridMap[o.row][o.cel] = 0
+    setCellValue(o.row, o.cel, 0)
+  }
+  o.canBleed = false
   o.addChild(barrel)
-  o.head = o
   playerUnits.push(o)
+  armedUnits.push(o)
   return o
 }
 const makeBluePrint = (x = 0, y = 0, w = cellSize) => {
@@ -521,7 +564,7 @@ const tempLaser = (x = 0, y = 0) => {
   o.visible = false
   return o
 }
-const gun = (owner, rifle = true, x = -50, y = -35, w = 70, h = 5) => {
+const gun = (owner, rifle = true, x = -55, y = -30, w = 70, h = 5) => {
   const o = {
     render(c) {
       c.lineWidth = 2
@@ -549,7 +592,7 @@ const gun = (owner, rifle = true, x = -50, y = -35, w = 70, h = 5) => {
   }
   handle.fire = () => {
     handle.flash.alwaysVisible = true
-    g.wait(50, () => handle.flash.alwaysVisible = false)
+    g.wait(25, () => handle.flash.alwaysVisible = false)
   }
   makeBasicObject(handle, x, y, 150, 150)
   handle.alwaysVisible = true
@@ -646,7 +689,7 @@ const newMakeEnemyEyes = () => {
       c.fillStyle = '#0F0'
       c.lineWidth = 2
       c.beginPath()
-      c.ellipse(0, -14, 10, 12, 0, 0, 2*PI, false)
+      c.ellipse(0, -10, 10, 10, 0, 0, 2*PI, false)
       c.stroke()
       c.fill()
     }
@@ -654,6 +697,49 @@ const newMakeEnemyEyes = () => {
   makeBasicObject(o, 0, 0)
   return o
 }
+
+const bloodDrop = (x, y) => {
+  let counter = 0
+  const o = {
+    l: 3,
+    vx: randomNum(-.5, .5, false),
+    vy: 2,
+  }
+  o.render = (c) => {
+    c.strokeStyle = '#000'
+    c.fillStyle = '#700'
+    c.lineWidth = 2
+    c.beginPath()
+    c.ellipse(0, -10, 3, o.l, 0, 0, 2*PI, false)
+    c.stroke()
+    c.fill()
+  }
+  makeBasicObject(o, x, y)
+  world.addChild(o)
+  bloodDrops.push(o)
+  g.wait(randomNum(300, 450), () => {
+    g.remove(o)
+    removeItem(bloodDrops, o)
+    bloodLake(o.x, o.y)
+  })
+}
+
+const bloodLake = (x, y) => {
+  const o = {
+    h: randomNum(15, 40),
+    v: randomNum(3, 7)
+  }
+  o.render = (c) => {
+    c.fillStyle = '#700'
+    c.beginPath()
+    c.ellipse(0, -10, o.h, o.v, 0, 0, 2*PI, false)
+    c.fill()
+  }
+  makeBasicObject(o, x, y)
+  floorLayer.addChild(o)
+  bloodLakes.push(o)
+}
+
 
 export { 
   makeCircle, 
@@ -665,10 +751,10 @@ export {
   makeLeg, 
   makeBorder, 
   makeHeadDetails, 
-  shotHit, 
+  bulletImpact, 
   flash, 
   actionMark,
-  HQ,
+  makeHQ,
   moonGround,
   laser,
   makeHead,
@@ -679,5 +765,8 @@ export {
   gun,
   newMakeEnemyEyes,
   turret,
-  makeBluePrint
+  makeBluePrint,
+  bloodDrop,
+  bloodLake
+  
  }

@@ -1,5 +1,5 @@
 import { makeRectangle } from './drawings.js'
-import { g, movingUnits, solids, MK, currentPlayer, world, objLayer, buttons } from './main.js'
+import { g, movingUnits, solids, MK, currentPlayer, world, objLayer, buttons, playerUnits, armedUnits } from './main.js'
 import { makeText } from './unitObject.js'
 // import { tempIndicator } from '../extra/debug.js'
 
@@ -233,5 +233,9 @@ const roll = (t, vx, vy) => {
     t.isRolling = false
   }
 }
+const playerDie = (o) => {
+  removeItem(playerUnits, o)
+  removeItem(armedUnits, o)
+}
 
-export { simpleButton, checkCollisions, removeItem, randomNum, getUnitVector, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle }
+export { simpleButton, checkCollisions, removeItem, randomNum, getUnitVector, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle, playerDie }

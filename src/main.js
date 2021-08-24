@@ -2,8 +2,8 @@ import { randomNum, removeItem, simpleButton, tempAngle } from './functions.js'
 import { moveCamera, movePlayer } from './keyboard.js'
 import { initSelectionBox, beginSelection, pointerDown, pointerUp } from './mouse.js'
 import { initUnitCamera, centerUnitCamera } from './camera.js'
-import { makeText, newMainPlayer, createEnemyUnit, createPlayerUnit } from './unitObject.js'
-import { makeRectangle, makeCircle, HQ, moonGround, laser, tempDrawing, tempEarth, tempDrawing_2, gun, turret, makeBluePrint } from './drawings.js'
+import { makeText, newMainPlayer, createEnemyUnit, createArmedPleb, createPleb } from './unitObject.js'
+import { bloodLake, bloodDrop, makeRectangle, makeCircle, makeHQ, moonGround, laser, tempDrawing, tempEarth, tempDrawing_2, gun, turret, makeBluePrint } from './drawings.js'
 import { GA } from './ga_minTest.js'
 import { debugShape } from './debug.js'
 // import { tempIndicator } from '../extra/debug.js'
@@ -25,6 +25,8 @@ const C = {
     attackSwordAngle: RAD_DEG * (initialAngle + 120),
     SPLATGROW: 0.54,
 }
+
+let HQ
 let currentPlayer
 let player
 let MK = false
@@ -47,8 +49,11 @@ let bloods = []
 let bloodSplats = []
 let shots = []
 let attackingTarget = []
-
 let buttons = []
+
+let bloodDrops = []
+let bloodLakes = []
+
 
 let moved = false
 let moveCycle = false
@@ -116,37 +121,56 @@ const moveUnits = () => {
 }
 
 const runScanners = () => {
-  scanFor(armedUnits, enemies, readyToScanE)
-  scanFor(enemies, playerUnits, readyToScanP)
+  scanFor()
+  scanFor(false)
 }
 
-const scanFor = (scanners, scannees, ready) => {
-  if (ready) {
-    ready = false
-    scanners.forEach(unit => {if (!unit.target) unit.scanForTargets(scannees)})
-    g.wait(4000, () => ready = true)
+const scanFor = (forEnemies = true) => {
+  if (forEnemies) {
+    if (readyToScanE) {
+      readyToScanE = false
+      scanLoop()
+      g.wait(1400, () => readyToScanE = true)
+    }
+  } else {
+    if (readyToScanP) {
+      readyToScanP = false
+      scanLoop(enemies, playerUnits)
+      g.wait(1100, () => readyToScanP = true)
+    }
   }
 }
+
+const scanLoop = (scanners = armedUnits, scannees = enemies) => scanners.forEach(unit => {if (!unit.target) unit.scanForTargets(scannees)})
+
 
 const switchMode = () => {
   if (!MK) {
     if (selectedUnits.length === 1) {
       MK = true
+      bottomPanel.visible = false
       currentPlayer = selectedUnits[0]
       currentPlayer.isMoving = false
+      currentPlayer.target = null
       removeItem(movingUnits, currentPlayer)
       removeItem(attackingTarget, currentPlayer)
+      // removeItem(armedUnits, currentPlayer)
       currentPlayer.deselect()
       selectedUnits = []
       ;[blackHB, yellowHB, HB].forEach(i => i.visible = true)
+      ;[yellowHB, HB].forEach(i => {
+        i.width = (currentPlayer.health / currentPlayer.baseHealth) * 400 * currentPlayer.HBscale
+      })
     }
   }
   else {
     MK = false
     ;[blackHB, yellowHB, HB].forEach(i => i.visible = false)
+    bottomPanel.visible = true
     if (!currentPlayer.isDead) {
       currentPlayer.isMoving = false
       currentPlayer.weapon.rotation = currentPlayer.weaponRotation
+      // armedUnits.push(currentPlayer)
       currentPlayer = null
     }
   }
@@ -160,6 +184,8 @@ const canBuildHere = (r, c) => {
   catch (e) {}
   return false
 }
+
+
 
 const play = () => {
   playerInput()
@@ -178,8 +204,26 @@ const play = () => {
       if (!unit.target || unit.isDead || unit.target.isDead) {
         removeItem(attackingTarget, unit)
         unit.target = null
-        g.wait(200, () => unit.weapon.rotation = unit.weaponRotation)
+        g.wait(150, () => unit.weapon.rotation = unit.weaponRotation)
       } else unit.attack(unit.target)
+    })
+  }
+
+
+  if (bloodDrops.length > 0) {
+    bloodDrops.forEach(drop => {
+      drop.x += drop.vx
+      drop.y += drop.vy
+    })
+  }
+
+  if (bloodLakes.length > 0) {
+    bloodLakes.forEach(lake => {
+      if (lake.alpha > 0.1) lake.alpha -= 0.003
+      else {
+        g.remove(lake)
+        removeItem(bloodLakes, lake)
+      }
     })
   }
 
@@ -204,16 +248,11 @@ const play = () => {
 
     if (bluePrintMoved) {
       bluePrintMoved = false
-      // console.log('row col = ', row, col)
-      // console.log('cellValue = ', gridMap[row][col])
-      // console.log(canBuildHere(row, col))
-      // console.log(' ')
       if (canBuildHere(row, col)) {
         bluePrint.f = '#FFF'
       } else {
         bluePrint.f = '#F00'
       }
-
     }
 
   }
@@ -258,37 +297,33 @@ const directions = [
 ]
 
 
-const setCantBuildArea = (row, col) => {
+const setCellValue = (row, col, value) => {
   let n
   directions.forEach(d => {
     n = addVectors([row, col], d)
     try {
-      gridMap[n[0]][n[1]] = 3
+      gridMap[n[0]][n[1]] = value
     } catch (e) {}
   })
 }
 
+
+
 const initMap = () => {
-  let maxPlayerUnits = 4
+
   const rows = Math.floor(surfaceHeight / cellSize)
   const cols = Math.floor(surfaceWidth / cellSize)
 
-
-  
   for (let i = 0; i < rows; i++) {
     gridMap[i] = Array(cols).fill(0)
   }
 
-  const tempHQ = HQ(cellSize * cols / 2, 0)
-  floorLayer.addChild(tempHQ)
-  solids.push(tempHQ)
+  const hqrow = 1
+  const hqcol = cols / 2
 
-  const empty = makeRectangle(cellSize, cellSize, '#321', 2, cellSize * cols / 2, 0)
-  empty.alpha = 0.4
-  floorLayer.addChild(empty)
 
-  gridMap[0][cols / 2] = 4
-  setCantBuildArea(0, cols / 2)
+  gridMap[hqrow][hqcol] = 5
+  setCellValue(hqrow, hqcol, 3)
 
 
   for (let row = 0; row < rows; row++) {
@@ -309,7 +344,7 @@ const initMap = () => {
           if (cel % 2 == 0) {
             if (gridMap[row][cel] === 0) {
               gridMap[row][cel] = 4
-              setCantBuildArea(row, cel)
+              setCellValue(row, cel, 3)
               const d = randomNum(5, cellSize * 0.25)
               // tempDrawing(d, cel * cellSize + d * 1.5 + randomNum(-35, 35), row * cellSize + d * 1.5 + randomNum(-35, 35))
               tempDrawing(d, cel * cellSize + d, row * cellSize + d)
@@ -320,6 +355,10 @@ const initMap = () => {
 
     }
   }
+
+  HQ = makeHQ(cellSize * hqcol , cellSize * hqrow)
+  floorLayer.addChild(HQ)
+  solids.push(HQ)
 
   // gridMap.forEach(c => console.log(c.join('') ))
 }
@@ -354,10 +393,8 @@ const setup = () => {
   
   const panelHeight = 100
 
-
   bluePrint = makeBluePrint()
   world.addChild(bluePrint)
-
 
   bottomPanel = makeRectangle(g.stage.width, panelHeight, '#533', 10, 0, g.stage.height - panelHeight)
   uiLayer.addChild(bottomPanel)
@@ -366,15 +403,21 @@ const setup = () => {
   const b2 = simpleButton('Unit', 200, 10, 30, 13)
 
   b1.action = () => {
-    currentAction.placingBuilding = true
-    bluePrint.visible = true
-
+    currentAction.placingBuilding = true  
+    g.wait(10, () => bluePrint.visible = true)
   }
+
+  b2.action = () => {
+    const tempVill = createArmedPleb(HQ.x , HQ.y, true)
+    objLayer.addChild(tempVill)
+    playerUnits.push(tempVill)
+    units.push(tempVill)
+    armedUnits.push(tempVill)
+  }
+
   buttons.push(b1, b2)
   bottomPanel.addChild(b1)
   bottomPanel.addChild(b2)
-
-
 
   // const T = turret(300, 100)
   // floorLayer.addChild(T)
@@ -385,14 +428,18 @@ const setup = () => {
   playerUnits.push(player)
   units.push(player)
 
-  for (let i = 0; i < 4; i++) {
-    const tempVill = createPlayerUnit(100, 400 + i * 55, true)
-    objLayer.addChild(tempVill)
-    playerUnits.push(tempVill)
-    units.push(tempVill)
-    armedUnits.push(tempVill)
-  }
-  for (let i = 0; i < 4; i++) {
+  const tem = createEnemyUnit(300, 180)
+  objLayer.addChild(tem)
+  units.push(tem)
+
+  // const h = makeHQ(400, 180)
+  // floorLayer.addChild(h)
+  // debugShape(h)
+
+  // const tempt = turret(300, 180)
+  // objLayer.addChild(tempt)
+
+  for (let i = 0; i < 7; i++) {
 
     const tempEnemy = createEnemyUnit(1400 + i * 50, 350)
     objLayer.addChild(tempEnemy)
@@ -400,16 +447,26 @@ const setup = () => {
     enemies.push(tempEnemy)
   }
 
-  // const tempVill = createPlayerUnit(875, 250, true)
-  // objLayer.addChild(tempVill)
-  // playerUnits.push(tempVill)
-  // units.push(tempVill)
+  const tempVill = createArmedPleb(275, 250, true)
+  objLayer.addChild(tempVill)
+  playerUnits.push(tempVill)
+  units.push(tempVill)
+
+
+  const pleb = createPleb(400, 180)
+  objLayer.addChild(pleb)
+  playerUnits.push(pleb)
+  units.push(pleb)
+
+  // const b = bloodDrop(370, 200)
+  // objLayer.addChild(b)
+
+  // const l = bloodLake(370, 250)
+  // floorLayer.addChild(l)
 
   initSelectionBox()
 
-
   initUIHealthBar()
-
   
   // uiLayer.addChild(bottomPanel)
   
@@ -424,10 +481,5 @@ g = GA.create(setup)
 g.start()
 
 
-export { g, world, floorLayer, uiLayer, objLayer, units, enemies, alertedEnemies, shots, selectedUnits, movingUnits, solids, playerUnits,
-C, bloods, bloodSplats, maze, gridMap, cellSize, PI, surfaceWidth, surfaceHeight, switchMode, MK, currentPlayer, attackingTarget, armedUnits,
-buttons,
-placingBuilding,
-setCantBuildArea,
-bluePrint
+export { g, world, floorLayer, uiLayer, objLayer, units, enemies, alertedEnemies, shots, selectedUnits, movingUnits, solids, playerUnits, C, bloods, bloodSplats, maze, gridMap, cellSize, PI, surfaceWidth, surfaceHeight, switchMode, MK, currentPlayer, attackingTarget, armedUnits, buttons, placingBuilding, setCellValue, bluePrint, bloodDrops, bloodLakes
 }
