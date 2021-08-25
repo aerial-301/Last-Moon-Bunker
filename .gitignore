@@ -2,6 +2,6 @@ oldStuff
 node_modules
 out
 test.js
-out/
+out
 out/out-advanced.zip
 out/out-advanced.js
