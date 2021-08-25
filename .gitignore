@@ -2,6 +2,6 @@ oldStuff
 node_modules
 out
 test.js
-# webpack.config.js
-# package-lock.json
 out/
+out/out-advanced.zip
+out/out-advanced.js

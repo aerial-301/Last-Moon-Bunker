@@ -1,23 +1,16 @@
-import { g, world, objLayer, surfaceWidth, surfaceHeight, switchMode, MK, enemies, currentPlayer } from './main.js'
-import { checkCollisions, randomNum } from './functions.js'
+import { world, objLayer } from './main/mainSetUp/initLayers.js'
+import { g, selectedUnits, movingUnits, attackingTarget } from './main.js'
+import { checkCollisions, removeItem } from './functions.js'
+import { bottomPanel } from './main/mainSetUp/initBottomPanel.js'
+import { blackHB, yellowHB, HB } from './main/mainSetUp/initUIHB.js'
 // import { debugShape, tempIndicator } from '../extra/debug.js'
+let currentPlayer, MK
 
-let paused = false
 const keys = {
   'w': false,
   's': false,
   'a': false,
   'd': false,
-  // 'c': false,
-  // 't': false,
-  // 'y': false,
-  // 'r': false,
-  // 'p': false,
-  // 'o': false,
-  // 'k': false,
-  // 'h': false,
-  // 'j': false,
-  // 'u': false,
 }
 
 window.addEventListener('keydown', (k) => {
@@ -35,7 +28,6 @@ window.addEventListener('keyup', (k) => {
     
     // if (k.key === 'p') moveSpeed += 100
     // if (k.key === 'o') moveSpeed -= 100
-
 
     // if (k.key === 'k') {
     //   tempIndicator(world.gx, world.gy, 400, 'white', 10)
@@ -63,44 +55,88 @@ window.addEventListener('keyup', (k) => {
   } else if (k.key === 'r') switchMode()
 })
 
-const moveCamera = () => {
-  if (keys.w) {
+const moveCamera = (surfaceWidth, surfaceHeight) => {
+  if (keys['w']) {
     if (world.y < 300) world.y += 10
   }
-  if (keys.s) {
+  if (keys['s']) {
     if (world.y > g.stage.height - surfaceHeight) world.y -= 10
   }
-  if (keys.a) {
+  if (keys['a']) {
     if (world.x < 0) world.x += 10
   }
-  if (keys.d) {
+  if (keys['d']) {
     if (world.x > g.stage.width - surfaceWidth) world.x -= 10
   }
 }
 const movePlayer = () => {
-  if (keys.w) {
+  if (keys['w']) {
     currentPlayer.y -= currentPlayer.speed
     checkCollisions('bot')
     currentPlayer.scan()
     objLayer.children.sort((a, b) => a.bottom - b.bottom)
   }
-  if (keys.s) {
+  if (keys['s']) {
     currentPlayer.y += currentPlayer.speed
     checkCollisions('top')
     currentPlayer.scan()
     objLayer.children.sort((a, b) => a.bottom - b.bottom)
   }
-  if (keys.a) {
+  if (keys['a']) {
     currentPlayer.x -= currentPlayer.speed
     checkCollisions('right')
     currentPlayer.scan()
   }
-  if (keys.d) {
+  if (keys['d']) {
     currentPlayer.x += currentPlayer.speed
     checkCollisions('left')
     currentPlayer.scan()
   }
 }
+
+
+
+
+const switchMode = () => {
+  if (!MK) {
+    if (selectedUnits.length === 1) {
+      MK = true
+      bottomPanel.visible = false
+      currentPlayer = selectedUnits[0]
+      currentPlayer.isMoving = false
+      currentPlayer.target = null
+      removeItem(movingUnits, currentPlayer)
+      removeItem(attackingTarget, currentPlayer)
+      currentPlayer.deselect()
+      selectedUnits.length = 0
+      ;[blackHB, yellowHB, HB].forEach(i => i.visible = true)
+      ;[yellowHB, HB].forEach(i => {
+        i.width = (currentPlayer.health / currentPlayer.baseHealth) * 400 * currentPlayer.HBscale
+      })
+    }
+  }
+  else {
+    MK = false
+    ;[blackHB, yellowHB, HB].forEach(i => i.visible = false)
+    bottomPanel.visible = true
+    if (!currentPlayer.isDead) {
+      currentPlayer.isMoving = false
+      currentPlayer.weapon.rotation = currentPlayer.weaponRotation
+      currentPlayer = null
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
 // let added = false
 // let removed = false
 // const addUnit = () => {
@@ -123,4 +159,7 @@ export {
   keys,
   moveCamera,
   movePlayer,
+  switchMode,
+  currentPlayer,
+  MK
 }

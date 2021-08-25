@@ -1,7 +1,12 @@
-import { floorLayer, currentAction, g, uiLayer, playerUnits, selectedUnits, movingUnits, MK, currentPlayer, enemies, world, attackingTarget, buttons, placingBuilding, objLayer, surfaceHeight, cellSize, solids, gridMap, setCellValue, bluePrint } from './main.js'
-import { getUnitVector, removeItem, sortUnits } from './functions.js'
+import { currentAction, g, playerUnits, selectedUnits, movingUnits, enemies, attackingTarget, solids, bluePrint, cellSize } from './main.js'
+import { gridMap } from './main/mainSetUp/initMap.js'
+import { uiLayer, world, floorLayer } from './main/mainSetUp/initLayers.js'
+import { getUnitVector, sortUnits, setCellValue } from './functions.js'
 import { actionMark, makeRectangle, makeSelectionBox, turret } from './drawings.js'
-import { debugShape } from './debug.js'
+import { currentPlayer, MK } from './keyboard.js'
+import { buttons } from './main/mainSetUp/initBottomPanel.js'
+
+// import { debugShape } from './debug.js'
 let selectionBox
 let selectionStarted
 let boxSet
@@ -39,8 +44,10 @@ const leftMouseDown = () => {
     } else {
       if (currentAction.placingBuilding) {
         
-        const cel = Math.floor((g.pointer.x - world.x) / cellSize)
         const row = Math.floor((g.pointer.y - world.y) / cellSize)
+        if (row < 0) return
+        const cel = Math.floor((g.pointer.x - world.x) / cellSize)
+
         const currentCell = gridMap[row][cel]
 
         if (currentCell) {
@@ -48,9 +55,9 @@ const leftMouseDown = () => {
         } else {
           currentAction.placingBuilding = false
           gridMap[row][cel] = 4
-          setCellValue(row, cel, 3)
+          setCellValue(gridMap, row, cel, 3)
           
-          const T = turret(cel, row)
+          const T = turret(cel, row, cellSize)
           T.x += T.halfWidth / 4
           T.y += T.halfHeight
           floorLayer.addChild(T)
@@ -110,7 +117,7 @@ const rightMouseDown = () => {
     if (currentPlayer.type == 'MK') {
       if (currentPlayer.rollOnCooldown) return false
       currentPlayer.rollOnCooldown = true
-      const uv = getUnitVector(currentPlayer, g.pointer, true)
+      const uv = getUnitVector(currentPlayer, g.pointer)
       currentPlayer.vx = uv.x
       currentPlayer.vy = uv.y
       const sides = []
@@ -121,7 +128,9 @@ const rightMouseDown = () => {
       currentPlayer.isRolling = true
       currentPlayer.scan(1500, 350)
       currentPlayer.roll()
-      g.wait(200, () => currentPlayer.rollOnCooldown = false)
+      g.wait(200, () => {
+        if (currentPlayer) currentPlayer.rollOnCooldown = false
+      })
     }
   }
 }

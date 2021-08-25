@@ -1,8 +1,13 @@
-import { armedUnits, alertedEnemies, bloodSplats, C, enemies, floorLayer, g, PI, selectedUnits, uiLayer, MK, world, shots, movingUnits, attackingTarget, playerUnits, units, objLayer, currentPlayer } from './main.js'
+import { enemies, g, PI, selectedUnits, shots, attackingTarget, playerUnits, units } from './main.js'
 import { playerDie, newMoveTest, randomNum, removeItem, roll, scan, tempAngle } from './functions.js'
-import { gun, makeEnemyEyes, makeLeg, makeCircle, makeHeadDetails, makeBorder, makeRectangle, makeTwoEyes, makeThirdEye, makeSlash, bulletImpact, laser, makeHead, newMakeEnemyEyes, bloodDrop } from './drawings.js'
-import { debugShape } from './debug.js'
+import { gun, makeLeg, makeHeadDetails, makeBorder, makeRectangle, makeTwoEyes, makeThirdEye, makeSlash, bulletImpact, makeHead, newMakeEnemyEyes, bloodDrop } from './drawings.js'
+import { world, floorLayer } from './main/mainSetUp/initLayers.js'
+// import { debugShape } from './debug.js'
+import { currentPlayer } from './keyboard.js'
 
+
+const idleSwordAngle = Math.PI / 180 * -60
+const attackSwordAngle = Math.PI / 180 * (-60 + 120)
 let hit = false
 
 const makeBasicObject = (o, x = 0, y = 0, w = 50, h = 50) => {
@@ -103,7 +108,7 @@ const moreProperties = (o) => {
   o.die = () => playerDie(o)
 }
 
-const makeUnitObject = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
+const makeUnitObject = (o, n = 0, x = 0, y = 0) => {
   makeMovableObject(o, x, y)
   
   o.speed = 2
@@ -111,7 +116,7 @@ const makeUnitObject = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
   o.rightLeg = makeLeg(30)
   o.head = makeHead()
   if (n) {
-    o.headDetails = makeHeadDetails(n)
+    o.headDetails = makeHeadDetails()
     o.head.addChild(o.headDetails)
   }
   o.playerHand = {}
@@ -185,7 +190,7 @@ const makeUnitObject = (o, n = 0, x = 0, y = 0, w = 50, h = 50) => {
 }
 
 const makePlayerUnitObject = (o, n = 1, x = 0, y = 0, w = 50, h = 50) => {
-  makeUnitObject(o, n, x, y, w, h)
+  makeUnitObject(o, n, x, y)
   o.border = makeBorder(w, h)
   o.addChild(o.border)
   o.border.x -= o.halfWidth
@@ -231,11 +236,11 @@ const makeMovableObject = (o, x = 0, y = 0, w = 50, h = 50) => {
 const makeText = (parent, content, font, fillStyle, x, y) => {
   const o = {
     content: content,
-    font: font || "12px sans-serif",
-    fillStyle: fillStyle || "white",
+    font: font, // "12px sans-serif"
+    fs: fillStyle,
     textBaseline: "top",
     render(c) {
-      c.fillStyle = this.fillStyle
+      c.fillStyle = this.fs
       if (o.width === 0) o.width = c.measureText(o.content).width
       if (o.height === 0) o.height = c.measureText("M").width
       c.translate(-o.width * o.pivotX, -o.height * o.pivotY)
@@ -268,7 +273,7 @@ const newMainPlayer = (x = 0, y = 0) => {
     slash1: slash1,
     slash2: slash2,
     weaponRotation: 3,
-    weaponAngle: C.idleSwordAngle,
+    weaponAngle: idleSwordAngle,
     rollDistance: 10, 
     rollCounter: 10, 
     alertSent: false,
@@ -280,7 +285,7 @@ const newMainPlayer = (x = 0, y = 0) => {
     handPointerAngle = -tempAngle(o.playerHand, g.pointer)
     if (!o.attacked && !o.attacked2) {
       o.attacked = true
-      o.swordHandle.rotation = handPointerAngle + C.attackSwordAngle
+      o.swordHandle.rotation = handPointerAngle + attackSwordAngle
       o.rotation = 0
       o.attackHit(randomNum(14, 25))
       o.slash1.visible = true
@@ -289,7 +294,7 @@ const newMainPlayer = (x = 0, y = 0) => {
     }
     else if (!o.attacked2) {
       o.attacked2 = true
-      o.swordHandle.rotation = handPointerAngle + C.idleSwordAngle
+      o.swordHandle.rotation = handPointerAngle + idleSwordAngle
       o.attackHit(randomNum(23, 36))
       o.slash2.visible = true
       g.wait(40, () => o.slash2.visible = false)
@@ -315,35 +320,7 @@ const newMainPlayer = (x = 0, y = 0) => {
         //  Calculated angles are all in Radians. 1.14 Radians is around 65 Degrees
         if (Math.abs(smallest) <= 1.14) {
           // enemy should get hit if within the slash arc
-          const hitResult = enemy.getHit(damage)
-          if (hitResult === 'dead') {
-            removeItem(enemies, enemy)
-            enemy.isDead = true
-            const r = randomNum(2, 6)
-            for (let i = 0; i < r; i++) {
-              const b = makeCircle(15, '#900', 0)
-              floorLayer.addChild(b)
-              b.x = enemy.x + randomNum(-50, 50)
-              b.y = enemy.y + randomNum(-50, 50)
-              b.health = 3
-              b.limit = randomNum(7, 17)
-              bloodSplats.push(b)
-            }
-            
-          }
-          // else {
-          //   for (let i = 0 i < 1 i++) {
-          //     const b = makeCircle(10, '#f00', 0)
-          //     // b.blendMode = 'luminosity'
-          //     objLayer.addChild(b)
-          //     b.x = enemy.x
-          //     b.y = enemy.y
-          //     b.xd = randomNum(-3, 3)
-          //     b.yd = randomNum(-3, 3)
-          //     b.health = 13
-          //     bloods.push(b)
-          //   }
-          // }
+          enemy.getHit(damage)
         }
       }
     }
@@ -422,7 +399,7 @@ const makeArmed = (o) => {
         false,             //If `reverse` is true the pitch will bend up
         20,         //A range, in Hz, within which to randomize the pitch
         2,          //A value in Hz. It creates 2 dissonant frequencies above and below the target pitch
-        [0.09, 0.1, 350],                //An array: [delayTimeInSeconds, feedbackTimeInSeconds, filterValueInHz]
+        [0.09, 0.1, 350]            //An array: [delayTimeInSeconds, feedbackTimeInSeconds, filterValueInHz]
         // [.8, 0.5, false]             //An array: [durationInSeconds, decayRateInSeconds, reverse]
       )
 
@@ -443,7 +420,7 @@ const makeArmed = (o) => {
   o.angleOffY = -40
 }
 
-const makePleb = (o, x, y) => {
+const makePleb = (o) => {
   const twoEyes = makeTwoEyes(0, 8)
   o.type = 'Pleb'
   o.twoEyes = twoEyes
@@ -452,12 +429,12 @@ const makePleb = (o, x, y) => {
   o.twoEyes.addChild(playerHand)
 }
 
-const createArmedPleb = (x = 0, y = 0, armed = false) => {
+const createArmedPleb = (x = 0, y = 0) => {
   const o = {}
   o.health = 100
   o.baseHealth = o.health
   makePlayerUnitObject(o, 0, x, y)
-  makePleb(o, x, y)
+  makePleb(o)
   makeArmed(o)
   return o
 }
@@ -466,8 +443,9 @@ const createPleb = (x, y) => {
  const o = {}
  o.health = 50
  o.baseHealth = o.health
+ o.attack = () => {}
  makePlayerUnitObject(o, 0, x, y)
- makePleb(o, x, y)
+ makePleb(o)
  return o
 }
 
@@ -511,7 +489,7 @@ const createEnemyUnit = (x = 0, y = 0) => {
         false,             //If `reverse` is true the pitch will bend up
         0,         //A range, in Hz, within which to randomize the pitch
         0,          //A value in Hz. It creates 2 dissonant frequencies above and below the target pitch
-        [0.1, .24, 4000],                //An array: [delayTimeInSeconds, feedbackTimeInSeconds, filterValueInHz]
+        [0.1, .24, 4000]                //An array: [delayTimeInSeconds, feedbackTimeInSeconds, filterValueInHz]
         // [.1, .1, true]             //An array: [durationInSeconds, decayRateInSeconds, reverse]
       )
 
@@ -542,10 +520,9 @@ const createEnemyUnit = (x = 0, y = 0) => {
   return o
 }
 
-
 const shotHit = (hit = 1, tx = g.pointer.x - world.x, ty = g.pointer.y - world.y) => {
   if (hit) {
-
+    console.log('hit')
   } else {
     const shot = bulletImpact(tx, ty)
     floorLayer.addChild(shot)
@@ -557,7 +534,6 @@ const shotHit = (hit = 1, tx = g.pointer.x - world.x, ty = g.pointer.y - world.y
     })
   }
 }
-
 
 export { 
   makeBasicObject,

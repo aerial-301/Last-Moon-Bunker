@@ -1,4 +1,4 @@
-import { world } from "./main.js"
+import { world } from './main/mainSetUp/initLayers.js'
 
 export var GA = {
   create(setup) {
@@ -97,19 +97,19 @@ export var GA = {
         },
       }
     })
-    g.remove = function (s) {
+    g.remove = function () {
       let sprites = Array.prototype.slice.call(arguments)
       if (!(sprites[0] instanceof Array)) {
         if (sprites.length > 1) sprites.forEach(s => s.parent.removeChild(s))
-        else sprites[0].parent.removeChild(sprites[0])
+        else sprites[0].parent.removeChild(sprites[0]) // KEEP THIS ONLY ?????????
       }
-      else {
-        let p = sprites[0]
-        p.forEach(s => {
-          s.parent.removeChild(s)
-          p.splice(p.indexOf(s), 1)
-        })
-      }
+      // else {
+      //   let p = sprites[0]
+      //   p.forEach(s => {
+      //     s.parent.removeChild(s)
+      //     p.splice(p.indexOf(s), 1)
+      //   })
+      // }
     }
     function makeBasicObject(o, x = 0, y = 0, w = 50, h = 50) {
       o.x= x
@@ -143,21 +143,7 @@ export var GA = {
         bottom: { get: () => { return o.y + o.parent.gy} }
       })
     }
-    function moreProperties(o) {
-      o.yOffset = 0
-      Object.defineProperties(o, {
-          gx: { get: () => { return o.parent ? o.x + o.parent.gx : o.x } },
-          gy: { get: () => { return o.parent ? o.y + o.parent.gy : o.y } },
-          centerX: { get: () => { return o.x + o.halfWidth } },
-          centerY: { get: () => { return o.y + o.halfHeight } },
-          Y: { get: () => { return o.y + o.parent.gy + o.yOffset } }
-      })
-      o.children = []
-      o.addChild = (c) => {
-          addC(c, o)
-      }
-      o.removeChild = (c) => remC(c, o)
-    }
+
     function makeStage() {
       const o = {}
       makeBasicObject(o, 0, 0, g.canvas.width, g.canvas.height)
@@ -546,7 +532,7 @@ export var GA = {
     
         //Return the `impulse`.
         return impulse;
-      };
+      }
     
     }
 

@@ -1,14 +1,48 @@
+import { g, movingUnits, solids, playerUnits, armedUnits } from './main.js'
+import { world, objLayer } from './main/mainSetUp/initLayers.js'
 import { makeRectangle } from './drawings.js'
-import { g, movingUnits, solids, MK, currentPlayer, world, objLayer, buttons, playerUnits, armedUnits } from './main.js'
 import { makeText } from './unitObject.js'
+import { currentPlayer } from './keyboard.js'
 // import { tempIndicator } from '../extra/debug.js'
 
 const OBSDIST = 250
 const OBSDIST_UNDERGROUND = 400
 
+
+const directions = [
+  [1, 0],
+  [1, 1],
+  [0, 1],
+  [-1, 1],
+  [-1, 0],
+  [-1, -1],
+  [0, -1],
+  [1, -1]
+]
+
 const tempAngle = (a, b, bOffsetX = 0, bOffsetY = 0) => {return Math.atan2((b.centerX + bOffsetX - a.centerX), (b.centerY + bOffsetY - a.centerY))}
 const xDistance = (a, b) => Math.abs(b.centerX - a.centerX)
 const yDistance = (a, b) => Math.abs(b.centerY - a.centerY)
+
+const addVectors = (a, b) => {return [a[0] + b[0], a[1] + b[1]]}
+
+
+const canBuildHere = (gridMap, r, c) => {
+  try {if (!gridMap[r][c]) return true}
+  catch (e) { console.log('error')}
+  return false
+}
+
+
+const setCellValue = (gridMap ,row, col, value) => {
+  let n
+  directions.forEach(d => {
+    n = addVectors([row, col], d)
+    try {
+      gridMap[n[0]][n[1]] = value
+    } catch (e) {null}
+  })
+}
 
 const simpleButton = (
   text, 
@@ -19,7 +53,7 @@ const simpleButton = (
   action = () => console.log(text), 
   width = 170, 
   height = 80,
-  color = '#0F0', 
+  color = '#0F0'
   ) => {
   const button = makeRectangle(width, height, color, 1, xPos, yPos)
   button.action = action
@@ -103,7 +137,7 @@ const removeItem = (array, item) => {
     const index = array.indexOf(item)
     if (index !== -1) array.splice(index, 1)
 }
-const getUnitVector = (a, b, toPointer = false) => {
+const getUnitVector = (a, b) => {
   let xv, yv
   xv = b.centerX - a.centerX
   yv = b.centerY - a.centerY
@@ -238,4 +272,7 @@ const playerDie = (o) => {
   removeItem(armedUnits, o)
 }
 
-export { simpleButton, checkCollisions, removeItem, randomNum, getUnitVector, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle, playerDie }
+
+
+
+export { simpleButton, checkCollisions, removeItem, randomNum, getUnitVector, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle, playerDie, setCellValue, canBuildHere }

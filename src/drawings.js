@@ -1,19 +1,21 @@
-import { debugShape } from "./debug.js"
-import { surfaceHeight, surfaceWidth, world, floorLayer, objLayer, solids, g, cellSize, C, playerUnits, armedUnits, gridMap, setCellValue, enemies, bloodDrops, bloodLakes } from "./main.js"
+import { solids, g, playerUnits, armedUnits, enemies, bloodDrops, bloodLakes, K } from "./main.js"
+import { gridMap } from "./main/mainSetUp/initMap.js"
+import { world, floorLayer, objLayer } from "./main/mainSetUp/initLayers.js"
 import { makeMovableObject, makeBasicObject, moreProperties } from "./unitObject.js"
-import { playerDie, randomNum, removeItem } from "./functions.js"
+import { playerDie, randomNum, removeItem, setCellValue } from "./functions.js"
+
+// import { debugShape } from "./debug.js"
 
 const PI = Math.PI
 
 const makeCircle = (d, k, l, movable = false, x = 0, y = 0) => {
   const o = {
-    fillStyle: k,
+    f: k,
     radius: d / 2 
   }
   o.render = (c) => {
-    c.strokeStyle = 'black'
     c.lineWidth = l
-    c.fillStyle = o.fillStyle
+    c.fillStyle = o.f
     c.beginPath()
     c.arc(o.radius + (-o.radius * 2 * o.pivotX), o.radius + (-o.radius * 2 * o.pivotY), o.radius, 0, 2 * PI, false)
     if (l) c.stroke()
@@ -29,13 +31,13 @@ const makeRectangle = (w, h, k, s = 1, x = 0, y = 0) => {
     y: y,
     width: w,
     height: h,
-    fillStyle: k,
-    strokeStyle: 'black' 
+    f: k,
+    // strokeStyle: K.b
   }
   o.render = (c) => {
-    c.strokeStyle = o.strokeStyle
+    // c.strokeStyle = o.strokeStyle
     c.lineWidth = s
-    c.fillStyle = o.fillStyle
+    c.fillStyle = o.f
     c.beginPath()
     c.moveTo(x, y)
     c.rect(-o.width * o.pivotX, -o.height * o.pivotY, o.width, o.height)
@@ -278,20 +280,20 @@ const actionMark = (x = 0, y = 0, attack = true) => {
   makeBasicObject(o, x, y, 10, 10)
   return o
 }
-const moonSurface1 = (w, h) => {
-  const o = {
-    render(c) {
-      c.strokeStyle = '#FFF'
-      c.lineWidth = 2
-      c.beginPath()
-      c.rect(0, 0, 100, 100)
-      c.stroke()
-    }
-  }
-  makeBasicObject(o, 0, 0, w, h)
-  return o
-}
-const moonGround = (w = surfaceWidth, h = surfaceHeight ) => {
+// const moonSurface1 = (w, h) => {
+//   const o = {
+//     render(c) {
+//       c.strokeStyle = '#FFF'
+//       c.lineWidth = 2
+//       c.beginPath()
+//       c.rect(0, 0, 100, 100)
+//       c.stroke()
+//     }
+//   }
+//   makeBasicObject(o, 0, 0, w, h)
+//   return o
+// }
+const moonGround = (w, h) => {
   const o = {
     render(c) {
       // c.strokeStyle = '#FFF'
@@ -304,7 +306,7 @@ const moonGround = (w = surfaceWidth, h = surfaceHeight ) => {
       grad.addColorStop(1, '#222')
       // grad.addColorStop(1, '#111')
       c.beginPath()
-      c.rect(-surfaceWidth / 2, -surfaceHeight/2, surfaceWidth, surfaceHeight)
+      c.rect(-w / 2, -h/2, w, h)
       c.fillStyle = grad
       c.fill()
     }
@@ -312,7 +314,7 @@ const moonGround = (w = surfaceWidth, h = surfaceHeight ) => {
   makeBasicObject(o, 0, 0, w, h)
   return o
 }
-const makeHQ = (x, y) => {
+const makeHQ = (x, y, cellSize) => {
   const o = {
     render(c) {
       c.lineWidth = 5
@@ -332,7 +334,8 @@ const makeHQ = (x, y) => {
   makeBasicObject(o, x, y, cellSize, cellSize)
   return o
 }
-const turret = (x, y, w = cellSize * .8) => {
+const turret = (x, y, cellSize) => {
+  const w = cellSize * .8
   const barrel = {
     muz: 4,
     color: '#000',
@@ -428,7 +431,7 @@ const turret = (x, y, w = cellSize * .8) => {
     playerDie(o)
     removeItem(solids, o)
     gridMap[o.row][o.cel] = 0
-    setCellValue(o.row, o.cel, 0)
+    setCellValue(gridMap, o.row, o.cel, 0)
   }
   o.canBleed = false
   o.addChild(barrel)
@@ -436,22 +439,23 @@ const turret = (x, y, w = cellSize * .8) => {
   armedUnits.push(o)
   return o
 }
-const makeBluePrint = (x = 0, y = 0, w = cellSize) => {
+const makeBluePrint = (width, x = 0, y = 0) => {
   const o = {
     f: '#FFF'
   }
-  makeBasicObject(o, x, y, w, w)
+  makeBasicObject(o, x, y, width, width)
   o.render = (c) => {
     c.fillStyle = o.f
     c.lineWidth = 2
     c.beginPath()
-    c.fillRect(0, 0, w, w)
+    c.fillRect(0, 0, width, width)
   }
   o.alpha = .4
   o.visible = false
+  world.addChild(o)
   return o
 }
-const tempDrawing = (d, x, y) => {
+const moonHole = (d, x, y) => {
 
   // const b = {
   //   ...j,
@@ -529,7 +533,7 @@ const tempDrawing = (d, x, y) => {
   solids.push(base)
   return o
 }
-const tempDrawing_2 = (w, h, x, y, lineWidth = 2, yOff = 0) => {
+const surfaceLine = (w, h, x, y, lineWidth = 2, yOff = 0) => {
   const o = {
     render(c) {
       c.lineWidth = lineWidth
@@ -699,7 +703,6 @@ const newMakeEnemyEyes = () => {
 }
 
 const bloodDrop = (x, y) => {
-  let counter = 0
   const o = {
     l: 3,
     vx: randomNum(-.5, .5, false),
@@ -758,8 +761,8 @@ export {
   moonGround,
   laser,
   makeHead,
-  tempDrawing_2,
-  tempDrawing,
+  surfaceLine,
+  moonHole,
   tempEarth,
   makeEnemyEyes,
   gun,

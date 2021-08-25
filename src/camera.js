@@ -1,5 +1,8 @@
 import { makeRectangle } from "./drawings.js"
-import { g, world, currentPlayer } from "./main.js"
+import { g } from "./main.js"
+import { world } from './main/mainSetUp/initLayers.js'
+import { currentPlayer } from './keyboard.js'
+
 let middlePoint, camCenterX, camCenterY
 const initUnitCamera = () => {
   camCenterX = g.stage.width / 2
