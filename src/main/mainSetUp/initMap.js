@@ -1,9 +1,10 @@
 import { randomNum, setCellValue } from '../../functions.js'
-import { surfaceLine, moonHole, makeHQ } from '../../drawings.js'
+import { surfaceLine, moonHole, makeHQ, makeMine } from '../../drawings.js'
 import { solids} from '../../main.js'
 import { floorLayer } from './initLayers.js'
+import { debugShape } from '../../debug.js'
 
-let HQ, gridMap = []
+let mine, HQ, gridMap = []
 
 const initMap = (surfaceWidth, surfaceHeight, cellSize) => {
 
@@ -17,6 +18,11 @@ const initMap = (surfaceWidth, surfaceHeight, cellSize) => {
   const hqrow = 1
   const hqcol = cols / 2
 
+  const mRow = 4
+  const mCol = 6
+
+  gridMap[mRow][mCol] = 5
+  setCellValue(gridMap, mRow, mCol, 3)
 
   gridMap[hqrow][hqcol] = 5
   setCellValue(gridMap, hqrow, hqcol, 3)
@@ -54,10 +60,19 @@ const initMap = (surfaceWidth, surfaceHeight, cellSize) => {
   HQ = makeHQ(cellSize * hqcol , cellSize * hqrow, cellSize)
   floorLayer.addChild(HQ)
   solids.push(HQ)
+
+
+
+  mine = makeMine(cellSize * mCol, cellSize * mRow, cellSize)
+  floorLayer.addChild(mine)
+  solids.push(mine)
+
+  // debugShape(mine)
 }
 
 export {
   initMap,
   gridMap,
-  HQ
+  HQ,
+  mine
 }

@@ -60,9 +60,10 @@ const moreProperties = (o) => {
   o.yellowHB.visible = false
   o.scanForTargets = (targets) => {
     if (o == currentPlayer) return
-    g.wait(randomNum(50, 500), () => {
+    g.wait(randomNum(50, 200), () => {
       targets.forEach(target => {
-        if (g.GlobalDistance(o, target) < o.range) {
+        const gd = g.GlobalDistance(o, target) / Math.sqrt(2)
+        if (g.GlobalDistance(o, target) / Math.sqrt(2) <= o.range) {
           o.target = target
           attackingTarget.push(o)
         }
@@ -70,6 +71,26 @@ const moreProperties = (o) => {
     })
   }
   o.getHit = (damage) => {
+
+    const HZ = 470
+
+    g.soundEffect(
+      HZ,      //The sound's fequency pitch in Hertz
+      0,              //The time, in seconds, to fade the sound in
+      .07,               //The time, in seconds, to fade the sound out
+      'triangle',                //waveform type: "sine", "triangle", "square", "sawtooth"
+      .15,         //The sound's maximum volume
+      0,            //The speaker pan. left: -1, middle: 0, right: 1
+      0,                //The time, in seconds, to wait before playing the sound
+      HZ * 0.74,     //The number of Hz in which to bend the sound's pitch down
+      false,             //If `reverse` is true the pitch will bend up
+      20,         //A range, in Hz, within which to randomize the pitch
+      // 0,          //A value in Hz. It creates 2 dissonant frequencies above and below the target pitch
+      // undefined,          //An array: [delayTimeInSeconds, feedbackTimeInSeconds, filterValueInHz]
+      // [.15, 0.1, false]             //An array: [durationInSeconds, decayRateInSeconds, reverse]
+    )
+
+
     o.health -= damage
     if (o.canBleed) bloodDrop(o.x, o.y)
 
@@ -81,6 +102,7 @@ const moreProperties = (o) => {
       o.die()
     }
     else {
+
       o.HB.alwaysVisible = true
       o.yellowHB.alwaysVisible = true
       o.damagedAmount += damage * o.HBscale
@@ -215,6 +237,11 @@ const makeMovableObject = (o, x = 0, y = 0, w = 50, h = 50) => {
   o.vy = 0
   o.destinationX = x
   o.destinationY = y
+  // o.spaceX = 0
+  // o.spaceY = 0
+  o.isSeeking = false
+  o.goal = null
+  o.getInRange = false
   o.scaned = false
   o.isMoving = false
   o.obstacles = []
@@ -251,6 +278,7 @@ const makeText = (parent, content, font, fillStyle, x, y) => {
   }
   makeBasicObject(o, x, y, content.length, 20)
   parent.addChild(o)
+  return o
 }
 
 const newMainPlayer = (x = 0, y = 0) => {
@@ -360,26 +388,37 @@ const newMainPlayer = (x = 0, y = 0) => {
 const makeArmed = (o) => {
   o.attack = (target = g.pointer) => {
     if (!o.attacked) {
-      const r = 5
       o.attacked = true
-      let rate
 
+
+      const r = 5
+      let rate
       if (o == currentPlayer) {
+
+
+
+
         rate = 10
         if (enemies.length > 0) {
           hit = false
           for (const enemy of enemies) {
             if (g.GlobalDistance(target, enemy) < enemy.halfWidth + r) {
               enemy.getHit(o.damage)
-              shotHit(1)
               hit = true
               break
             }
           }
         }
-        if (!hit) shotHit(0)
+        if (!hit) shotHit()
       }
       else {
+
+        if (g.GlobalDistance(o, target) > o.range) {
+          o.target = null
+          o.attacked = false
+          return
+        }
+
         rate = o.attackRate
         o.weapon.rotation = -tempAngle(o.playerHand, target, o.angleOffX, o.angleOffY) + o.weaponAngle
         target.getHit(o.damage)
@@ -387,30 +426,30 @@ const makeArmed = (o) => {
 
       o.weapon.fire()
 
+      const HZ = 900
+
       g.soundEffect(
-        220,      //The sound's fequency pitch in Hertz
+        HZ,      //The sound's fequency pitch in Hertz
         0,              //The time, in seconds, to fade the sound in
-        .15,               //The time, in seconds, to fade the sound out
+        .05,               //The time, in seconds, to fade the sound out
         'sine',                //waveform type: "sine", "triangle", "square", "sawtooth"
-        .15,         //The sound's maximum volume
+        .25,         //The sound's maximum volume
         0,            //The speaker pan. left: -1, middle: 0, right: 1
         0,                //The time, in seconds, to wait before playing the sound
-        180,     //The number of Hz in which to bend the sound's pitch down
+        HZ * 0.8,     //The number of Hz in which to bend the sound's pitch down
         false,             //If `reverse` is true the pitch will bend up
-        20,         //A range, in Hz, within which to randomize the pitch
-        2,          //A value in Hz. It creates 2 dissonant frequencies above and below the target pitch
-        [0.09, 0.1, 350]            //An array: [delayTimeInSeconds, feedbackTimeInSeconds, filterValueInHz]
+        50,         //A range, in Hz, within which to randomize the pitch
+        0,          //A value in Hz. It creates 2 dissonant frequencies above and below the target pitch
+        // [0.05, 0.1, 350]            //An array: [delayTimeInSeconds, feedbackTimeInSeconds, filterValueInHz]
         // [.8, 0.5, false]             //An array: [durationInSeconds, decayRateInSeconds, reverse]
       )
 
       g.wait(rate, () => o.attacked = false)
     }
   }
-  o.type = 'armedPleb'
-  // o.health = 100
-  // o.baseHealth = 100
+  o.type = 'Scout'
   o.damage = 21
-  o.range = 700
+  o.range = 300
   o.attackRate = 500
   o.targets = enemies
   o.weaponAngle = (PI / 2) + 0.1
@@ -422,7 +461,6 @@ const makeArmed = (o) => {
 
 const makePleb = (o) => {
   const twoEyes = makeTwoEyes(0, 8)
-  o.type = 'Pleb'
   o.twoEyes = twoEyes
   o.addChild(twoEyes)
   const playerHand = o.playerHand
@@ -441,6 +479,10 @@ const createArmedPleb = (x = 0, y = 0) => {
 
 const createPleb = (x, y) => {
  const o = {}
+ o.type = 'Pleb'
+ o.mined = false
+ o.isMining = false
+ o.readyForOrder = true
  o.health = 50
  o.baseHealth = o.health
  o.attack = () => {}
@@ -454,7 +496,7 @@ const createEnemyUnit = (x = 0, y = 0) => {
     type: 'invader',
     health: 100,
     damage: 9,
-    range: 700,
+    range: 300,
     weaponAngle: (PI / 2),
     weaponRotation: 0.4,
     targets: playerUnits,
@@ -464,6 +506,7 @@ const createEnemyUnit = (x = 0, y = 0) => {
   o.attack = (target) => {
     if(!o.attacked) {
       if (g.GlobalDistance(o, target) > o.range) {
+        // console.log(g.GlobalDistance(o, target))
         o.target = null
         return
       }
@@ -476,23 +519,23 @@ const createEnemyUnit = (x = 0, y = 0) => {
       o.playerHand.alwaysVisible = true
       o.twoEyes.alwaysVisible = true
 
+      const HZ = 3000
 
       g.soundEffect(
-        4000,      //The sound's fequency pitch in Hertz
+        HZ,      //The sound's fequency pitch in Hertz
         0,              //The time, in seconds, to fade the sound in
-        .1,               //The time, in seconds, to fade the sound out
-        'square',                //waveform type: "sine", "triangle", "square", "sawtooth"
-        .3,         //The sound's maximum volume
+        .09,               //The time, in seconds, to fade the sound out
+        'triangle',                //waveform type: "sine", "triangle", "square", "sawtooth"
+        .05,         //The sound's maximum volume
         0,            //The speaker pan. left: -1, middle: 0, rdight: 1
         0,                //The time, in seconds, to wait before playing the sound
-        3500,     //The number of Hz in which to bend the sound's pitch down
+        HZ * .9,     //The number of Hz in which to bend the sound's pitch down
         false,             //If `reverse` is true the pitch will bend up
         0,         //A range, in Hz, within which to randomize the pitch
         0,          //A value in Hz. It creates 2 dissonant frequencies above and below the target pitch
-        [0.1, .24, 4000]                //An array: [delayTimeInSeconds, feedbackTimeInSeconds, filterValueInHz]
+        // [0.09, .04, 3000]                //An array: [delayTimeInSeconds, feedbackTimeInSeconds, filterValueInHz]
         // [.1, .1, true]             //An array: [durationInSeconds, decayRateInSeconds, reverse]
       )
-
 
 
       target.getHit(o.damage)
@@ -520,19 +563,17 @@ const createEnemyUnit = (x = 0, y = 0) => {
   return o
 }
 
-const shotHit = (hit = 1, tx = g.pointer.x - world.x, ty = g.pointer.y - world.y) => {
-  if (hit) {
-    console.log('hit')
-  } else {
-    const shot = bulletImpact(tx, ty)
-    floorLayer.addChild(shot)
-    shots.push(shot)
+const shotHit = (tx = g.pointer.shiftedX, ty = g.pointer.shiftedY) => {
+  // const shot = bulletImpact(tx, ty)
+  const shot = bulletImpact(tx, ty)
+  floorLayer.addChild(shot)
+  shots.push(shot)
 
-    g.wait(170, () => {
-      g.remove(shot)
-      removeItem(shots, shot)
-    })
-  }
+  g.wait(170, () => {
+    g.remove(shot)
+    removeItem(shots, shot)
+  })
+  
 }
 
 export { 

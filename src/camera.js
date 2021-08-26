@@ -9,6 +9,10 @@ const initUnitCamera = () => {
   camCenterY = g.stage.height / 2
   middlePoint = makeRectangle(1, 1, '', 0)
   middlePoint.alpha = 0
+
+  world.x = -g.stage.width / 4
+  world.y = 150
+
 }
 const centerUnitCamera = () => {
   middlePoint.x = (g.pointer.x + currentPlayer.gx + currentPlayer.halfWidth) * 0.5

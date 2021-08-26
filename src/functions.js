@@ -50,6 +50,7 @@ const simpleButton = (
   yPos = 10, 
   textX = 10, 
   textY = 10, 
+  size = 42,
   action = () => console.log(text), 
   width = 170, 
   height = 80,
@@ -57,7 +58,8 @@ const simpleButton = (
   ) => {
   const button = makeRectangle(width, height, color, 1, xPos, yPos)
   button.action = action
-  const tSize = 90 - (text.length * 8)
+  // const tSize = 80 - (text.length * 10)
+  const tSize = size
   makeText(button, text, `${tSize}px arial`, '#FFF', textX, textY)
   return button
 }
@@ -167,20 +169,30 @@ const sortUnits = (array, x, y, moveArray) => {
   for (let i in array) {
     const u = array[i]
 
+    u.getInRange = false
     u.isCollided = false
     u.target = null
-    // u.attacked = false
+    u.isSeeking = false
 
-    const dX = x + (i % size) * (maxWidth + xSpace) - midX
-    const dY = y + Math.floor(i / size) * (maxHeight + ySpace) - midY
-    u.destinationX = dX //- world.x
-    u.destinationY = dY
-    // tempIndicator(dX, dY, 500, '#0FF', 50)
-    const xV = dX - u.x
-    const yV = dY - u.y
-    const mag = Math.sqrt((Math.pow(xV, 2)) + (Math.pow(yV, 2)))
-    u.vx = (xV / mag)
-    u.vy = (yV / mag)
+    if (u.isMining) {
+      u.isMining = false
+      u.readyForOrder = true
+    }
+
+    // const dX = x + (i % size) * (maxWidth + xSpace) - midX
+    // const dY = y + Math.floor(i / size) * (maxHeight + ySpace) - midY
+    // u.destinationX = dX
+    // u.destinationY = dY
+    
+    u.destinationX = x + (i % size) * (maxWidth + xSpace) - midX
+    u.destinationY = y + Math.floor(i / size) * (maxHeight + ySpace) - midY
+    setDirection(u)
+    // const xV = dX - u.x
+    // const yV = dY - u.y
+    // const mag = Math.sqrt((Math.pow(xV, 2)) + (Math.pow(yV, 2)))
+    // u.vx = (xV / mag)
+    // u.vy = (yV / mag)
+
     if (moveArray.findIndex((e) => e == u) == -1) {
       u.isMoving = true
       moveArray.push(u)
@@ -188,17 +200,17 @@ const sortUnits = (array, x, y, moveArray) => {
   }
 }
 const setDirection = (u) => {
-  const xV = u.destinationX - u.x
-  const yV = u.destinationY - u.y
-  const mag = Math.sqrt((Math.pow(xV, 2)) + (Math.pow(yV, 2)))
-  u.vx = (xV / mag)
-  u.vy = (yV / mag)
+  const xD = u.destinationX - u.x
+  const yD = u.destinationY - u.y
+  const mag = Math.sqrt(xD**2 + yD**2)
+  u.vx = (xD / mag)
+  u.vy = (yD / mag)
 }
 const newMoveX = (u) => {
   const xD = u.destinationX - u.x
   const xd = Math.abs(xD)
   if (!u.isCollidingV) {
-    if (xd > u.speed) {
+    if (xd > u.speed + (u.getInRange ? u.range / Math.sqrt(2) - 35 : 0)) {
       u.x += u.vx * u.speed
       if (u.obstacles.length > 0) {
         if (xD != 0) aroundAll(u, 1)
@@ -213,7 +225,7 @@ const newMoveY = (u) => {
   const yD = u.destinationY - u.y
   const yd = Math.abs(yD)
   if (!u.isCollidingH) {
-    if (yd > u.speed) {
+    if (yd > u.speed + (u.getInRange ? u.range / Math.sqrt(2) - 35 : 0)) {
       u.y += u.vy * u.speed
       if (u.obstacles.length > 0) {
         if (yD != 0) aroundAll(u, 0)
@@ -229,7 +241,9 @@ const newMoveTest = (u) => {
 
   if (!x && !y) {
     removeItem(movingUnits, u)
+    u.getInRange = false
     u.isMoving = false
+    // u.scanForTargets(u.targets)
   }
 }
 const scan = (u, delay = 400, distance = OBSDIST_UNDERGROUND) => {
@@ -275,4 +289,4 @@ const playerDie = (o) => {
 
 
 
-export { simpleButton, checkCollisions, removeItem, randomNum, getUnitVector, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle, playerDie, setCellValue, canBuildHere }
+export { setDirection, simpleButton, checkCollisions, removeItem, randomNum, getUnitVector, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle, playerDie, setCellValue, canBuildHere }

@@ -247,9 +247,11 @@ export var GA = {
       if (p.x < s.gx || p.x > s.gx + s.width || p.y < s.gy || p.y > s.gy + s.height) return false
       return true
     }
-    g.GlobalDistance = (a, b, aOffX = 0, aOffY = 0) => {return Math.sqrt(Math.pow(((b.centerX) - (a.centerX + aOffX)), 2) + Math.pow(((b.centerY) - (a.centerY + aOffY)), 2))}
+    g.GlobalDistance = (a, b, aOffX = 0, aOffY = 0) => {
 
 
+      return Math.sqrt( ( b.centerX - a.centerX + aOffX)**2 + ( b.centerY - a.centerY + aOffY)**2 )
+    }
 
     g.actx = new AudioContext()
 
@@ -269,26 +271,8 @@ export var GA = {
       reverb               //An array: [durationInSeconds, decayRateInSeconds, reverse]
     ) {
     
-      //Set the default values
-      if (frequencyValue === undefined) frequencyValue = 200;
-      if (attack === undefined) attack = 0;
-      if (decay === undefined) decay = 1;
-      if (type === undefined) type = "sine";
-      if (volumeValue === undefined) volumeValue = 1;
-      if (panValue === undefined) panValue = 0;
-      if (wait === undefined) wait = 0;
-      if (pitchBendAmount === undefined) pitchBendAmount = 0;
-      if (reverse === undefined) reverse = false;
-      if (randomValue === undefined) randomValue = 0;
-      if (dissonance === undefined) dissonance = 0;
-      if (echo === undefined) echo = undefined;
-      if (reverb === undefined) reverb = undefined;
-    
-      //The audio context
       var actx = g.actx;
     
-      //Create an oscillator, gain and pan nodes, and connect them
-      //together to the destination
       var oscillator, volume, pan;
       oscillator = actx.createOscillator();
       volume = actx.createGain();
@@ -384,19 +368,19 @@ export var GA = {
       }
   
       //The `fadeIn` function
-      function fadeIn(volumeNode) {
+      // function fadeIn(volumeNode) {
   
-        //Set the volume to 0 so that you can fade
-        //in from silence
-        volumeNode.gain.value = 0;
+      //   //Set the volume to 0 so that you can fade
+      //   //in from silence
+      //   volumeNode.gain.value = 0;
   
-        volumeNode.gain.linearRampToValueAtTime(
-          0, actx.currentTime + wait
-        );
-        volumeNode.gain.linearRampToValueAtTime(
-          volumeValue, actx.currentTime + wait + attack
-        );
-      }
+      //   volumeNode.gain.linearRampToValueAtTime(
+      //     0, actx.currentTime + wait
+      //   );
+      //   volumeNode.gain.linearRampToValueAtTime(
+      //     volumeValue, actx.currentTime + wait + attack
+      //   );
+      // }
   
       //The `fadeOut` function
       function fadeOut(volumeNode) {

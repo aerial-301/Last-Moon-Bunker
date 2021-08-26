@@ -1,7 +1,7 @@
-import { currentAction, g, playerUnits, selectedUnits, movingUnits, enemies, attackingTarget, solids, bluePrint, cellSize } from './main.js'
-import { gridMap } from './main/mainSetUp/initMap.js'
+import { currentAction, g, playerUnits, selectedUnits, movingUnits, enemies, attackingTarget, solids, bluePrint, cellSize, units, miners } from './main.js'
+import { gridMap, mine } from './main/mainSetUp/initMap.js'
 import { uiLayer, world, floorLayer } from './main/mainSetUp/initLayers.js'
-import { getUnitVector, sortUnits, setCellValue } from './functions.js'
+import { getUnitVector, sortUnits, setCellValue, setDirection, removeItem } from './functions.js'
 import { actionMark, makeRectangle, makeSelectionBox, turret } from './drawings.js'
 import { currentPlayer, MK } from './keyboard.js'
 import { buttons } from './main/mainSetUp/initBottomPanel.js'
@@ -97,16 +97,70 @@ const rightMouseDown = () => {
               const a = actionMark(0, 0, true)
               enemy.addChild(a)
               g.wait(300, () => g.remove(a))
+
               selectedUnits.forEach(unit => {
-                unit.isMoving = false
-                unit.target = enemy
-                attackingTarget.push(unit)
+                if (g.GlobalDistance(unit, enemy) > unit.range) {
+                  unit.destinationX = enemy.centerX - world.x
+                  unit.destinationY = enemy.centerY - world.y
+                  unit.goal = enemy
+                  setDirection(unit)
+                  unit.getInRange = true
+                  unit.isSeeking = true
+
+                  if (!unit.isMoving) {
+                    unit.isMoving = true
+                    movingUnits.push(unit)
+                  }
+
+                } else {
+                  unit.isMoving = false
+                  unit.target = enemy
+                  attackingTarget.push(unit)
+                }
+
               })
+
+              // selectedUnits.forEach(unit => {
+              // })
               return
             }   
           }
         }
-        sortUnits(selectedUnits, g.pointer.x - world.x, g.pointer.y - world.y, movingUnits)
+
+
+        const dis = g.GlobalDistance(mine, g.pointer)
+        // console.log(dis)
+
+        if (dis < 25) {
+          selectedUnits.forEach(unit => {
+            if (unit.type == 'Pleb') {
+
+              unit.readForOrders = true
+              
+              if (!unit.isMining) {
+                unit.isMining = true
+                miners.push(unit)
+              }
+              
+              
+
+              if (!unit.isMoving) {
+                unit.isMoving = true
+                movingUnits.push(unit)
+              }
+              // unit.destinationX = mine.centerX
+              // unit.destinationy = mine.centerY
+              // setDirection(unit)
+              // unit.isMoving = true
+            }
+          })
+
+          return
+        }
+
+
+        
+        sortUnits(selectedUnits, g.pointer.shiftedX, g.pointer.shiftedY, movingUnits)
       }
 
     }

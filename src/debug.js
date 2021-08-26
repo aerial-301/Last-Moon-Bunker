@@ -9,11 +9,12 @@ const debugShape = (shape) => {
     shape.height,
     'white',
     0,
-    shape.gx,
-    shape.gy
+    // shape.gx,
+    // shape.gy
   )
-  s.alpha = 0.1
-  g.stage.addChild(s)
+  s.alpha = 0.8
+  // g.stage.addChild(s)
+  shape.addChild(s)
   return s
 }
 

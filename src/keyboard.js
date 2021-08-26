@@ -1,8 +1,7 @@
 import { world, objLayer } from './main/mainSetUp/initLayers.js'
-import { g, selectedUnits, movingUnits, attackingTarget } from './main.js'
+import { g, selectedUnits, movingUnits, attackingTarget, summonWave } from './main.js'
 import { checkCollisions, removeItem } from './functions.js'
 import { bottomPanel } from './main/mainSetUp/initBottomPanel.js'
-import { blackHB, yellowHB, HB } from './main/mainSetUp/initUIHB.js'
 // import { debugShape, tempIndicator } from '../extra/debug.js'
 let currentPlayer, MK
 
@@ -26,6 +25,10 @@ window.addEventListener('keyup', (k) => {
       if (Object.values(keys).every(v => v === false)) currentPlayer.isMoving = false
     }
     
+    
+
+
+
     // if (k.key === 'p') moveSpeed += 100
     // if (k.key === 'o') moveSpeed -= 100
 
@@ -53,6 +56,9 @@ window.addEventListener('keyup', (k) => {
     // }
 
   } else if (k.key === 'r') switchMode()
+
+  if (k.key === 'p') summonWave()
+  
 })
 
 const moveCamera = (surfaceWidth, surfaceHeight) => {
@@ -108,16 +114,21 @@ const switchMode = () => {
       removeItem(movingUnits, currentPlayer)
       removeItem(attackingTarget, currentPlayer)
       currentPlayer.deselect()
+      // currentPlayer.HB.alwaysVisible = true
+      // currentPlayer.yellowHB.alwaysVisible = true
       selectedUnits.length = 0
-      ;[blackHB, yellowHB, HB].forEach(i => i.visible = true)
-      ;[yellowHB, HB].forEach(i => {
-        i.width = (currentPlayer.health / currentPlayer.baseHealth) * 400 * currentPlayer.HBscale
-      })
+      // ;[blackHB, yellowHB, HB].forEach(i => i.visible = true)
+      // ;[yellowHB, HB].forEach(i => {
+      //   i.width = (currentPlayer.health / currentPlayer.baseHealth) * 400 * currentPlayer.HBscale
+      // })
     }
   }
   else {
     MK = false
-    ;[blackHB, yellowHB, HB].forEach(i => i.visible = false)
+    // ;[blackHB, yellowHB, HB].forEach(i => i.visible = false)
+    // ;[yellowHB, HB].forEach(i => currentPlayer[i].alwaysVisible = false)
+    // currentPlayer.HB.alwaysVisible = false
+    // currentPlayer.yellowHB.alwaysVisible = false
     bottomPanel.visible = true
     if (!currentPlayer.isDead) {
       currentPlayer.isMoving = false
