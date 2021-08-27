@@ -8,8 +8,8 @@ let mine, HQ, gridMap = []
 
 const initMap = (surfaceWidth, surfaceHeight, cellSize) => {
 
-  const rows = Math.floor(surfaceHeight / cellSize)
-  const cols = Math.floor(surfaceWidth / cellSize)
+  const rows = (surfaceHeight / cellSize) | 0
+  const cols = (surfaceWidth / cellSize) | 0
 
   for (let i = 0; i < rows; i++) {
     gridMap[i] = Array(cols).fill(0)
@@ -39,7 +39,7 @@ const initMap = (surfaceWidth, surfaceHeight, cellSize) => {
 
       if (row % 2 == 1) {
         if (Math.random() < 0.5) {
-          surfaceLine(randomNum(10, 170, 0), 10, cel * cellSize, row * cellSize + randomNum(-cellSize, cellSize), randomNum(1, 4), randomNum(0, 5, 0))
+          surfaceLine(randomNum(10, 170, 1), 10, cel * cellSize, row * cellSize + randomNum(-cellSize, cellSize, 1), randomNum(1, 4), randomNum(0, 5, 1))
         }
 
         if (Math.random() < 0.3) {

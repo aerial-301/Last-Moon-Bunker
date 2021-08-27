@@ -1,4 +1,4 @@
-import { g, units, bloodDrops, bloodLakes, shots } from "../../main.js"
+import { g, units, bloodDrops, fadeOuts, shots } from "../../main.js"
 import { removeItem } from "../../functions.js"
 
 const animateUnits = () => {
@@ -26,13 +26,14 @@ const animateBloodDrops = () => {
   }
 }
 
-const animateBloodLakes = () => {
-  if (bloodLakes.length > 0) {
-    bloodLakes.forEach(lake => {
-      if (lake.alpha > 0.1) lake.alpha -= 0.003
+
+const fadeOut = () => {
+  if (fadeOuts.length > 0) {
+    fadeOuts.forEach(s => {
+      if (s.alpha > 0.1) s.alpha -= s.fadeRate
       else {
-        g.remove(lake)
-        removeItem(bloodLakes, lake)
+        g.remove(s)
+        removeItem(fadeOuts, s)
       }
     })
   }
@@ -42,5 +43,5 @@ export const playAnimations = () => {
   animateUnits()
   animateBulletImpact()
   animateBloodDrops()
-  animateBloodLakes()
+  fadeOut()
 }

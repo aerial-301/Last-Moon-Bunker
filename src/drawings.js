@@ -1,6 +1,6 @@
-import { solids, g, playerUnits, armedUnits, enemies, bloodDrops, bloodLakes, K } from "./main.js"
+import { solids, g, playerUnits, armedUnits, enemies, bloodDrops, fadeOuts, K } from "./main.js"
 import { gridMap } from "./main/mainSetUp/initMap.js"
-import { world, floorLayer, objLayer } from "./main/mainSetUp/initLayers.js"
+import { world, floorLayer, objLayer, uiLayer } from "./main/mainSetUp/initLayers.js"
 import { makeMovableObject, makeBasicObject, moreProperties } from "./unitObject.js"
 import { playerDie, randomNum, removeItem, setCellValue } from "./functions.js"
 
@@ -102,13 +102,35 @@ const makeSlash = (n) => {
   return o
 }
 
+const makeHead = () => {
+  const o = {
+    c1: '#222',
+    c2: '#555',
+  }
+  o.render = (c) => {
+    const grad = c.createRadialGradient(2, -3, 27, 10, -20,0)
+    grad.addColorStop(0, o.c1)
+    grad.addColorStop(0.1, o.c2)
+    c.strokeStyle = K.b
+    c.fillStyle = grad
+    c.lineWidth = 2
+    BP(c)
+    c.arc(0, 0, 25, 0, 2 * PI, false)
+    SK(c)
+    FL(c)
+  } 
+  makeBasicObject(o)
+  o.head = o
+  return o
+}
+
 const makeTwoEyes = (x = 0, y = 0) => {
   const o = {
     render(c) {
       // const LL = (x, y) => c.lineTo(x, y)
-      c.lineJoin = 'round'
-      c.strokeStyle = '#000'
-      c.fillStyle = 'red'
+      // c.lineJoin = 'round'
+      c.strokeStyle = K.b
+      c.fillStyle = K.r
       c.lineWidth = 0.7
       // c.beginPath()
       BP(c)
@@ -231,27 +253,7 @@ const makeHeadDetails = () => {
   makeBasicObject(o, 0, 0)
   return o
 }
-const makeHead = () => {
-  const o = {
-    c1: '#222',
-    c2: '#555',
-  }
-  o.render = (c) => {
-    const grad = c.createRadialGradient(2, -3, 27, 10, -20,0)
-    grad.addColorStop(0, o.c1)
-    grad.addColorStop(0.1, o.c2)
-    c.strokeStyle = K.b
-    c.fillStyle = grad
-    c.lineWidth = 2
-    BP(c)
-    c.arc(0, 0, 25, 0, 2 * PI, false)
-    SK(c)
-    FL(c)
-  } 
-  makeBasicObject(o)
-  o.head = o
-  return o
-}
+
 const bulletImpact = (x, y) => {
   const o = {
     render(c) {
@@ -301,7 +303,7 @@ const laser = (shooterX, shooterY, targetX, targetY) => {
   makeBasicObject(o, 0, 0, 1, 1)
   return o
 }
-const actionMark = (x = 0, y = 0, attack = true) => {
+const actionMark = (p, x = 0, y = 0, attack = true) => {
   const o = {
     render(c) {
       c.lineWidth = 8
@@ -321,6 +323,13 @@ const actionMark = (x = 0, y = 0, attack = true) => {
     } 
   }
   makeBasicObject(o, x, y, 10, 10)
+  p.addChild(o)
+  o.fadeRate = 0.1
+  fadeOuts.push(o)
+
+
+
+
   return o
 }
 // const moonSurface1 = (w, h) => {
@@ -339,19 +348,17 @@ const actionMark = (x = 0, y = 0, attack = true) => {
 const moonGround = (w, h) => {
   const o = {
     render(c) {
-      // c.strokeStyle = '#FFF'
-      // c.lineWidth = 2
-      // const grad = c.createLinearGradient(surfaceWidth /10, -surfaceHeight * 2, -surfaceWidth / 2, surfaceHeight)
-      const grad = c.createLinearGradient(0, 0, -100, 500)
-      grad.addColorStop(0, '#444')
-      grad.addColorStop(0.2, '#333')
-      // grad.addColorStop(0.3, '#333')
-      grad.addColorStop(1, '#222')
-      // grad.addColorStop(1, '#111')
-      BP(c)
-      c.rect(-w / 2, -h/2, w, h)
-      c.fillStyle = grad
-      FL(c)
+      // const grad = c.createLinearGradient(0, 0, -100, 500)
+      // grad.addColorStop(0, '#444')
+      // grad.addColorStop(0.2, '#333')
+      // grad.addColorStop(1, '#222')
+
+      // c.fillStyle = '#444'
+
+      // BP(c)
+      // c.rect(-w / 2, -h/2, w, h)
+      // c.fillStyle = '#444'
+      // FL(c)
     }
   }
   makeBasicObject(o, 0, 0, w, h)
@@ -394,6 +401,10 @@ const makeHQ = (x, y, cellSize) => {
   playerUnits.push(o)
   return o
 }
+
+
+
+
 const turret = (x, y, cellSize) => {
   const w = cellSize * .8
   const barrel = {
@@ -578,7 +589,7 @@ const moonHole = (d, x, y) => {
   b.rotation = PI
 
   const base = {}
-  makeBasicObject(base, Math.floor(x - d / 1.8), Math.floor(y - d * 0.1), Math.floor(d * 2.2), Math.floor(d * 1.2))
+  makeBasicObject(base, (x - d / 1.8) | 0, (y - d * 0.1) | 0, (d * 2.2) | 0, (d * 1.2) | 0)
   objLayer.addChild(base)
   solids.push(base)
   return o
@@ -785,8 +796,64 @@ const bloodLake = (x, y) => {
   }
   makeBasicObject(o, x, y)
   floorLayer.addChild(o)
-  bloodLakes.push(o)
+  o.fadeRate = 0.003
+  fadeOuts.push(o)
 }
+
+const makeGold = (x = 0, y = 0) => {
+  const o = {
+    render(c) {
+      c.strokeStyle = K.b
+      c.fillStyle = '#fb5'
+      c.lineWidth = 5
+      BP(c)
+      c.rect(-6, -12, 12, 24)
+      SK(c)
+      FL(c)
+    }
+  }
+  makeBasicObject(o, x, y)
+  // uiLayer.addChild(o)
+  return o
+}
+
+const renderTurret = (x, y) => {
+  const w = 40
+  const barrel = {
+    render(c) {
+      c.strokeStyle = '#999'
+      c.fillStyle = K.b
+      BP(c)
+      c.arc(0, 0, 2, 0, 2*PI)
+      FL(c)
+      SK(c)
+    }
+  }
+
+  const o = {
+    render(c) {
+      const grad = c.createLinearGradient(w, 0, 0, w)
+      grad.addColorStop(0, '#555')
+      grad.addColorStop(1, '#222')
+      c.fillStyle = grad
+      c.lineWidth = 2
+      BP(c)
+      c.ellipse(0, w * 0.3, w/2, w/2, 0, 0, PI, true)
+      c.closePath()
+      FL(c)
+      SK(c)
+    },
+  }
+
+  makeBasicObject(barrel, 0, 0)
+  makeBasicObject(o, x, y)
+  moreProperties(o)
+  o.addChild(barrel)
+
+ return o
+
+}
+
 
 
 export { 
@@ -816,6 +883,8 @@ export {
   makeBluePrint,
   bloodDrop,
   bloodLake,
-  makeMine
+  makeMine,
+  makeGold,
+  renderTurret
   
  }

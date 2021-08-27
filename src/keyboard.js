@@ -1,9 +1,10 @@
 import { world, objLayer } from './main/mainSetUp/initLayers.js'
-import { g, selectedUnits, movingUnits, attackingTarget, summonWave } from './main.js'
-import { checkCollisions, removeItem } from './functions.js'
+import { g, selectedUnits, movingUnits, attackingTarget, summonWave, currentAction, tip, playerUnits, surfaceWidth, surfaceHeight } from './main.js'
+import { checkCollisions, removeItem, setDirection } from './functions.js'
 import { bottomPanel } from './main/mainSetUp/initBottomPanel.js'
+import { HQ } from './main/mainSetUp/initMap.js'
 // import { debugShape, tempIndicator } from '../extra/debug.js'
-let currentPlayer, MK
+let currentPlayer, UC
 
 const keys = {
   'w': false,
@@ -15,13 +16,15 @@ const keys = {
 window.addEventListener('keydown', (k) => {
   if (k.key in keys) {
     keys[k.key] = true
-    if (MK) currentPlayer.isMoving = true
+    if (UC) currentPlayer.isMoving = true
+
+    // currentAction.UIupdated = false
   }
 })
 window.addEventListener('keyup', (k) => {
   if (k.key in keys) {
     keys[k.key] = false
-    if (MK) {
+    if (UC) {
       if (Object.values(keys).every(v => v === false)) currentPlayer.isMoving = false
     }
     
@@ -104,9 +107,11 @@ const movePlayer = () => {
 
 
 const switchMode = () => {
-  if (!MK) {
+  if (!UC) {
     if (selectedUnits.length === 1) {
-      MK = true
+      UC = true
+      tip.visible = false
+      // tip.visible = false
       bottomPanel.visible = false
       currentPlayer = selectedUnits[0]
       currentPlayer.isMoving = false
@@ -124,7 +129,17 @@ const switchMode = () => {
     }
   }
   else {
-    MK = false
+    UC = false
+
+    // playerUnits.forEach(unit => {
+    //   if (unit.gx < 0 || unit.gx > surfaceWidth || unit.gy > surfaceHeight) {
+    //     unit.destinationX = HQ.gx - world.x
+    //     unit.destinationY = HQ.gy - world.y
+    //     setDirection(unit)
+    //     unit.isMoving = true
+    //     movingUnits.push(unit)
+    //   }
+    // })
     // ;[blackHB, yellowHB, HB].forEach(i => i.visible = false)
     // ;[yellowHB, HB].forEach(i => currentPlayer[i].alwaysVisible = false)
     // currentPlayer.HB.alwaysVisible = false
@@ -172,5 +187,5 @@ export {
   movePlayer,
   switchMode,
   currentPlayer,
-  MK
+  UC
 }

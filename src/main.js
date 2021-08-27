@@ -2,10 +2,10 @@ import { GA } from './ga_minTest.js'
 import { initCanvasEvents } from './main/mainSetUp/initCanvas.js'
 import { initLayers, objLayer, uiLayer, world } from './main/mainSetUp/initLayers.js'
 import { HQ, initMap, mine } from './main/mainSetUp/initMap.js'
-import { initBottomPanel } from './main/mainSetUp/initBottomPanel.js'
+import { bottomPanel, buttons, initBottomPanel, prices } from './main/mainSetUp/initBottomPanel.js'
 import { initSelectionBox} from './mouse.js'
 import { initUnitCamera } from './camera.js'
-import { makeBluePrint } from './drawings.js'
+import { makeBluePrint, makeGold, makeRectangle } from './drawings.js'
 
 import { newMainPlayer, createEnemyUnit, createArmedPleb, createPleb, makeText } from './unitObject.js'
 
@@ -15,8 +15,9 @@ import { playAnimations } from './main/mainLoop/playAnimations.js'
 import { lookForTargets } from './main/mainLoop/lookForTargets.js'
 import { attackTarget } from './main/mainLoop/attackTarget.js'
 import { showBluePrint } from './main/mainLoop/showBluePrint.js'
-import { randomNum, removeItem, setDirection } from './functions.js'
+import { randomNum, removeItem, setDirection, simpleButton } from './functions.js'
 import { debugShape } from './debug.js'
+import { currentPlayer, UC } from './keyboard.js'
 
 // import { debugShape } from './debug.js'
 
@@ -26,6 +27,7 @@ const cellSize = 73
 
 export const currentAction = {
   placingBuilding: false,
+  // UIupdated: false,
 }
 
 export const K = {
@@ -42,7 +44,7 @@ let gold
 const PI = Math.PI
 
 let player
-let MK = false
+// let UC = false
 let playerUnits = []
 let maze
 let g
@@ -60,13 +62,14 @@ let bloodSplats = []
 let shots = []
 let attackingTarget = []
 let bloodDrops = []
-let bloodLakes = []
+let fadeOuts = []
 
 let miners = []
 
 let placingBuilding = false
 let bluePrint
 
+let tip
 
 
 
@@ -80,25 +83,19 @@ const summonWave = () => {
   if (readyToSummon) {
     // readyToSummon = false
 
-
-    
     if (firstWaveDelay) {
 
       console.log('new wave !')
 
-      
-      for (let i = 0; i < 15; i++) {
-        const enemy = createEnemyUnit(-500 + i * 550, surfaceHeight)
+      for (let i = 0; i < 7; i++) {
+        const enemy = createEnemyUnit(i * 350, surfaceHeight)
         objLayer.addChild(enemy)
         units.push(enemy)
         enemies.push(enemy)
         enemy.destinationX = HQ.centerX - world.x
         enemy.destinationY = HQ.centerY - world.y
         setDirection(enemy)
-        // debugShape(enemy)
         enemy.getInRange = true
-        // enemy.spaceX = enemy.range //- enemy.halfWidth
-        // enemy.spaceY = enemy.range //- enemy.halfHeight
         enemy.isMoving = true
         movingUnits.push(enemy)
         
@@ -117,22 +114,10 @@ const summonWave = () => {
 
 }
 
-const play = () => {
-
-  playerInput()
-
-  moveUnits()
-    
-  playAnimations()
-  
-  lookForTargets()
-  
-  attackTarget()
-  
-  showBluePrint()
 
 
 
+const moveMiners = () => {
   if (miners.length > 0) {
     miners.forEach(miner => {
       if (!miner.isMining) {
@@ -175,44 +160,94 @@ const play = () => {
           miner.readyForOrder = true
         }
       }
-        
-        
-
     })
   }
+}
+
+let tipSet = false
+
+const showTip = () => {
+
+  if (!UC) {
+    // console.log(UC)
+    if (g.pointer.y > g.stage.height - 100) {
+      for (let i in buttons) {
+        if (g.hitTestPoint(g.pointer, buttons[i])) {
+          tip.x = g.pointer.x
+          tip.y = g.pointer.y - tip.height
+          tip.text.content = `x${prices[i]}`
+          
+          if (!tipSet) {
+            tipSet = true
+            g.wait(150, () => tip.visible = true)
+          }
+          
+        }
+      }
+    } else {
+      if (tipSet) {
+        tipSet = false
+        tip.visible = false
+      }
+    }
+
+  }
+
+}
+
+
+const play = () => {
+
+  playerInput()
+
+  moveUnits()
+    
+  playAnimations()
+  
+  lookForTargets()
+  
+  attackTarget()
+  
+  showBluePrint()
+
+  moveMiners()
+
+  showTip()
 
   // summonWave()
+
+
+
+
+
 
   // const hx = HQ.centerX.toFixed(1)
   // const hy = HQ.centerY.toFixed(1)
   // const ex = enemies[0].centerX.toFixed(1)
   // const ey = enemies[0].centerY.toFixed(1)
   
-  if (units.length > 0) {
-
-
-    const u = units[0]
-
-    debugText.content = `
-    isMining = ${u.isMining}
-    isMoving = ${u.isMoving}
-    movers = ${movingUnits.length}
-    miners = ${miners.length}
-    d = ${g.GlobalDistance(u, mine).toFixed(2)}
-    d = ${g.GlobalDistance(u, HQ).toFixed(2)}
-    `
-
-  }
+  // if (units.length > 0) {
+  //   const u = units[0]
+    // debugText.content = `
+    // xy = ${world.x}, ${world.y}
+    // `
+  // }
 
 
 
 }
 
 const initialStuff = () => {
-  // player = newMainPlayer(200, 180)
-  // objLayer.addChild(player)
-  // playerUnits.push(player)
-  // units.push(player)
+
+
+  // const G = makeGold(65,20)
+  // bottomPanel.addChild(G)
+
+
+  player = newMainPlayer(200, 180)
+  objLayer.addChild(player)
+  playerUnits.push(player)
+  units.push(player)
 
   // const enemy = createEnemyUnit(100, 200)
   // objLayer.addChild(enemy)
@@ -249,10 +284,16 @@ const setup = () => {
 
 
 
-  const states = makeText(uiLayer, 'Gold = 0', '32px arial', 'white')
+  // const states = makeText(uiLayer, 'Gold = 0', '32px arial', 'white')
 
 
-
+  // const tip = makeRectangle(200, 100, K.b, 0, 0, 0)
+  tip = simpleButton('x25', 100, 0, 60, 20, 32, () => {}, 150, 80, K.b)
+  tip.alpha = 0.7
+  const mg = makeGold(20, 10)
+  tip.addChild(mg)
+  uiLayer.addChild(tip)
+  tip.visible = false
 
 
 
@@ -269,6 +310,6 @@ g = GA.create(setup)
 g.start()
 
 
-export { miners, summonWave, PI, g, units, enemies, alertedEnemies, shots, selectedUnits, movingUnits, solids, playerUnits, bloods, bloodSplats, maze, MK, attackingTarget, armedUnits, placingBuilding, bluePrint, bloodDrops, bloodLakes, cellSize
+export { tip, miners, summonWave, PI, g, units, enemies, alertedEnemies, shots, selectedUnits, movingUnits, solids, playerUnits, bloods, bloodSplats, maze, UC, attackingTarget, armedUnits, placingBuilding, bluePrint, bloodDrops, fadeOuts, cellSize
 }
 

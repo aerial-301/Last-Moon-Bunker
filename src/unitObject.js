@@ -1,7 +1,7 @@
 import { enemies, g, PI, selectedUnits, shots, attackingTarget, playerUnits, units } from './main.js'
 import { playerDie, newMoveTest, randomNum, removeItem, roll, scan, tempAngle } from './functions.js'
 import { gun, makeLeg, makeHeadDetails, makeBorder, makeRectangle, makeTwoEyes, makeThirdEye, makeSlash, bulletImpact, makeHead, newMakeEnemyEyes, bloodDrop } from './drawings.js'
-import { world, floorLayer } from './main/mainSetUp/initLayers.js'
+import { world, floorLayer, space } from './main/mainSetUp/initLayers.js'
 // import { debugShape } from './debug.js'
 import { currentPlayer } from './keyboard.js'
 
@@ -165,7 +165,7 @@ const makeUnitObject = (o, n = 0, x = 0, y = 0) => {
         o.offsetCounter = 0
         o.idleOffset = 1
       }
-      if (o.type == 'MK') o.thirdEye.y = o.twoEyes.y
+      if (o.type == 'UC') o.thirdEye.y = o.twoEyes.y
       o.twoEyes.y = o.head.y + (o.type=='Pleb'?8:0)
       o.head.y += o.idleOffset
       o.offsetCounter += o.idleOffset
@@ -195,7 +195,7 @@ const makeUnitObject = (o, n = 0, x = 0, y = 0) => {
       o.rightLeg.y = o.oldLegOffset3
       o.head.y = -Math.abs(o.legOffset) - 7
       o.twoEyes.y = o.head.y + (o.type == 'Pleb'? 10:0)
-      if (o.type == 'MK') o.thirdEye.y = o.twoEyes.y
+      if (o.type == 'UC') o.thirdEye.y = o.twoEyes.y
       if (o.moveCounter >= 15) o.legOffset -= 5
       else if (o.moveCounter <= 15) o.legOffset += 5
       g.wait(20, () => o.moveAnimated = false)
@@ -229,6 +229,7 @@ const makePlayerUnitObject = (o, n = 1, x = 0, y = 0, w = 50, h = 50) => {
     o.HB.visible = false
     o.yellowHB.visible = false
   }
+  // o.obstacles.push(space)
 }
 
 const makeMovableObject = (o, x = 0, y = 0, w = 50, h = 50) => {
@@ -244,7 +245,7 @@ const makeMovableObject = (o, x = 0, y = 0, w = 50, h = 50) => {
   o.getInRange = false
   o.scaned = false
   o.isMoving = false
-  o.obstacles = []
+  o.obstacles = [space]
   o.isCollided = false
   o.isColliding = false
   o.isCollidingH = false
@@ -291,7 +292,7 @@ const newMainPlayer = (x = 0, y = 0) => {
   const slash2 = makeSlash(0)
   const hitRange = 175
   const o = {
-    type: 'MK',
+    type: 'UC',
     health: 500,
     damage: 0,
     twoEyes: twoEyes,

@@ -7,8 +7,8 @@ let bluePrintMoved = false
 
 export const showBluePrint = () => {
   if (currentAction.placingBuilding) {
-    const col = Math.floor((g.pointer.shiftedX) / cellSize)
-    const row = Math.floor((g.pointer.shiftedY) / cellSize)
+    const col = ((g.pointer.shiftedX) / cellSize) | 0
+    const row = ((g.pointer.shiftedY) / cellSize) | 0
     if (col != oldCol) {
       bluePrint.x = col * cellSize - cellSize / 2
       oldCol = col

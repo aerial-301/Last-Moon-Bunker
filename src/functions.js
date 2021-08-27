@@ -50,17 +50,17 @@ const simpleButton = (
   yPos = 10, 
   textX = 10, 
   textY = 10, 
-  size = 42,
+  size = 28,
   action = () => console.log(text), 
-  width = 170, 
+  width = 160, 
   height = 80,
-  color = '#0F0'
+  color = '#555'
   ) => {
   const button = makeRectangle(width, height, color, 1, xPos, yPos)
   button.action = action
   // const tSize = 80 - (text.length * 10)
   const tSize = size
-  makeText(button, text, `${tSize}px arial`, '#FFF', textX, textY)
+  if (text ) button.text = makeText(button, text, `${tSize}px arial`, '#FFF', textX, textY)
   return button
 }
 const aroundAll = (collider, H) => {
@@ -133,7 +133,7 @@ const checkCollisions = (side, collider = currentPlayer) => {
 }
 const randomNum = (min, max, int = 1) => {
     const r = Math.random() * (max - min) + min
-    return int ? Math.floor(r) : r
+    return int ? r | 0 : r
 }
 const removeItem = (array, item) => {
     const index = array.indexOf(item)
@@ -149,7 +149,7 @@ const getUnitVector = (a, b) => {
 const sortUnits = (array, x, y, moveArray) => {
   const len = array.length
   if (len == 0) return
-  const size = Math.floor(Math.sqrt(len))
+  const size = Math.sqrt(len) | 0
   let z = 1
   while (z < size) {
     if ((len - z) % size !== size - 1) z++
@@ -163,7 +163,7 @@ const sortUnits = (array, x, y, moveArray) => {
   const firstX = x
   const firstY = y
   const lastX = x + ((len - z) % size) * (maxWidth + 4) + maxWidth
-  const lastY = y + Math.floor((len - z) / size) * (maxHeight + 4) + maxHeight
+  const lastY = y + (0 | ((len - z) / size)) * (maxHeight + 4) + maxHeight
   const midX = (lastX - firstX) / 2
   const midY = (lastY - firstY) / 2
   for (let i in array) {
@@ -178,20 +178,10 @@ const sortUnits = (array, x, y, moveArray) => {
       u.isMining = false
       u.readyForOrder = true
     }
-
-    // const dX = x + (i % size) * (maxWidth + xSpace) - midX
-    // const dY = y + Math.floor(i / size) * (maxHeight + ySpace) - midY
-    // u.destinationX = dX
-    // u.destinationY = dY
     
     u.destinationX = x + (i % size) * (maxWidth + xSpace) - midX
-    u.destinationY = y + Math.floor(i / size) * (maxHeight + ySpace) - midY
+    u.destinationY = y + (0 | (i / size)) * (maxHeight + ySpace) - midY
     setDirection(u)
-    // const xV = dX - u.x
-    // const yV = dY - u.y
-    // const mag = Math.sqrt((Math.pow(xV, 2)) + (Math.pow(yV, 2)))
-    // u.vx = (xV / mag)
-    // u.vy = (yV / mag)
 
     if (moveArray.findIndex((e) => e == u) == -1) {
       u.isMoving = true
@@ -210,7 +200,7 @@ const newMoveX = (u) => {
   const xD = u.destinationX - u.x
   const xd = Math.abs(xD)
   if (!u.isCollidingV) {
-    if (xd > u.speed + (u.getInRange ? u.range / Math.sqrt(2) - 35 : 0)) {
+    if (xd > u.speed + (u.getInRange ? u.range / Math.sqrt(2) - 95 : 0)) {
       u.x += u.vx * u.speed
       if (u.obstacles.length > 0) {
         if (xD != 0) aroundAll(u, 1)
@@ -225,7 +215,7 @@ const newMoveY = (u) => {
   const yD = u.destinationY - u.y
   const yd = Math.abs(yD)
   if (!u.isCollidingH) {
-    if (yd > u.speed + (u.getInRange ? u.range / Math.sqrt(2) - 35 : 0)) {
+    if (yd > u.speed + (u.getInRange ? u.range / Math.sqrt(2) - 45 : 0)) {
       u.y += u.vy * u.speed
       if (u.obstacles.length > 0) {
         if (yD != 0) aroundAll(u, 0)

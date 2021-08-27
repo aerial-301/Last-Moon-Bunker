@@ -3,13 +3,15 @@ import { gridMap, mine } from './main/mainSetUp/initMap.js'
 import { uiLayer, world, floorLayer } from './main/mainSetUp/initLayers.js'
 import { getUnitVector, sortUnits, setCellValue, setDirection, removeItem } from './functions.js'
 import { actionMark, makeRectangle, makeSelectionBox, turret } from './drawings.js'
-import { currentPlayer, MK } from './keyboard.js'
+import { currentPlayer, UC } from './keyboard.js'
 import { buttons } from './main/mainSetUp/initBottomPanel.js'
 
 // import { debugShape } from './debug.js'
 let selectionBox
 let selectionStarted
 let boxSet
+
+let marked = false
 
 
 const initSelectionBox = () => {
@@ -24,7 +26,7 @@ const pointerDown = (e) => {
   else if (e.button === 2) rightMouseDown()
 }
 const pointerUp = (e) => {
-  if (MK) return false
+  if (UC) return false
   if (e.button === 0) leftMouseUp()
   else if (e.button === 2) rightMouseUp()
 }
@@ -32,7 +34,7 @@ const clickedBottomPanel = () => {
   if (g.pointer.y > g.stage.height - 100) return true
 }
 const leftMouseDown = () => {
-  if (!MK) {
+  if (!UC) {
     if (clickedBottomPanel()) {
 
       buttons.forEach(button => {
@@ -44,9 +46,9 @@ const leftMouseDown = () => {
     } else {
       if (currentAction.placingBuilding) {
         
-        const row = Math.floor((g.pointer.y - world.y) / cellSize)
+        const row = ((g.pointer.y - world.y) / cellSize) | 0
         if (row < 0) return
-        const cel = Math.floor((g.pointer.x - world.x) / cellSize)
+        const cel = ((g.pointer.x - world.x) / cellSize) | 0
 
         const currentCell = gridMap[row][cel]
 
@@ -72,13 +74,15 @@ const leftMouseDown = () => {
         
       } else {
         selectionStarted = true
-        selectionBox.alpha = 1
+        g.wait(20, () => selectionBox.alpha = 1)
       }
     }
   } else currentPlayer.attack()
 }
 const rightMouseDown = () => {
-  if (!MK) {
+  if (!UC) {
+
+    if (g.pointer.shiftedY < 80) return
 
     if (clickedBottomPanel()) {
       // nothing
@@ -94,9 +98,9 @@ const rightMouseDown = () => {
         if (enemies.length > 0) {
           for (const enemy of enemies) {
             if (g.GlobalDistance(enemy, g.pointer) <= 25) {
-              const a = actionMark(0, 0, true)
+
+              const a = actionMark(enemy, 0, 0, true)
               enemy.addChild(a)
-              g.wait(300, () => g.remove(a))
 
               selectedUnits.forEach(unit => {
                 if (g.GlobalDistance(unit, enemy) > unit.range) {
@@ -159,7 +163,7 @@ const rightMouseDown = () => {
         }
 
 
-        
+        actionMark(floorLayer, g.pointer.shiftedX, g.pointer.shiftedY, false)
         sortUnits(selectedUnits, g.pointer.shiftedX, g.pointer.shiftedY, movingUnits)
       }
 
@@ -168,17 +172,17 @@ const rightMouseDown = () => {
   } else {
     // if (!g.state) return false
     // if (g.state.name !== 'play') return false
-    if (currentPlayer.type == 'MK') {
+    if (currentPlayer.type == 'UC') {
       if (currentPlayer.rollOnCooldown) return false
       currentPlayer.rollOnCooldown = true
       const uv = getUnitVector(currentPlayer, g.pointer)
       currentPlayer.vx = uv.x
       currentPlayer.vy = uv.y
-      const sides = []
-      if (uv.x > 0) sides.push('left')
-      else sides.push('right')
-      if (uv.y > 0) sides.push('top')
-      else sides.push('down')
+      // const sides = []
+      // if (uv.x > 0) sides.push('left')
+      // else sides.push('right')
+      // if (uv.y > 0) sides.push('top')
+      // else sides.push('down')
       currentPlayer.isRolling = true
       currentPlayer.scan(1500, 350)
       currentPlayer.roll()

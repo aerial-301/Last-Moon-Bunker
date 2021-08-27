@@ -1,11 +1,11 @@
 import { g, surfaceHeight, surfaceWidth } from "../../main.js"
 import { centerUnitCamera } from "../../camera.js"
-import { movePlayer, moveCamera, currentPlayer, MK, switchMode } from "../../keyboard.js"
+import { movePlayer, moveCamera, currentPlayer, UC, switchMode } from "../../keyboard.js"
 import { tempAngle } from "../../functions.js"
 import { beginSelection } from "../../mouse.js"
 
 export const playerInput = ( player = currentPlayer) => {
-  if (MK) {
+  if (UC) {
     if (player.isDead) {
       switchMode()
       return

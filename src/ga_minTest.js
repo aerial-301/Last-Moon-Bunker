@@ -1,17 +1,19 @@
-import { world } from './main/mainSetUp/initLayers.js'
+import { randomNum } from './functions.js'
+import { currentAction } from './main.js'
+import { uiLayer, world } from './main/mainSetUp/initLayers.js'
 
 export var GA = {
   create(setup) {
     var g = {}
     g.canvas = document.getElementById('c')
-    g.canvas.style.backgroundColor = "black"
+    g.canvas.style.backgroundColor = '#333'
     g.canvas.ctx = g.canvas.getContext("2d")
     g.stage = makeStage()
     g.pointer = makePointer()
     g.state = undefined
     g.setup = setup
     g.paused = false
-    g._fps = 60
+    g._fps = 30
     g._startTime = Date.now()
     g._frameDuration = 1000 / g._fps
     g._lag = 0
@@ -28,6 +30,7 @@ export var GA = {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       g.stage.children.forEach(c => displaySprite(c))
       function displaySprite(s) {
+
         if (s.alwaysVisible || s.visible && s.gx < canvas.width + s.width && s.gx + s.width >= -s.width && s.gy < canvas.height + s.height && s.gy + s.height >= -s.height) {
           ctx.save()
           if (g.interpolate) {
@@ -43,6 +46,7 @@ export var GA = {
           ctx.globalAlpha = s.alpha
           ctx.rotate(s.rotation)
           ctx.scale(s.scaleX, s.scaleY)
+          if (s.blendMode)  ctx.globalCompositeOperation = s.blendMode;
           if (s.render) s.render(ctx)
           if (s.children && s.children.length > 0) {
             ctx.translate(-s.width * s.pivotX, -s.height * s.pivotY)
@@ -298,14 +302,14 @@ export var GA = {
       //than zero, a random pitch is selected that's within the range
       //specified by `frequencyValue`. The random pitch will be either
       //above or below the target frequency.
-      var frequency;
-      var randomInt = function(min, max){
-        return Math.floor(Math.random() * (max - min + 1)) + min
-      };
+      let frequency;
+      // var randomInt = function(min, max){
+      //   return Math.floor(Math.random() * (max - min + 1)) + min
+      // };
       if (randomValue > 0) {
-        frequency = randomInt(
+        frequency = randomNum(
           frequencyValue - randomValue / 2,
-          frequencyValue + randomValue / 2
+          frequencyValue + randomValue / 2, 1
         );
       } else {
         frequency = frequencyValue;
