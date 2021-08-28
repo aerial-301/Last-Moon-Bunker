@@ -425,7 +425,7 @@ const turret = (x, y, cellSize) => {
     cel: x,
     health: 100,
     baseHealth: 100,
-    range: 400,
+    range: 300,
     damage: 10,
     type: 'Building',
     c1: '#333',
@@ -503,7 +503,7 @@ const turret = (x, y, cellSize) => {
     playerDie(o)
     removeItem(solids, o)
     gridMap[o.row][o.cel] = 0
-    setCellValue(gridMap, o.row, o.cel, 0)
+    // setCellValue(gridMap, o.row, o.cel, 0)
   }
   o.canBleed = false
   o.addChild(barrel)

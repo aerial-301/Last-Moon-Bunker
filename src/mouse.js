@@ -1,10 +1,10 @@
 import { currentAction, g, playerUnits, selectedUnits, movingUnits, enemies, attackingTarget, solids, bluePrint, cellSize, units, miners } from './main.js'
 import { gridMap, mine } from './main/mainSetUp/initMap.js'
 import { uiLayer, world, floorLayer } from './main/mainSetUp/initLayers.js'
-import { getUnitVector, sortUnits, setCellValue, setDirection, removeItem } from './functions.js'
+import { getUnitVector, sortUnits, setCellValue, setDirection, removeItem, checkNeighbors } from './functions.js'
 import { actionMark, makeRectangle, makeSelectionBox, turret } from './drawings.js'
 import { currentPlayer, UC } from './keyboard.js'
-import { buttons } from './main/mainSetUp/initBottomPanel.js'
+import { buttons, currentGold, goldAmount, prices } from './main/mainSetUp/initBottomPanel.js'
 
 // import { debugShape } from './debug.js'
 let selectionBox
@@ -52,12 +52,13 @@ const leftMouseDown = () => {
 
         const currentCell = gridMap[row][cel]
 
-        if (currentCell) {
+        if (currentCell || !checkNeighbors(gridMap, row, cel) || currentGold < prices[2]) {
           // console.log('cant build here')
         } else {
+          goldAmount.sub(prices[2])
           currentAction.placingBuilding = false
           gridMap[row][cel] = 4
-          setCellValue(gridMap, row, cel, 3)
+          // setCellValue(gridMap, row, cel, 3)
           
           const T = turret(cel, row, cellSize)
           T.x += T.halfWidth / 4
@@ -66,7 +67,6 @@ const leftMouseDown = () => {
           solids.push(T)
           // console.log('construction complete')
           bluePrint.visible = false
-          // debugShape(T)
         }
         
         // const building = makeRectangle(100, 100, '#321', 3, g.pointer.x - world.x, g.pointer.y - world.y)
@@ -82,7 +82,7 @@ const leftMouseDown = () => {
 const rightMouseDown = () => {
   if (!UC) {
 
-    if (g.pointer.shiftedY < 80) return
+    if (g.pointer.shiftedY < 30) return
 
     if (clickedBottomPanel()) {
       // nothing
@@ -119,7 +119,9 @@ const rightMouseDown = () => {
                 } else {
                   unit.isMoving = false
                   unit.target = enemy
-                  attackingTarget.push(unit)
+                  if (attackingTarget.indexOf(unit) == -1) {
+                    attackingTarget.push(unit)
+                  }
                 }
 
               })
@@ -172,7 +174,7 @@ const rightMouseDown = () => {
   } else {
     // if (!g.state) return false
     // if (g.state.name !== 'play') return false
-    if (currentPlayer.type == 'UC') {
+    if (currentPlayer.type == 'MK') {
       if (currentPlayer.rollOnCooldown) return false
       currentPlayer.rollOnCooldown = true
       const uv = getUnitVector(currentPlayer, g.pointer)

@@ -3,7 +3,7 @@ import { makeCircle, tempEarth, moonGround, makeRectangle } from '../../drawings
 import { moreProperties } from '../../unitObject.js'
 export let world, uiLayer, floorLayer, objLayer, sun, earth, ground, space
 export const initLayers = (groundWidth, groundHeight) => {
-  space = makeRectangle(surfaceWidth + 50, 350, '#000', 0, -25, -300)
+  space = makeRectangle(surfaceWidth + 50, 350, '#000', 0, -25, -350)
   moreProperties(space)
   // solids.push(space)
   sun = makeCircle(130, '#fb0', 0, false, 800, -250)

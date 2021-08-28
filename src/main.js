@@ -2,7 +2,7 @@ import { GA } from './ga_minTest.js'
 import { initCanvasEvents } from './main/mainSetUp/initCanvas.js'
 import { initLayers, objLayer, uiLayer, world } from './main/mainSetUp/initLayers.js'
 import { HQ, initMap, mine } from './main/mainSetUp/initMap.js'
-import { bottomPanel, buttons, initBottomPanel, prices } from './main/mainSetUp/initBottomPanel.js'
+import { bottomPanel, buttons, goldAmount, initBottomPanel, prices } from './main/mainSetUp/initBottomPanel.js'
 import { initSelectionBox} from './mouse.js'
 import { initUnitCamera } from './camera.js'
 import { makeBluePrint, makeGold, makeRectangle } from './drawings.js'
@@ -29,6 +29,8 @@ export const currentAction = {
   placingBuilding: false,
   // UIupdated: false,
 }
+
+
 
 export const K = {
   b : '#000',
@@ -72,8 +74,12 @@ let bluePrint
 let tip
 
 
-
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+let maxSummons = 2
+let minSummons = 0
+let summons
+let enemyLevel = 1
 
 let readyToSummon = true
 
@@ -81,14 +87,16 @@ let firstWaveDelay = false
 
 const summonWave = () => {
   if (readyToSummon) {
-    // readyToSummon = false
+    readyToSummon = false
 
     if (firstWaveDelay) {
 
       console.log('new wave !')
 
-      for (let i = 0; i < 7; i++) {
-        const enemy = createEnemyUnit(i * 350, surfaceHeight)
+      summons = randomNum(minSummons, maxSummons)
+
+      for (let i = 0; i < summons; i++) {
+        const enemy = createEnemyUnit(50 + i * 150, surfaceHeight, 100 * enemyLevel)
         objLayer.addChild(enemy)
         units.push(enemy)
         enemies.push(enemy)
@@ -100,13 +108,18 @@ const summonWave = () => {
         movingUnits.push(enemy)
         
       }
+
+
+      if (Math.random() > .75) {
+        minSummons += 1
+        maxSummons += 1
+        enemyLevel += 0.5
+      }
       
     }
 
 
-
-
-    // g.wait(50000, () => readyToSummon = true)
+    g.wait((summons * 5) * 200, () => readyToSummon = true)
   }
 
 
@@ -120,14 +133,13 @@ const summonWave = () => {
 const moveMiners = () => {
   if (miners.length > 0) {
     miners.forEach(miner => {
-      if (!miner.isMining) {
+      if (!miner.isMining || miner.isDead) {
         removeItem(miners, miner)
         return
       }
 
       if (miner.readyForOrder) {
 
-        
         if (miner.mined) {
           miner.destinationX = HQ.centerX - world.x
           miner.destinationY = HQ.centerY - world.y
@@ -154,9 +166,14 @@ const moveMiners = () => {
   
         if (miner.mined && distHQ < 85) {
           miner.mined = false
+          miner.gb.visible = false
+          goldAmount.add(1)
+
+
           miner.readyForOrder = true
         } else if (!miner.mined && distMI < 85) {
           miner.mined = true
+          miner.gb.visible = true
           miner.readyForOrder = true
         }
       }
@@ -226,12 +243,15 @@ const play = () => {
   // const ex = enemies[0].centerX.toFixed(1)
   // const ey = enemies[0].centerY.toFixed(1)
   
-  // if (units.length > 0) {
-  //   const u = units[0]
-    // debugText.content = `
-    // xy = ${world.x}, ${world.y}
-    // `
-  // }
+  if (enemies.length > 0) {
+    const e = enemies[0]
+    debugText.content = `
+    target = ${e.target}
+    isMoving = ${e.isMoving}
+    attackings = ${attackingTarget.length}
+    enemies = ${enemies.length}
+    `
+  }
 
 
 
@@ -280,7 +300,7 @@ const setup = () => {
   initSelectionBox()
   // initUIHealthBar()
   // debugText = makeText(' ', '12px arial', 'white', 0, 100)
-  debugText = makeText(uiLayer, ' ', '32px arial', 'white', 0, 100)
+  debugText = makeText(uiLayer, ' ', '22px arial', 'white', 0, 100)
 
 
 

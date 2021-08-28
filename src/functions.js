@@ -28,7 +28,7 @@ const addVectors = (a, b) => {return [a[0] + b[0], a[1] + b[1]]}
 
 
 const canBuildHere = (gridMap, r, c) => {
-  try {if (!gridMap[r][c]) return true}
+  try {if (!gridMap[r][c] && checkNeighbors(gridMap,r, c)) return true}
   catch (e) { console.log('error')}
   return false
 }
@@ -44,8 +44,26 @@ const setCellValue = (gridMap ,row, col, value) => {
   })
 }
 
+const checkNeighbors = (gridMap, row, col) => {
+  let n
+  for (let d of directions) {
+    n = addVectors([row, col], d)
+    try {
+      if (gridMap[n[0]][n[1]] != 0) return false
+    } catch (e) {null}
+  }
+  return true
+
+  // directions.forEach(d => {
+  //   n = addVectors([row, col], d)
+  //   try {
+  //     if (gridMap[n[0]][n[1]] != 0) 
+  //   } catch (e) {null}
+  // })
+}
+
 const simpleButton = (
-  text, 
+  text,
   xPos = 10, 
   yPos = 10, 
   textX = 10, 
@@ -279,4 +297,4 @@ const playerDie = (o) => {
 
 
 
-export { setDirection, simpleButton, checkCollisions, removeItem, randomNum, getUnitVector, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle, playerDie, setCellValue, canBuildHere }
+export { checkNeighbors, setDirection, simpleButton, checkCollisions, removeItem, randomNum, getUnitVector, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle, playerDie, setCellValue, canBuildHere }

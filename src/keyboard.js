@@ -1,8 +1,8 @@
 import { world, objLayer } from './main/mainSetUp/initLayers.js'
-import { g, selectedUnits, movingUnits, attackingTarget, summonWave, currentAction, tip, playerUnits, surfaceWidth, surfaceHeight } from './main.js'
+import { g, selectedUnits, movingUnits, attackingTarget, summonWave, currentAction, tip, playerUnits, surfaceWidth, surfaceHeight, K } from './main.js'
 import { checkCollisions, removeItem, setDirection } from './functions.js'
 import { bottomPanel } from './main/mainSetUp/initBottomPanel.js'
-import { HQ } from './main/mainSetUp/initMap.js'
+import { gridMap, HQ } from './main/mainSetUp/initMap.js'
 // import { debugShape, tempIndicator } from '../extra/debug.js'
 let currentPlayer, UC
 
@@ -61,6 +61,10 @@ window.addEventListener('keyup', (k) => {
   } else if (k.key === 'r') switchMode()
 
   if (k.key === 'p') summonWave()
+
+  if (k.key === 'o') {
+    gridMap.forEach(r => console.log(r.join('')))
+  }
   
 })
 
