@@ -8,7 +8,7 @@ const debugShape = (shape) => {
     shape.width,
     shape.height,
     'white',
-    0,
+    0
     // shape.gx,
     // shape.gy
   )

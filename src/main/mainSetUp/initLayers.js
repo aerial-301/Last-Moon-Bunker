@@ -1,9 +1,9 @@
-import { g, solids, surfaceHeight, surfaceWidth } from '../../main.js'
+import { g, surfaceWidth } from '../../main.js'
 import { makeCircle, tempEarth, moonGround, makeRectangle } from '../../drawings.js'
 import { moreProperties } from '../../unitObject.js'
 export let world, uiLayer, floorLayer, objLayer, sun, earth, ground, space
 export const initLayers = (groundWidth, groundHeight) => {
-  space = makeRectangle(surfaceWidth + 50, 350, '#000', 0, -25, -350)
+  space = makeRectangle(surfaceWidth + 50, 400, '#000', 0, -25, -400)
   moreProperties(space)
   // solids.push(space)
   sun = makeCircle(130, '#fb0', 0, false, 800, -250)

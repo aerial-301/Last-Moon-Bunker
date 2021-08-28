@@ -1,6 +1,5 @@
 import { randomNum } from './functions.js'
-import { currentAction } from './main.js'
-import { uiLayer, world } from './main/mainSetUp/initLayers.js'
+import { world } from './main/mainSetUp/initLayers.js'
 
 export var GA = {
   create(setup) {
@@ -215,317 +214,85 @@ export var GA = {
       g.canvas.addEventListener("mousemove", o.moveHandler.bind(o), false)
       return o
     }
+
+
+    
     g.wait = (d, c) => setTimeout(c, d)
     g.hitTestRectangle = (r1, r2, global = false) => {
-        let hit = false, combinedHalfWidths, combinedHalfHeights, vx, vy
-        if (global) {
-            vx = (r1.gx + r1.halfWidth) - (r2.gx + r2.halfWidth)
-            vy = (r1.gy + r1.halfHeight) - (r2.gy + r2.halfHeight)
+      let hit = false, combinedHalfWidths, combinedHalfHeights, vx, vy
+      if (global) {
+        vx = (r1.gx + r1.halfWidth) - (r2.gx + r2.halfWidth)
+        vy = (r1.gy + r1.halfHeight) - (r2.gy + r2.halfHeight)
+      }
+      else {
+        vx = r1.centerX - r2.centerX
+        vy = r1.centerY - r2.centerY
+      }
+      if (Math.abs(vx) < r1.halfWidth + r2.halfWidth) {
+        if (Math.abs(vy) < r1.halfHeight + r2.halfHeight) {
+          hit = true
         }
         else {
-            vx = r1.centerX - r2.centerX
-            vy = r1.centerY - r2.centerY
+          hit = false
         }
-        combinedHalfWidths = r1.halfWidth + r2.halfWidth
-        combinedHalfHeights = r1.halfHeight + r2.halfHeight
-        //Check for a collision on the x axis
-        if (Math.abs(vx) < combinedHalfWidths) {
-            //A collision might be occuring. Check for a collision on the y axis
-            if (Math.abs(vy) < combinedHalfHeights) {
-                //There's definitely a collision happening
-                hit = true
-            }
-            else {
-                //There's no collision on the y axis
-                hit = false
-            }
-        }
-        else {
-            //There's no collision on the x axis
-            hit = false
-        }
-        //`hit` will be either `true` or `false`
-        return hit
+      }
+      else {
+        hit = false
+      }
+      return hit
     }
     g.hitTestPoint = function (p, s) {
       if (p.x < s.gx || p.x > s.gx + s.width || p.y < s.gy || p.y > s.gy + s.height) return false
       return true
     }
-    g.GlobalDistance = (a, b, aOffX = 0, aOffY = 0) => {
-
-
-      return Math.sqrt( ( b.centerX - a.centerX + aOffX)**2 + ( b.centerY - a.centerY + aOffY)**2 )
-    }
-
+    g.GlobalDistance = (a, b, aOffX = 0, aOffY = 0) => {return Math.sqrt( ( b.centerX - a.centerX + aOffX)**2 + ( b.centerY - a.centerY + aOffY)**2 )}
+    
     g.actx = new AudioContext()
-
-    g.soundEffect = function(
-      frequencyValue,      //The sound's fequency pitch in Hertz
-      attack,              //The time, in seconds, to fade the sound in
-      decay,               //The time, in seconds, to fade the sound out
-      type,                //waveform type: "sine", "triangle", "square", "sawtooth"
-      volumeValue,         //The sound's maximum volume
-      panValue,            //The speaker pan. left: -1, middle: 0, right: 1
-      wait,                //The time, in seconds, to wait before playing the sound
-      pitchBendAmount,     //The number of Hz in which to bend the sound's pitch down
-      reverse,             //If `reverse` is true the pitch will bend up
-      randomValue,         //A range, in Hz, within which to randomize the pitch
-      dissonance,          //A value in Hz. It creates 2 dissonant frequencies above and below the target pitch
-      echo,                //An array: [delayTimeInSeconds, feedbackTimeInSeconds, filterValueInHz]
-      reverb               //An array: [durationInSeconds, decayRateInSeconds, reverse]
-    ) {
-    
-      var actx = g.actx;
-    
-      var oscillator, volume, pan;
-      oscillator = actx.createOscillator();
-      volume = actx.createGain();
-      if (!actx.createStereoPanner) {
-        pan = actx.createPanner();
-      } else {
-        pan = actx.createStereoPanner();
-      }
-      oscillator.connect(volume);
-      volume.connect(pan);
-      pan.connect(actx.destination);
-    
-      //Set the supplied values
+    g.soundEffect = function(frequencyValue, attack, decay, type, volumeValue, panValue, wait, pitchBendAmount, reverse, randomValue,) {
+      var actx = g.actx
+      var oscillator, volume, pan
+      oscillator = actx.createOscillator()
+      volume = actx.createGain()
+      if (!actx.createStereoPanner) pan = actx.createPanner() 
+      else pan = actx.createStereoPanner()
+      oscillator.connect(volume)
+      volume.connect(pan)
+      pan.connect(actx.destination)
       volume.gain.value = volumeValue;
-      if (!actx.createStereoPanner) {
-        pan.setPosition(panValue, 0, 1 - Math.abs(panValue));
-      } else {
-        pan.pan.value = panValue; 
-      }
-      oscillator.type = type;
-    
-      //Optionally randomize the pitch. If the `randomValue` is greater
-      //than zero, a random pitch is selected that's within the range
-      //specified by `frequencyValue`. The random pitch will be either
-      //above or below the target frequency.
-      let frequency;
-      // var randomInt = function(min, max){
-      //   return Math.floor(Math.random() * (max - min + 1)) + min
-      // };
+      if (!actx.createStereoPanner) pan.setPosition(panValue, 0, 1 - Math.abs(panValue)) 
+      else pan.pan.value = panValue
+      oscillator.type = type
+      let frequency
       if (randomValue > 0) {
         frequency = randomNum(
           frequencyValue - randomValue / 2,
           frequencyValue + randomValue / 2, 1
-        );
-      } else {
-        frequency = frequencyValue;
-      }
-      oscillator.frequency.value = frequency;
-    
-      //Apply effects
-      if (attack > 0) fadeIn(volume);
-      fadeOut(volume);
-      if (pitchBendAmount > 0) pitchBend(oscillator);
-      if (echo) addEcho(volume);
-      if (reverb) addReverb(volume);
-      if (dissonance > 0) addDissonance();
-    
-      //Play the sound
-      play(oscillator);
-    
-    
-      function play(node) {
-        node.start(actx.currentTime + wait);
-      }
+        )
+      } else frequency = frequencyValue
+      oscillator.frequency.value = frequency
+      fadeOut(volume)
+      if (pitchBendAmount > 0) pitchBend(oscillator)
+      play(oscillator)
 
-      function addReverb(volumeNode) {
-        var convolver = actx.createConvolver();
-        convolver.buffer = impulseResponse(reverb[0], reverb[1], reverb[2], actx);
-        volumeNode.connect(convolver);
-        convolver.connect(pan);
-      }
-  
-      function addEcho(volumeNode) {
-  
-        //Create the nodes
-        var feedback = actx.createGain(),
-            delay = actx.createDelay(),
-            filter = actx.createBiquadFilter();
-  
-        //Set their values (delay time, feedback time and filter frequency)
-        delay.delayTime.value = echo[0];
-        feedback.gain.value = echo[1];
-        if (echo[2]) filter.frequency.value = echo[2];
-  
-        //Create the delay feedback loop, with
-        //optional filtering
-        delay.connect(feedback);
-        if (echo[2]) {
-          feedback.connect(filter);
-          filter.connect(delay);
-        } else {
-          feedback.connect(delay);
-        }
-  
-        //Connect the delay loop to the oscillator's volume
-        //node, and then to the destination
-        volumeNode.connect(delay);
-  
-        //Connect the delay loop to the main sound chain's
-        //pan node, so that the echo effect is directed to
-        //the correct speaker
-        delay.connect(pan);
-      }
-  
-      //The `fadeIn` function
-      // function fadeIn(volumeNode) {
-  
-      //   //Set the volume to 0 so that you can fade
-      //   //in from silence
-      //   volumeNode.gain.value = 0;
-  
-      //   volumeNode.gain.linearRampToValueAtTime(
-      //     0, actx.currentTime + wait
-      //   );
-      //   volumeNode.gain.linearRampToValueAtTime(
-      //     volumeValue, actx.currentTime + wait + attack
-      //   );
-      // }
-  
-      //The `fadeOut` function
+      function play(node) {node.start(actx.currentTime + wait)}
       function fadeOut(volumeNode) {
-        volumeNode.gain.linearRampToValueAtTime(
-          volumeValue, actx.currentTime + attack + wait
-        );
-        volumeNode.gain.linearRampToValueAtTime(
-          0, actx.currentTime + wait + attack + decay
-        );
+        volumeNode.gain.linearRampToValueAtTime(volumeValue, actx.currentTime + attack + wait)
+        volumeNode.gain.linearRampToValueAtTime(0, actx.currentTime + wait + attack + decay)
       }
-  
-      //The `pitchBend` function
       function pitchBend(oscillatorNode) {
-  
-        //If `reverse` is true, make the note drop in frequency. Useful for
-        //shooting sounds
-  
-        //Get the frequency of the current oscillator
-        var frequency = oscillatorNode.frequency.value;
-  
-        //If `reverse` is true, make the sound drop in pitch
+        var frequency = oscillatorNode.frequency.value
         if (!reverse) {
-          oscillatorNode.frequency.linearRampToValueAtTime(
-            frequency, 
-            actx.currentTime + wait
-          );
-          oscillatorNode.frequency.linearRampToValueAtTime(
-            frequency - pitchBendAmount, 
-            actx.currentTime + wait + attack + decay
-          );
+          oscillatorNode.frequency.linearRampToValueAtTime(frequency, actx.currentTime + wait)
+          oscillatorNode.frequency.linearRampToValueAtTime(frequency - pitchBendAmount, actx.currentTime + wait + attack + decay)
         }
-  
-        //If `reverse` is false, make the note rise in pitch. Useful for
-        //jumping sounds
+
         else {
-          oscillatorNode.frequency.linearRampToValueAtTime(
-            frequency, 
-            actx.currentTime + wait
-          );
-          oscillatorNode.frequency.linearRampToValueAtTime(
-            frequency + pitchBendAmount, 
-            actx.currentTime + wait + attack + decay
-          );
+          oscillatorNode.frequency.linearRampToValueAtTime(frequency, actx.currentTime + wait)
+          oscillatorNode.frequency.linearRampToValueAtTime(frequency + pitchBendAmount, actx.currentTime + wait + attack + decay)
         }
       }
-  
-      //The `addDissonance` function
-      function addDissonance() {
-  
-        //Create two more oscillators and gain nodes
-        var d1 = actx.createOscillator(),
-            d2 = actx.createOscillator(),
-            d1Volume = actx.createGain(),
-            d2Volume = actx.createGain();
-  
-        //Set the volume to the `volumeValue`
-        d1Volume.gain.value = volumeValue;
-        d2Volume.gain.value = volumeValue;
-  
-        //Connect the oscillators to the gain and destination nodes
-        d1.connect(d1Volume);
-        d1Volume.connect(actx.destination);
-        d2.connect(d2Volume);
-        d2Volume.connect(actx.destination);
-  
-        //Set the waveform to "sawtooth" for a harsh effect
-        d1.type = "sawtooth";
-        d2.type = "sawtooth";
-  
-        //Make the two oscillators play at frequencies above and
-        //below the main sound's frequency. Use whatever value was
-        //supplied by the `dissonance` argument
-        d1.frequency.value = frequency + dissonance;
-        d2.frequency.value = frequency - dissonance;
-  
-        //Fade in/out, pitch bend and play the oscillators
-        //to match the main sound
-        if (attack > 0) {
-          fadeIn(d1Volume);
-          fadeIn(d2Volume);
-        }
-        if (decay > 0) {
-          fadeOut(d1Volume);
-          fadeOut(d2Volume);
-        }
-        if (pitchBendAmount > 0) {
-          pitchBend(d1);
-          pitchBend(d2);
-        }
-        if (echo) {
-          addEcho(d1Volume);
-          addEcho(d2Volume);
-        }
-        if (reverb) {
-          addReverb(d1Volume);
-          addReverb(d2Volume);
-        }
-        play(d1);
-        play(d2);
-      }
 
-
-      function impulseResponse(duration, decay, reverse, actx) {
-
-        //The length of the buffer.
-        var length = actx.sampleRate * duration;
-    
-        //Create an audio buffer (an empty sound container) to store the reverb effect.
-        var impulse = actx.createBuffer(2, length, actx.sampleRate);
-    
-        //Use `getChannelData` to initialize empty arrays to store sound data for
-        //the left and right channels.
-        var left = impulse.getChannelData(0),
-            right = impulse.getChannelData(1);
-    
-        //Loop through each sample-frame and fill the channel
-        //data with random noise.
-        for (var i = 0; i < length; i++){
-    
-          //Apply the reverse effect, if `reverse` is `true`.
-          var n;
-          if (reverse) {
-            n = length - i;
-          } else {
-            n = i;
-          }
-    
-          //Fill the left and right channels with random white noise which
-          //decays exponentially.
-          left[i] = (Math.random() * 2 - 1) * Math.pow(1 - n / length, decay);
-          right[i] = (Math.random() * 2 - 1) * Math.pow(1 - n / length, decay);
-        }
-    
-        //Return the `impulse`.
-        return impulse;
-      }
-    
     }
-
-
-
 
     return g
   }

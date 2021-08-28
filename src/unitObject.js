@@ -1,14 +1,16 @@
 import { enemies, g, PI, selectedUnits, shots, attackingTarget, playerUnits, units, movingUnits } from './main.js'
-import { playerDie, newMoveTest, randomNum, removeItem, roll, scan, tempAngle } from './functions.js'
+import { playerDie, newMoveTest, randomNum, removeItem, roll, scan, tempAngle, getUnitVector, setDirection } from './functions.js'
 import { gun, makeLeg, makeHeadDetails, makeBorder, makeRectangle, makeTwoEyes, makeThirdEye, makeSlash, bulletImpact, makeHead, newMakeEnemyEyes, bloodDrop, makeGold } from './drawings.js'
 import { world, floorLayer, space } from './main/mainSetUp/initLayers.js'
 // import { debugShape } from './debug.js'
-import { currentPlayer } from './keyboard.js'
+import { currentPlayer, UC } from './keyboard.js'
+import { HQ } from './main/mainSetUp/initMap.js'
 
 
 const idleSwordAngle = Math.PI / 180 * -60
 const attackSwordAngle = Math.PI / 180 * (-60 + 120)
 let hit = false
+let handPointerAngle
 
 const makeBasicObject = (o, x = 0, y = 0, w = 50, h = 50) => {
   o.x= x
@@ -63,8 +65,8 @@ const moreProperties = (o) => {
     g.wait(randomNum(50, 200), () => {
       targets.forEach(target => {
 
-        const gd = g.GlobalDistance(o, target) / Math.sqrt(2)
-        
+        // const gd = g.GlobalDistance(o, target) / Math.sqrt(2)
+
         if (g.GlobalDistance(o, target) / Math.sqrt(2) <= o.range) {
           o.target = target
           if (attackingTarget.indexOf(o) == -1) {
@@ -76,11 +78,12 @@ const moreProperties = (o) => {
   }
   o.getHit = (damage) => {
 
-    // const HZ = 470
-    // g.soundEffect(HZ, 0, .07, 'triangle', .15, 0, 0, HZ * 0.74, false, 20,)
     o.health -= damage
     if (o.canBleed) {
       bloodDrop(o.x, o.y)
+      if (!o.target || o.target.isDead) {
+        o.scanForTargets(o.targets)
+      }
 
     }
 
@@ -104,9 +107,7 @@ const moreProperties = (o) => {
       }
       o.changeColor()
 
-      if (!o.target || o.target.isDead) {
-        o.scanForTargets(o.targets)
-      }
+
       
 
     }
@@ -162,7 +163,7 @@ const makeUnitObject = (o, n = 0, x = 0, y = 0) => {
         o.offsetCounter = 0
         o.idleOffset = 1
       }
-      if (o.type == 'UC') o.thirdEye.y = o.twoEyes.y
+      if (o.type == 'MK') o.thirdEye.y = o.twoEyes.y
       o.twoEyes.y = o.head.y + (o.type=='Pleb'?8:0)
       o.head.y += o.idleOffset
       o.offsetCounter += o.idleOffset
@@ -192,7 +193,7 @@ const makeUnitObject = (o, n = 0, x = 0, y = 0) => {
       o.rightLeg.y = o.oldLegOffset3
       o.head.y = -Math.abs(o.legOffset) - 7
       o.twoEyes.y = o.head.y + (o.type == 'Pleb'? 10:0)
-      if (o.type == 'UC') o.thirdEye.y = o.twoEyes.y
+      if (o.type == 'MK') o.thirdEye.y = o.twoEyes.y
       if (o.moveCounter >= 15) o.legOffset -= 5
       else if (o.moveCounter <= 15) o.legOffset += 5
       g.wait(20, () => o.moveAnimated = false)
@@ -279,19 +280,43 @@ const makeText = (parent, content, font, fillStyle, x, y) => {
   return o
 }
 
+const slice1 = (o, t) => {
+  o.attacked = true
+  o.swordHandle.rotation = handPointerAngle + attackSwordAngle
+  o.rotation = 0
+  o.attackHit(t, randomNum(24, 35))
+  const HZ = 10
+  g.soundEffect(HZ, 0, .2, 'sine', .05, 0, 0, HZ * 700, true)
+  o.slash1.visible = true
+  g.wait(40, () => o.slash1.visible = false)
+  g.wait(150, () => o.attacked = false)
+}
+
+const slice2 = (o, t) => {
+  o.attacked2 = true
+  o.swordHandle.rotation = handPointerAngle + idleSwordAngle
+  o.attackHit(t, randomNum(33, 46))
+  const HZ = 10
+  g.soundEffect(HZ, 0, .2, 'sine', .05, 0, 0, HZ * 700, true)
+  o.slash2.visible = true
+  g.wait(40, () => o.slash2.visible = false)
+  g.wait(90, () => o.attacked2 = false)
+}
+
 const newMainPlayer = (x = 0, y = 0) => {
-  let handPointerAngle
+  
   const twoEyes = makeTwoEyes()
   const thirdEye = makeThirdEye()
   const sword = makeRectangle(2, 140, '#FFF', 0, 0)
-  const swordHandle = makeRectangle(4, 40, '#0F0')
+  const swordHandle = makeRectangle(4, 40, '#ea5')
   const slash1 = makeSlash(1)
   const slash2 = makeSlash(0)
   const hitRange = 175
   const o = {
     type: 'MK',
-    health: 500,
+    health: 999,
     damage: 0,
+    range: 999,
     twoEyes: twoEyes,
     thirdEye: thirdEye, 
     swordHandle: swordHandle,
@@ -307,53 +332,78 @@ const newMainPlayer = (x = 0, y = 0) => {
   o.baseHealth = o.health
   makePlayerUnitObject(o, 1, x, y)
   
-  o.attack = () => {
-    handPointerAngle = -tempAngle(o.playerHand, g.pointer)
-    if (!o.attacked && !o.attacked2) {
-      o.attacked = true
-      o.swordHandle.rotation = handPointerAngle + attackSwordAngle
-      o.rotation = 0
-      o.attackHit(randomNum(14, 25))
-      o.slash1.visible = true
-      g.wait(40, () => o.slash1.visible = false)
-      g.wait(150, () => o.attacked = false)
-    }
-    else if (!o.attacked2) {
-      o.attacked2 = true
-      o.swordHandle.rotation = handPointerAngle + idleSwordAngle
-      o.attackHit(randomNum(23, 36))
-      o.slash2.visible = true
-      g.wait(40, () => o.slash2.visible = false)
-      g.wait(70, () => o.attacked2 = false)
+  o.attack = (target = g.pointer) => {
+    if (UC || o.inRange) {
+      handPointerAngle = -tempAngle(o.playerHand, target)
+      if (!o.attacked && !o.attacked2) slice1(o, target)
+      else if (!o.attacked2) slice2(o, target)
+      o.inRange = false
+    } else {
+
+      if (g.GlobalDistance(o, target) > hitRange - 50) {
+        if (!o.isRolling) {
+          o.inRange = false
+          o.rotation += 0.85
+          o.destinationX = target.centerX - world.x
+          o.destinationY = target.centerY - world.y
+          setDirection(o)
+          o.isRolling = true
+          o.roll(o, o.vx, o.vy)
+          const HZ = 1
+          g.soundEffect(HZ, 0, .025, 'sine', .2, 0, 0, HZ * 1000, true)
+          return
+        }
+      } else {
+        o.rotation = 0
+        o.inRange = true
+      }
+
     }
   }
-  o.attackHit = (damage) => {
+
+  o.attackHit = (target = g.pointer, damage) => {
+    
     for (const enemy of enemies) {
-      // Check distance between each enemy and playerHand
       const distance = g.GlobalDistance(o.playerHand, enemy)
-      // If in range of the player attack than check if in direction of the sword slash arc thing
       if (distance <= hitRange) {
-        // angle between playerHand and mouse pointer
-        let angleToPointer = -tempAngle(o.playerHand, g.pointer)
+        let angleToPointer = -tempAngle(o.playerHand, target)
         angleToPointer += 2 * PI * (angleToPointer < 0)
-        // angle between playerHand and the enemy
+
         let angleToEnemy = -tempAngle(o.playerHand, enemy)
         angleToEnemy += 2 * PI * (angleToEnemy < 0)
-        // Get the difference between those two angles
+
         const difference = angleToPointer - angleToEnemy
         // If difference is greater than 180 degrees subtract it from 360
         const smallest = difference > PI ? 2 * PI - difference : difference < -PI ? 2 * PI + difference : difference
         //  Calculated angles are all in Radians. 1.14 Radians is around 65 Degrees
         if (Math.abs(smallest) <= 1.14) {
-          // enemy should get hit if within the slash arc
-          enemy.getHit(damage)
+          if (enemy.getHit(damage)) {
+            if (enemies.length > 0) {
+              o.scanForTargets(o.targets)
+            } else {
+              g.wait(10, () => {
+                o.destinationX = HQ.x
+                o.destinationY = HQ.y
+                setDirection(o)
+                o.roll(o, o.vx, o.vy)
+              })
+            }
+          }
+          
+          
+          
+          // o.inRange = false
         }
       }
     }
   }
-  o.roll = () => roll(o, o.vx, o.vy)
+  o.roll = () => {
+    const HZ = 1
+    g.soundEffect(HZ, 0, .5, 'sine', .2, 0, 0, HZ * 1000, true)
+    roll(o, o.vx, o.vy)
+  }
 
-  
+  o.targets = enemies
   
   const playerHand = o.playerHand
   o.addChild(twoEyes)
@@ -505,7 +555,7 @@ const createEnemyUnit = (x = 0, y = 0, hp) => {
 
       const HZ = 3000
 
-      g.soundEffect(HZ, 0, .09, 'triangle', .05, 0, 0, HZ * .9, false, )
+      g.soundEffect(HZ, 0, .09, 'triangle', .05, 0, 0, HZ * .9, false)
 
       if (target.getHit(o.damage)) {
         o.isMoving = true

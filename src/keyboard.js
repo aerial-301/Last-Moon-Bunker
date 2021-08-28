@@ -1,8 +1,8 @@
 import { world, objLayer } from './main/mainSetUp/initLayers.js'
-import { g, selectedUnits, movingUnits, attackingTarget, summonWave, currentAction, tip, playerUnits, surfaceWidth, surfaceHeight, K } from './main.js'
-import { checkCollisions, removeItem, setDirection } from './functions.js'
+import { g, selectedUnits, movingUnits, attackingTarget, tip} from './main.js'
+import { checkCollisions, removeItem } from './functions.js'
 import { bottomPanel } from './main/mainSetUp/initBottomPanel.js'
-import { gridMap, HQ } from './main/mainSetUp/initMap.js'
+import { gridMap } from './main/mainSetUp/initMap.js'
 // import { debugShape, tempIndicator } from '../extra/debug.js'
 let currentPlayer, UC
 
@@ -17,8 +17,6 @@ window.addEventListener('keydown', (k) => {
   if (k.key in keys) {
     keys[k.key] = true
     if (UC) currentPlayer.isMoving = true
-
-    // currentAction.UIupdated = false
   }
 })
 window.addEventListener('keyup', (k) => {
@@ -27,44 +25,13 @@ window.addEventListener('keyup', (k) => {
     if (UC) {
       if (Object.values(keys).every(v => v === false)) currentPlayer.isMoving = false
     }
-    
-    
-
-
-
-    // if (k.key === 'p') moveSpeed += 100
-    // if (k.key === 'o') moveSpeed -= 100
-
-    // if (k.key === 'k') {
-    //   tempIndicator(world.gx, world.gy, 400, 'white', 10)
-    //   for (const c of objLayer.children) {
-    //     tempIndicator(c.parent.gx, c.parent.gy, 400, 'purple', 20)
-    //     tempIndicator(c.gx, c.gy, 500, 'red', 20)
-    //     tempIndicator(c.centerX, c.centerY, 500, 'yellow', 20)
-    //   }
-    // }
-
-    // if (k.key === 'h') {
-    //   for (const c of objLayer.children) {
-    //     const s = debugShape(c)
-    //     shapes.push(s)
-    //   }
-    // }
-
-    // if (k.key === 'j') {
-    //   if (shapes.length > 0) {
-    //     shapes.forEach(s => g.remove(s))
-    //     shapes = []
-    //   }
-    // }
 
   } else if (k.key === 'r') switchMode()
 
-  if (k.key === 'p') summonWave()
-
-  if (k.key === 'o') {
-    gridMap.forEach(r => console.log(r.join('')))
-  }
+  // if (k.key === 'p') summonWave()
+  // if (k.key === 'o') {
+  //   gridMap.forEach(r => console.log(r.join('')))
+  // }
   
 })
 
@@ -115,7 +82,6 @@ const switchMode = () => {
     if (selectedUnits.length === 1) {
       UC = true
       tip.visible = false
-      // tip.visible = false
       bottomPanel.visible = false
       currentPlayer = selectedUnits[0]
       currentPlayer.isMoving = false
@@ -123,31 +89,11 @@ const switchMode = () => {
       removeItem(movingUnits, currentPlayer)
       removeItem(attackingTarget, currentPlayer)
       currentPlayer.deselect()
-      // currentPlayer.HB.alwaysVisible = true
-      // currentPlayer.yellowHB.alwaysVisible = true
       selectedUnits.length = 0
-      // ;[blackHB, yellowHB, HB].forEach(i => i.visible = true)
-      // ;[yellowHB, HB].forEach(i => {
-      //   i.width = (currentPlayer.health / currentPlayer.baseHealth) * 400 * currentPlayer.HBscale
-      // })
     }
   }
   else {
     UC = false
-
-    // playerUnits.forEach(unit => {
-    //   if (unit.gx < 0 || unit.gx > surfaceWidth || unit.gy > surfaceHeight) {
-    //     unit.destinationX = HQ.gx - world.x
-    //     unit.destinationY = HQ.gy - world.y
-    //     setDirection(unit)
-    //     unit.isMoving = true
-    //     movingUnits.push(unit)
-    //   }
-    // })
-    // ;[blackHB, yellowHB, HB].forEach(i => i.visible = false)
-    // ;[yellowHB, HB].forEach(i => currentPlayer[i].alwaysVisible = false)
-    // currentPlayer.HB.alwaysVisible = false
-    // currentPlayer.yellowHB.alwaysVisible = false
     bottomPanel.visible = true
     if (!currentPlayer.isDead) {
       currentPlayer.isMoving = false
@@ -157,34 +103,6 @@ const switchMode = () => {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-// let added = false
-// let removed = false
-// const addUnit = () => {
-//     if (added) return
-//     added = true
-//     const u = makeEnemy(300 + randomNum(-100, 100), 500 + randomNum(-100, 100))
-//     objLayer.addChild(u)
-//     enemies.push(u)
-//     g.wait(50, () => added = false)
-// }
-
-// const removeUnit = () => {
-//     if (enemies.length == 0) return
-//     if (removed) return
-//     removed = true
-//     g.remove(enemies.pop())
-//     g.wait(30, () => removed = false)
-// }
 export { 
   keys,
   moveCamera,

@@ -1,8 +1,8 @@
 import { uiLayer, objLayer } from "./initLayers.js"
-import { gun, makeGold, makeHead, makeRectangle, makeTwoEyes, renderTurret } from "../../drawings.js"
+import { gun, makeGold, makeHead, makeRectangle, makeThirdEye, makeTwoEyes, renderTurret } from "../../drawings.js"
 import { randomNum, simpleButton } from "../../functions.js"
 import { g, currentAction, bluePrint, armedUnits, playerUnits, units, K } from "../../main.js"
-import { createArmedPleb, createPleb, makeBasicObject, moreProperties } from "../../unitObject.js"
+import { createArmedPleb, createPleb, makeBasicObject, moreProperties, newMainPlayer } from "../../unitObject.js"
 import { HQ } from './initMap.js'
 
 let bottomPanel, buttons = []
@@ -16,10 +16,11 @@ const initBottomPanel = () => {
   uiLayer.addChild(bottomPanel)
   
   const b1 = simpleButton(0, 10, 10, 100, 23)
-  const b2 = simpleButton(0, 180, 10, 100, 23)
-  const b3 = simpleButton(0, 350, 10, 100, 23)
+  const b2 = simpleButton(0, 120, 10, 100, 23)
+  const b3 = simpleButton(0, 230, 10, 100, 23)
+  const b4 = simpleButton(0, 340, 10, 100, 23, K.b)
 
-  goldAmount = simpleButton(`${currentGold}`, 520, 10, 30, 8, 27, () => {}, 200, 40, '#555')
+  goldAmount = simpleButton(`${currentGold}`, 460, 10, 30, 8, '#555', 27, () => {}, 200, 40)
   goldAmount.add = (x) => {
     currentGold += x
     goldAmount.text.content = `${currentGold}`
@@ -37,21 +38,31 @@ const initBottomPanel = () => {
   goldAmount.addChild(gb)
   bottomPanel.addChild(goldAmount)
 
-  const pleb = createPleb(50, 15)
+  const pleb = createPleb(25, 15)
   b1.addChild(pleb)
   
-  const armed = createArmedPleb(50, 15)
+  const armed = createArmedPleb(25, 15)
   armed.weapon.rotation = -.2
   b2.addChild(armed)
   
-  const turr = renderTurret(50, 30) 
+  const turr = renderTurret(24, 30) 
   b3.addChild(turr)
+
+
+  const thirdeye = makeThirdEye(25, 15)
+  const twoeyes = makeTwoEyes(25, 15)
+  const swrd = makeRectangle(55, 2, K.w, 0, 46, 46)
+  const sh = makeRectangle(40, 4, '#ea5', 1, 10, 45)
+  b4.addChild(twoeyes)
+  b4.addChild(thirdeye)
+  b4.addChild(swrd)
+  b4.addChild(sh)
 
   b1.action = () => {
 
     if (goldAmount.sub(prices[0])) {
 
-      const u = createPleb(HQ.x + randomNum(-50, 50,0), HQ.y + 101)
+      const u = createPleb(HQ.x - 60 - randomNum(0, 100, 0), HQ.y)
       objLayer.addChild(u)
       playerUnits.push(u)
       units.push(u)
@@ -61,7 +72,7 @@ const initBottomPanel = () => {
   
   b2.action = () => {
     if (goldAmount.sub(prices[1])) {
-      const u = createArmedPleb(HQ.x + randomNum(-50, 50, 0), HQ.y + 101)
+      const u = createArmedPleb(HQ.x + 80 + randomNum(0, 100, 0), HQ.y)
       objLayer.addChild(u)
       playerUnits.push(u)
       units.push(u)
@@ -71,19 +82,27 @@ const initBottomPanel = () => {
   
   
   b3.action = () => {
+    currentAction.placingBuilding = true  
+    g.wait(10, () => bluePrint.visible = true)
+  }
 
-      currentAction.placingBuilding = true  
-      g.wait(10, () => bluePrint.visible = true)
 
+  b4.action = () => {
+    if (goldAmount.sub(prices[3])) {
+      const u = newMainPlayer(HQ.x + 25, HQ.y + 150)
+      objLayer.addChild(u)
+      playerUnits.push(u)
+      units.push(u)
+      armedUnits.push(u)
+    }
   }
   
-  
 
-  buttons.push(b1, b2, b3)
   bottomPanel.addChild(b1)
   bottomPanel.addChild(b2)
   bottomPanel.addChild(b3)
-  // bottomPanel.addChild(b4)
+  bottomPanel.addChild(b4)
+  buttons.push(b1, b2, b3, b4)
 }
 
 

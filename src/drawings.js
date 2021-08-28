@@ -4,15 +4,12 @@ import { world, floorLayer, objLayer, uiLayer } from "./main/mainSetUp/initLayer
 import { makeMovableObject, makeBasicObject, moreProperties } from "./unitObject.js"
 import { playerDie, randomNum, removeItem, setCellValue } from "./functions.js"
 
-// import { debugShape } from "./debug.js"
 const BP = (c) => c.beginPath()
 const MT = (c, x, y) => c.moveTo(x, y)
 const SK = (c) => c.stroke()
 const FL = (c) => c.fill()
 const L = (c, x, y) => c.lineTo(x, y)
 const FR = (c, x, y, w, h) => c.fillRect(x, y, w, h)
-
-
 
 const PI = Math.PI
 
@@ -101,7 +98,6 @@ const makeSlash = (n) => {
   o.visible = false
   return o
 }
-
 const makeHead = () => {
   const o = {
     c1: '#222',
@@ -123,7 +119,6 @@ const makeHead = () => {
   o.head = o
   return o
 }
-
 const makeTwoEyes = (x = 0, y = 0) => {
   const o = {
     render(c) {
@@ -163,19 +158,12 @@ const makeTwoEyes = (x = 0, y = 0) => {
   makeBasicObject(o, x, y)
   return o
 }
-const makeThirdEye = () => {
+const makeThirdEye = (x = 0, y = 0) => {
   const o = {
     render(c) {
-      c.strokeStyle = '#000'
-      c.fillStyle = 'red'
+      c.strokeStyle = K.b
+      c.fillStyle = K.r
       c.lineWidth = .8
-      // c.beginPath()
-      // c.moveTo(-3, -18)
-      // c.lineTo(3, -18)
-      // c.lineTo(0, -3)
-      // c.lineTo(-3, -18)
-      // c.fill()
-      // c.stroke()
       BP(c)
       MT(c, -3, -18)
       L(c, 3, -18)
@@ -186,7 +174,7 @@ const makeThirdEye = () => {
 
     } 
   }
-  makeBasicObject(o)
+  makeBasicObject(o, x, y)
   return o
 }
 const makeLeg = (x) => {
@@ -513,21 +501,21 @@ const turret = (x, y, cellSize) => {
 }
 
 const makeMine = (x, y, cellSize) => {
-  // const m = makeHQ(x, y, cellSize)
   const o = {
     render(c) {
       c.lineWidth = 5
-      c.fillStyle = '#533'
+      c.fillStyle = '#fb5'
       BP(c)
-      c.arc(0, 0, 25, 0, 2*PI, false)
+      c.rect(-24, 5, 24, 8)
+      c.rect(2, 5, 10, 8)
+      c.rect(14, 5, 10, 8)
+      c.rect(-18, -5, 24, 8)
+      c.rect(8, -5, 10, 8)
+      SK(c)
       FL(c)
     }
   }
-  makeBasicObject(o, x, y, cellSize, cellSize)
-  // moreProperties(o)
-
-  // o.canBleed = false
-  // playerUnits.push(o)
+  makeBasicObject(o, x, y, cellSize / 2, cellSize / 4)
   return o
 }
 
@@ -836,7 +824,7 @@ const renderTurret = (x, y) => {
       grad.addColorStop(0, '#555')
       grad.addColorStop(1, '#222')
       c.fillStyle = grad
-      c.lineWidth = 2
+      c.lineWidth = 1
       BP(c)
       c.ellipse(0, w * 0.3, w/2, w/2, 0, 0, PI, true)
       c.closePath()
@@ -853,6 +841,22 @@ const renderTurret = (x, y) => {
  return o
 
 }
+
+// const makeMine = (x, y) => {
+//   const o = {
+//     render(c) {
+//       c.strokeStyle = K.b
+//       c.fillStyle = '#fb5'
+//       c.lineWidth = 5
+//       BP(c)
+//       c.rect(-6, -12, 12, 24)
+//       SK(c)
+//       FL(c)
+//     }
+//   }
+//   makeBasicObject(o, x, y)
+//   return o
+// }
 
 
 
@@ -885,6 +889,7 @@ export {
   bloodLake,
   makeMine,
   makeGold,
-  renderTurret
+  renderTurret,
+  makeMine
   
  }

@@ -5,7 +5,7 @@ import { HQ, initMap, mine } from './main/mainSetUp/initMap.js'
 import { bottomPanel, buttons, goldAmount, initBottomPanel, prices } from './main/mainSetUp/initBottomPanel.js'
 import { initSelectionBox} from './mouse.js'
 import { initUnitCamera } from './camera.js'
-import { makeBluePrint, makeGold, makeRectangle } from './drawings.js'
+import { makeBluePrint, makeGold, makeMine, makeRectangle } from './drawings.js'
 
 import { newMainPlayer, createEnemyUnit, createArmedPleb, createPleb, makeText } from './unitObject.js'
 
@@ -40,13 +40,8 @@ export const K = {
   g : '#555'
 }
 
-
-let gold
-
 const PI = Math.PI
-
 let player
-// let UC = false
 let playerUnits = []
 let maze
 let g
@@ -58,7 +53,6 @@ let movingUnits = []
 let solids = []
 let enemies = []
 let alertedEnemies = []
-// let movingEnemies = []
 let bloods = []
 let bloodSplats = []
 let shots = []
@@ -90,11 +84,7 @@ const summonWave = () => {
     readyToSummon = false
 
     if (firstWaveDelay) {
-
-      console.log('new wave !')
-
       summons = randomNum(minSummons, maxSummons)
-
       for (let i = 0; i < summons; i++) {
         const enemy = createEnemyUnit(50 + i * 150, surfaceHeight, 100 * enemyLevel)
         objLayer.addChild(enemy)
@@ -106,9 +96,7 @@ const summonWave = () => {
         enemy.getInRange = true
         enemy.isMoving = true
         movingUnits.push(enemy)
-        
       }
-
 
       if (Math.random() > .75) {
         minSummons += 1
@@ -119,7 +107,7 @@ const summonWave = () => {
     }
 
 
-    g.wait((summons * 5) * 200, () => readyToSummon = true)
+    g.wait((summons * 5) * 1000, () => readyToSummon = true)
   }
 
 
@@ -171,7 +159,7 @@ const moveMiners = () => {
 
 
           miner.readyForOrder = true
-        } else if (!miner.mined && distMI < 85) {
+        } else if (!miner.mined && distMI < 60) {
           miner.mined = true
           miner.gb.visible = true
           miner.readyForOrder = true
@@ -183,24 +171,36 @@ const moveMiners = () => {
 
 let tipSet = false
 
+
+
 const showTip = () => {
 
   if (!UC) {
-    // console.log(UC)
     if (g.pointer.y > g.stage.height - 100) {
-      for (let i in buttons) {
-        if (g.hitTestPoint(g.pointer, buttons[i])) {
-          tip.x = g.pointer.x
-          tip.y = g.pointer.y - tip.height
-          tip.text.content = `x${prices[i]}`
-          
-          if (!tipSet) {
-            tipSet = true
-            g.wait(150, () => tip.visible = true)
+      if (g.pointer.x < 440) {
+
+        for (let i in buttons) {
+          if (g.hitTestPoint(g.pointer, buttons[i])) {
+            tip.x = g.pointer.x
+            tip.y = g.pointer.y - tip.height
+            tip.text.content = `x${prices[i]}`
+            
+            if (!tipSet) {
+              tipSet = true
+              g.wait(150, () => tip.visible = true)
+            }
+            
+            
           }
-          
+        }
+        
+      } else {
+        if (tipSet) {
+          tipSet = false
+          tip.visible = false
         }
       }
+      
     } else {
       if (tipSet) {
         tipSet = false
@@ -243,15 +243,14 @@ const play = () => {
   // const ex = enemies[0].centerX.toFixed(1)
   // const ey = enemies[0].centerY.toFixed(1)
   
-  if (enemies.length > 0) {
-    const e = enemies[0]
-    debugText.content = `
-    target = ${e.target}
-    isMoving = ${e.isMoving}
-    attackings = ${attackingTarget.length}
-    enemies = ${enemies.length}
-    `
-  }
+  // if (playerUnits.length > 0) {
+    // const u = playerUnits[0]
+    // debugText.content = `
+    // target = ${u.target}
+    // isMoving = ${u.isMoving}
+    // attackings = ${attackingTarget.length}
+    // `
+  // }
 
 
 
@@ -268,6 +267,12 @@ const initialStuff = () => {
   objLayer.addChild(player)
   playerUnits.push(player)
   units.push(player)
+
+
+
+
+  const m = makeMine (100, 100)
+  objLayer.addChild(m)
 
   // const enemy = createEnemyUnit(100, 200)
   // objLayer.addChild(enemy)
@@ -298,19 +303,15 @@ const setup = () => {
   initialStuff()
 
   initSelectionBox()
-  // initUIHealthBar()
-  // debugText = makeText(' ', '12px arial', 'white', 0, 100)
+
+
+
   debugText = makeText(uiLayer, ' ', '22px arial', 'white', 0, 100)
 
 
-
-  // const states = makeText(uiLayer, 'Gold = 0', '32px arial', 'white')
-
-
-  // const tip = makeRectangle(200, 100, K.b, 0, 0, 0)
-  tip = simpleButton('x25', 100, 0, 60, 20, 32, () => {}, 150, 80, K.b)
+  tip = simpleButton('x25', 0, 0, 30, 6, K.b, 32, 0, 90, 40)
   tip.alpha = 0.7
-  const mg = makeGold(20, 10)
+  const mg = makeGold(-8, -4)
   tip.addChild(mg)
   uiLayer.addChild(tip)
   tip.visible = false

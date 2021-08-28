@@ -68,11 +68,11 @@ const simpleButton = (
   yPos = 10, 
   textX = 10, 
   textY = 10, 
+  color = '#555',
   size = 28,
   action = () => console.log(text), 
-  width = 160, 
-  height = 80,
-  color = '#555'
+  width = 100, 
+  height = 80
   ) => {
   const button = makeRectangle(width, height, color, 1, xPos, yPos)
   button.action = action
@@ -274,13 +274,13 @@ const roll = (t, vx, vy) => {
     g.wait(1, () => {
       t.rotation += 0.625
       t.x += vx * t.speed * 12.5
-      if (vx > 0) checkCollisions('left')
-      else if (vx < 0) checkCollisions('right')
+      if (vx > 0) checkCollisions('left', t)
+      else if (vx < 0) checkCollisions('right', t)
       t.y += vy * t.speed * 12.5
-      if (vy > 0) checkCollisions('top')
-      else if (vy < 0) checkCollisions('bot')
+      if (vy > 0) checkCollisions('top', t)
+      else if (vy < 0) checkCollisions('bot', t)
       t.rollCounter -= 1
-      t.roll()
+      roll(t, vx, vy)
     })
   }
   else {
