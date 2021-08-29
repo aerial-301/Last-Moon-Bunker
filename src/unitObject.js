@@ -1,4 +1,4 @@
-import { enemies, g, PI, selectedUnits, shots, attackingTarget, playerUnits, units, movingUnits } from './main.js'
+import { enemies, g, PI, selectedUnits, shots, attackingTarget, playerUnits, units, movingUnits, K } from './main.js'
 import { playerDie, newMoveTest, randomNum, removeItem, roll, scan, tempAngle, getUnitVector, setDirection } from './functions.js'
 import { gun, makeLeg, makeHeadDetails, makeBorder, makeRectangle, makeTwoEyes, makeThirdEye, makeSlash, bulletImpact, makeHead, newMakeEnemyEyes, bloodDrop, makeGold } from './drawings.js'
 import { world, floorLayer, space } from './main/mainSetUp/initLayers.js'
@@ -62,7 +62,7 @@ const moreProperties = (o) => {
   o.yellowHB.visible = false
   o.scanForTargets = (targets) => {
     if (o == currentPlayer) return
-    g.wait(randomNum(50, 200), () => {
+    // g.wait(randomNum(50, 200), () => {
       targets.forEach(target => {
 
         // const gd = g.GlobalDistance(o, target) / Math.sqrt(2)
@@ -74,17 +74,19 @@ const moreProperties = (o) => {
           }
         }
       })
-    })
+    // })
   }
   o.getHit = (damage) => {
 
     o.health -= damage
     if (o.canBleed) {
       bloodDrop(o.x, o.y)
+    }
+
+    if (o.canRet) {
       if (!o.target || o.target.isDead) {
         o.scanForTargets(o.targets)
       }
-
     }
 
     if (o.health <= 0) {
@@ -128,13 +130,13 @@ const moreProperties = (o) => {
   o.die = () => playerDie(o)
 }
 
-const makeUnitObject = (o, n = 0, x = 0, y = 0) => {
+const makeUnitObject = (o, n = 0, x = 0, y = 0, e = 0) => {
   makeMovableObject(o, x, y)
   
   o.speed = 2
-  o.leftLeg = makeLeg(5)
-  o.rightLeg = makeLeg(30)
-  o.head = makeHead()
+  o.leftLeg = makeLeg(5, e)
+  o.rightLeg = makeLeg(30, e)
+  o.head = makeHead(e)
   if (n) {
     o.headDetails = makeHeadDetails()
     o.head.addChild(o.headDetails)
@@ -164,6 +166,7 @@ const makeUnitObject = (o, n = 0, x = 0, y = 0) => {
         o.idleOffset = 1
       }
       if (o.type == 'MK') o.thirdEye.y = o.twoEyes.y
+      // o.playerHand.y = o.twoEyes.y
       o.twoEyes.y = o.head.y + (o.type=='Pleb'?8:0)
       o.head.y += o.idleOffset
       o.offsetCounter += o.idleOffset
@@ -200,7 +203,7 @@ const makeUnitObject = (o, n = 0, x = 0, y = 0) => {
     }
   }
   o.changeColor = () => {
-    o.head.c1 = o.head.c2 = '#FFF'
+    o.head.c1 = o.head.c2 = K.w
     g.wait(80, () => {
       o.head.c1 = '#222'
       o.head.c2 = '#555'
@@ -284,9 +287,9 @@ const slice1 = (o, t) => {
   o.attacked = true
   o.swordHandle.rotation = handPointerAngle + attackSwordAngle
   o.rotation = 0
-  o.attackHit(t, randomNum(24, 35))
-  const HZ = 10
-  g.soundEffect(HZ, 0, .2, 'sine', .05, 0, 0, HZ * 700, true)
+  o.attackHit(t, randomNum(45, 63))
+  const HZ = 100
+  g.soundEffect(HZ, .18, 'triangle', .13, HZ * 5, true, 50)
   o.slash1.visible = true
   g.wait(40, () => o.slash1.visible = false)
   g.wait(150, () => o.attacked = false)
@@ -295,12 +298,12 @@ const slice1 = (o, t) => {
 const slice2 = (o, t) => {
   o.attacked2 = true
   o.swordHandle.rotation = handPointerAngle + idleSwordAngle
-  o.attackHit(t, randomNum(33, 46))
-  const HZ = 10
-  g.soundEffect(HZ, 0, .2, 'sine', .05, 0, 0, HZ * 700, true)
+  o.attackHit(t, randomNum(57, 82))
+  const HZ = 100
+  g.soundEffect(HZ, .14, 'triangle', .17, HZ * 5, true, 50)
   o.slash2.visible = true
   g.wait(40, () => o.slash2.visible = false)
-  g.wait(90, () => o.attacked2 = false)
+  g.wait(120, () => o.attacked2 = false)
 }
 
 const newMainPlayer = (x = 0, y = 0) => {
@@ -316,7 +319,7 @@ const newMainPlayer = (x = 0, y = 0) => {
     type: 'MK',
     health: 999,
     damage: 0,
-    range: 999,
+    range: 400,
     twoEyes: twoEyes,
     thirdEye: thirdEye, 
     swordHandle: swordHandle,
@@ -328,6 +331,7 @@ const newMainPlayer = (x = 0, y = 0) => {
     rollDistance: 10, 
     rollCounter: 10, 
     alertSent: false,
+    
   }
   o.baseHealth = o.health
   makePlayerUnitObject(o, 1, x, y)
@@ -349,8 +353,8 @@ const newMainPlayer = (x = 0, y = 0) => {
           setDirection(o)
           o.isRolling = true
           o.roll(o, o.vx, o.vy)
-          const HZ = 1
-          g.soundEffect(HZ, 0, .025, 'sine', .2, 0, 0, HZ * 1000, true)
+          // const HZ = 1
+          // g.soundEffect(HZ, 0, .001, 'triangle', .09, 0, 0, HZ * 700, true)
           return
         }
       } else {
@@ -378,29 +382,27 @@ const newMainPlayer = (x = 0, y = 0) => {
         //  Calculated angles are all in Radians. 1.14 Radians is around 65 Degrees
         if (Math.abs(smallest) <= 1.14) {
           if (enemy.getHit(damage)) {
-            if (enemies.length > 0) {
-              o.scanForTargets(o.targets)
-            } else {
-              g.wait(10, () => {
-                o.destinationX = HQ.x
-                o.destinationY = HQ.y
+            g.wait(500, () => {
+              if (!o.target) {
+                o.destinationX = HQ.x + 25
+                o.destinationY = HQ.y + 200
                 setDirection(o)
                 o.roll(o, o.vx, o.vy)
-              })
-            }
+              }
+            })
           }
+
           
-          
-          
-          // o.inRange = false
         }
       }
     }
   }
   o.roll = () => {
-    const HZ = 1
-    g.soundEffect(HZ, 0, .5, 'sine', .2, 0, 0, HZ * 1000, true)
-    roll(o, o.vx, o.vy)
+    if (o.isRolling) {
+      const HZ = 1
+      g.soundEffect(HZ, .29, 'sine', .1, HZ * 800, true)
+      roll(o, o.vx, o.vy)
+    }
   }
 
   o.targets = enemies
@@ -466,8 +468,8 @@ const makeArmed = (o) => {
       }
 
       o.weapon.fire()
-      const HZ = 900
-      g.soundEffect(HZ, 0, .05, 'sine', .25, 0, 0, HZ * 0.8, false, 50)
+      const HZ = 950
+      g.soundEffect(HZ, .13, 'sine', .09, HZ * .7, false, 120)
       g.wait(rate, () => o.attacked = false)
     }
   }
@@ -476,6 +478,7 @@ const makeArmed = (o) => {
   o.range = 300
   o.attackRate = 500
   o.targets = enemies
+  o.canRet = true
   o.weaponAngle = (PI / 2) + 0.1
   o.weaponRotation = 0.4
   gun(o)
@@ -510,11 +513,11 @@ const createPleb = (x, y) => {
  o.hasGold = false
  o.health = 50
  o.baseHealth = o.health
- 
  o.attack = () => {}
  makePlayerUnitObject(o, 0, x, y)
  makePleb(o)
 
+ o.scanForTargets = () => {}
  const gb = makeGold(0, 10)
  gb.visible = false
  gb.rotation = PI/2
@@ -534,13 +537,11 @@ const createEnemyUnit = (x = 0, y = 0, hp) => {
     targets: playerUnits,
   }
   o.baseHealth = o.health
-  makeUnitObject(o, 0, x, y)
+  makeUnitObject(o, 0, x, y, 1)
   o.attack = (target) => {
     if(!o.attacked) {
       if (g.GlobalDistance(o, target) > o.range) {
         o.target = null
-        // o.isMoving = true
-        // movingUnits.push(o)
         return
       }
       o.attacked = true
@@ -553,9 +554,8 @@ const createEnemyUnit = (x = 0, y = 0, hp) => {
       o.playerHand.alwaysVisible = true
       o.twoEyes.alwaysVisible = true
 
-      const HZ = 3000
-
-      g.soundEffect(HZ, 0, .09, 'triangle', .05, 0, 0, HZ * .9, false)
+      const HZ = 10
+      g.soundEffect(HZ, .25, 'sine', .04, HZ * 120, true, 50)
 
       if (target.getHit(o.damage)) {
         o.isMoving = true
@@ -573,6 +573,7 @@ const createEnemyUnit = (x = 0, y = 0, hp) => {
   }
 
   
+  o.canRet = true
   o.die = () => removeItem(enemies, o)
   o.twoEyes = newMakeEnemyEyes()
   o.addChild(o.twoEyes)

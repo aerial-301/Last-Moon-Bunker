@@ -1,20 +1,28 @@
 import { uiLayer, objLayer } from "./initLayers.js"
-import { gun, makeGold, makeHead, makeRectangle, makeThirdEye, makeTwoEyes, renderTurret } from "../../drawings.js"
-import { randomNum, simpleButton } from "../../functions.js"
+import { makeGold, makeRectangle, makeThirdEye, makeTwoEyes, renderTurret } from "../../drawings.js"
+import { notEnough, randomNum, simpleButton } from "../../functions.js"
 import { g, currentAction, bluePrint, armedUnits, playerUnits, units, K } from "../../main.js"
-import { createArmedPleb, createPleb, makeBasicObject, moreProperties, newMainPlayer } from "../../unitObject.js"
+import { createArmedPleb, createPleb, newMainPlayer } from "../../unitObject.js"
 import { HQ } from './initMap.js'
 
 let bottomPanel, buttons = []
 const panelHeight = 100
 export let goldAmount 
-export let currentGold = 324
+export let currentGold = 100
 export let prices = [3, 7, 15, 77]
 
 const initBottomPanel = () => {
   bottomPanel = makeRectangle(g.stage.width, panelHeight, '#311', 10, 0, g.stage.height - panelHeight)
   uiLayer.addChild(bottomPanel)
+
+  const summonSound = () => {
+    const HZ = 150
+    g.soundEffect(HZ, .2, 'triangle', .2, 20, true)
+  }
   
+
+
+
   const b1 = simpleButton(0, 10, 10, 100, 23)
   const b2 = simpleButton(0, 120, 10, 100, 23)
   const b3 = simpleButton(0, 230, 10, 100, 23)
@@ -62,22 +70,25 @@ const initBottomPanel = () => {
 
     if (goldAmount.sub(prices[0])) {
 
+      summonSound()
+
       const u = createPleb(HQ.x - 60 - randomNum(0, 100, 0), HQ.y)
       objLayer.addChild(u)
       playerUnits.push(u)
       units.push(u)
       armedUnits.push(u)
-    }
+    } else notEnough()
   }
   
   b2.action = () => {
     if (goldAmount.sub(prices[1])) {
+      summonSound()
       const u = createArmedPleb(HQ.x + 80 + randomNum(0, 100, 0), HQ.y)
       objLayer.addChild(u)
       playerUnits.push(u)
       units.push(u)
       armedUnits.push(u)
-    }
+    } else notEnough()
   }
   
   
@@ -89,12 +100,14 @@ const initBottomPanel = () => {
 
   b4.action = () => {
     if (goldAmount.sub(prices[3])) {
+      summonSound()
+
       const u = newMainPlayer(HQ.x + 25, HQ.y + 150)
       objLayer.addChild(u)
       playerUnits.push(u)
       units.push(u)
       armedUnits.push(u)
-    }
+    } else notEnough()
   }
   
 

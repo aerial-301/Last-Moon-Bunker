@@ -1,8 +1,8 @@
 import { world, objLayer } from './main/mainSetUp/initLayers.js'
-import { g, selectedUnits, movingUnits, attackingTarget, tip} from './main.js'
+import { g, selectedUnits, movingUnits, attackingTarget, tip, summonWave} from './main.js'
 import { checkCollisions, removeItem } from './functions.js'
 import { bottomPanel } from './main/mainSetUp/initBottomPanel.js'
-import { gridMap } from './main/mainSetUp/initMap.js'
+// import { gridMap } from './main/mainSetUp/initMap.js'
 // import { debugShape, tempIndicator } from '../extra/debug.js'
 let currentPlayer, UC
 
@@ -28,7 +28,7 @@ window.addEventListener('keyup', (k) => {
 
   } else if (k.key === 'r') switchMode()
 
-  // if (k.key === 'p') summonWave()
+  if (k.key === 'p') summonWave()
   // if (k.key === 'o') {
   //   gridMap.forEach(r => console.log(r.join('')))
   // }
@@ -37,16 +37,16 @@ window.addEventListener('keyup', (k) => {
 
 const moveCamera = (surfaceWidth, surfaceHeight) => {
   if (keys['w']) {
-    if (world.y < 300) world.y += 10
+    if (world.y < 300) world.y += 20
   }
   if (keys['s']) {
-    if (world.y > g.stage.height - surfaceHeight) world.y -= 10
+    if (world.y > g.stage.height - surfaceHeight) world.y -= 20
   }
   if (keys['a']) {
-    if (world.x < 0) world.x += 10
+    if (world.x < 0) world.x += 20
   }
   if (keys['d']) {
-    if (world.x > g.stage.width - surfaceWidth) world.x -= 10
+    if (world.x > g.stage.width - surfaceWidth) world.x -= 20
   }
 }
 const movePlayer = () => {

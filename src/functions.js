@@ -34,15 +34,15 @@ const canBuildHere = (gridMap, r, c) => {
 }
 
 
-const setCellValue = (gridMap ,row, col, value) => {
-  let n
-  directions.forEach(d => {
-    n = addVectors([row, col], d)
-    try {
-      gridMap[n[0]][n[1]] = value
-    } catch (e) {null}
-  })
-}
+// const setCellValue = (gridMap ,row, col, value) => {
+//   let n
+//   directions.forEach(d => {
+//     n = addVectors([row, col], d)
+//     try {
+//       gridMap[n[0]][n[1]] = value
+//     } catch (e) {null}
+//   })
+// }
 
 const checkNeighbors = (gridMap, row, col) => {
   let n
@@ -294,7 +294,10 @@ const playerDie = (o) => {
   removeItem(armedUnits, o)
 }
 
+const notEnough = () => {
+  const HZ = 150
+  g.soundEffect(HZ, .2, 'sawtooth', .05, 100, false)
+}
 
 
-
-export { checkNeighbors, setDirection, simpleButton, checkCollisions, removeItem, randomNum, getUnitVector, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle, playerDie, setCellValue, canBuildHere }
+export { notEnough, checkNeighbors, setDirection, simpleButton, checkCollisions, removeItem, randomNum, getUnitVector, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle, playerDie, canBuildHere }

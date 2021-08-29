@@ -2,12 +2,12 @@ import { GA } from './ga_minTest.js'
 import { initCanvasEvents } from './main/mainSetUp/initCanvas.js'
 import { initLayers, objLayer, uiLayer, world } from './main/mainSetUp/initLayers.js'
 import { HQ, initMap, mine } from './main/mainSetUp/initMap.js'
-import { bottomPanel, buttons, goldAmount, initBottomPanel, prices } from './main/mainSetUp/initBottomPanel.js'
+import { buttons, goldAmount, initBottomPanel, prices } from './main/mainSetUp/initBottomPanel.js'
 import { initSelectionBox} from './mouse.js'
 import { initUnitCamera } from './camera.js'
-import { makeBluePrint, makeGold, makeMine, makeRectangle } from './drawings.js'
+import { makeBluePrint, makeGold, makeMine} from './drawings.js'
 
-import { newMainPlayer, createEnemyUnit, createArmedPleb, createPleb, makeText } from './unitObject.js'
+import { newMainPlayer, createEnemyUnit, makeText } from './unitObject.js'
 
 import { playerInput } from './main/mainLoop/handleInput.js'
 import { moveUnits } from './main/mainLoop/moveUnits.js'
@@ -17,7 +17,7 @@ import { attackTarget } from './main/mainLoop/attackTarget.js'
 import { showBluePrint } from './main/mainLoop/showBluePrint.js'
 import { randomNum, removeItem, setDirection, simpleButton } from './functions.js'
 import { debugShape } from './debug.js'
-import { currentPlayer, UC } from './keyboard.js'
+import { UC } from './keyboard.js'
 
 // import { debugShape } from './debug.js'
 
@@ -70,23 +70,44 @@ let tip
 
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-let maxSummons = 2
-let minSummons = 0
+let maxSummons = 8
+let minSummons = 5
 let summons
-let enemyLevel = 1
+let enemyLevel = 5
 
 let readyToSummon = true
 
 let firstWaveDelay = false
+
+let wavePosition
+
+
+const sideWave = () => {
+  return Math.random() < .5 ? [-20, randomNum(50, surfaceHeight)]  : [surfaceWidth -20, randomNum(50, surfaceHeight)]
+}
+
+const bottomWave = () => {
+  return [randomNum(0, surfaceWidth - 30), surfaceHeight - 130]
+}
+
+let sides = [sideWave, bottomWave]
+let side
+
 
 const summonWave = () => {
   if (readyToSummon) {
     readyToSummon = false
 
     if (firstWaveDelay) {
+
       summons = randomNum(minSummons, maxSummons)
       for (let i = 0; i < summons; i++) {
-        const enemy = createEnemyUnit(50 + i * 150, surfaceHeight, 100 * enemyLevel)
+
+        side = sides[Math.random() < .5 ? 0 : 1]()
+
+
+        const enemy = createEnemyUnit(side[0], side[1], enemyLevel)
+        // const enemy = createEnemyUnit(side[0], side[1], 100 * enemyLevel)
         objLayer.addChild(enemy)
         units.push(enemy)
         enemies.push(enemy)
@@ -107,7 +128,7 @@ const summonWave = () => {
     }
 
 
-    g.wait((summons * 5) * 1000, () => readyToSummon = true)
+    g.wait((summons * 5) * 100, () => readyToSummon = true)
   }
 
 
@@ -194,11 +215,10 @@ const showTip = () => {
           }
         }
         
-      } else {
-        if (tipSet) {
-          tipSet = false
-          tip.visible = false
-        }
+      } 
+      else {
+        tipSet = false
+        tip.visible = false
       }
       
     } else {
@@ -263,16 +283,20 @@ const initialStuff = () => {
   // bottomPanel.addChild(G)
 
 
-  player = newMainPlayer(200, 180)
-  objLayer.addChild(player)
-  playerUnits.push(player)
-  units.push(player)
+  // player = newMainPlayer(200, 180)
+  // objLayer.addChild(player)
+  // playerUnits.push(player)
+  // units.push(player)
+
+
+  const enemy = createEnemyUnit(300, 100)
+  objLayer.addChild(enemy)
+  units.push(enemy)
 
 
 
-
-  const m = makeMine (100, 100)
-  objLayer.addChild(m)
+  // const m = makeMine (100, 100)
+  // objLayer.addChild(m)
 
   // const enemy = createEnemyUnit(100, 200)
   // objLayer.addChild(enemy)

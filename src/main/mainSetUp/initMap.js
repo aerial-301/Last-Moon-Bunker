@@ -1,8 +1,7 @@
-import { checkNeighbors, randomNum, setCellValue } from '../../functions.js'
+import { checkNeighbors, randomNum } from '../../functions.js'
 import { surfaceLine, moonHole, makeHQ, makeMine } from '../../drawings.js'
 import { solids} from '../../main.js'
 import { floorLayer } from './initLayers.js'
-import { debugShape } from '../../debug.js'
 
 let mine, HQ, gridMap = []
 
@@ -22,10 +21,8 @@ const initMap = (surfaceWidth, surfaceHeight, cellSize) => {
   const mCol = 12
 
   gridMap[mRow][mCol] = 5
-  // setCellValue(gridMap, mRow, mCol, 3)
-
   gridMap[hqrow][hqcol] = 5
-  // setCellValue(gridMap, hqrow, hqcol, 3)
+
 
 
   for (let row = 0; row < rows; row++) {
@@ -46,7 +43,6 @@ const initMap = (surfaceWidth, surfaceHeight, cellSize) => {
           if (cel % 2 == 0) {
             if (gridMap[row][cel] === 0 && checkNeighbors(gridMap, row,cel)) {
               gridMap[row][cel] = 4
-              // setCellValue(gridMap, row, cel, 3)
               const d = randomNum(5, cellSize * 0.25)
               moonHole(d, cel * cellSize + d, row * cellSize + d)
             }

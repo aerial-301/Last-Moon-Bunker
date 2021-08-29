@@ -1,8 +1,8 @@
 import { solids, g, playerUnits, armedUnits, enemies, bloodDrops, fadeOuts, K } from "./main.js"
 import { gridMap } from "./main/mainSetUp/initMap.js"
-import { world, floorLayer, objLayer, uiLayer } from "./main/mainSetUp/initLayers.js"
+import { world, floorLayer, objLayer } from "./main/mainSetUp/initLayers.js"
 import { makeMovableObject, makeBasicObject, moreProperties } from "./unitObject.js"
-import { playerDie, randomNum, removeItem, setCellValue } from "./functions.js"
+import { playerDie, randomNum, removeItem } from "./functions.js"
 
 const BP = (c) => c.beginPath()
 const MT = (c, x, y) => c.moveTo(x, y)
@@ -21,12 +21,9 @@ const makeCircle = (d, k, l, movable = false, x = 0, y = 0) => {
   o.render = (c) => {
     c.lineWidth = l
     c.fillStyle = o.f
-    // c.beginPath()
     BP(c)
     c.arc(o.radius + (-o.radius * 2 * o.pivotX), o.radius + (-o.radius * 2 * o.pivotY), o.radius, 0, 2 * PI, false)
-    // if (l) c.stroke()
     if (l) SK()
-    // c.fill()
     FL(c)
   }
   if (!movable) makeBasicObject(o, x, y, d, d)
@@ -40,20 +37,14 @@ const makeRectangle = (w, h, k, s = 1, x = 0, y = 0) => {
     width: w,
     height: h,
     f: k,
-    // strokeStyle: K.b
   }
   o.render = (c) => {
-    // c.strokeStyle = o.strokeStyle
     c.lineWidth = s
     c.fillStyle = o.f
-    // c.beginPath()
     BP(c)
-    // c.moveTo(x, y)
     MT(c, x, y)
     c.rect(-o.width * o.pivotX, -o.height * o.pivotY, o.width, o.height)
-    // c.fill()
     FL(c)
-    // if (s) c.stroke()
     if (s) SK(c)
   }
   makeBasicObject(o, x, y, w, h)
@@ -64,11 +55,8 @@ const makeSelectionBox = () => {
     WIDTH: 1,
     HEIGHT: 1,
     render(c) {
-      c.strokeStyle = '#FFF'
+      c.strokeStyle = K.w
       c.lineWidth = 4
-      // c.beginPath()
-      // c.rect(o.WIDTH, o.HEIGHT, -o.WIDTH, -o.HEIGHT)
-      // c.stroke()
       BP(c)
       c.rect(o.WIDTH, o.HEIGHT, -o.WIDTH, -o.HEIGHT)
       SK(c)
@@ -80,7 +68,7 @@ const makeSelectionBox = () => {
 const makeSlash = (n) => {
   const o = {
     render(c) {
-      c.fillStyle = '#fff'
+      c.fillStyle = K.w
       if (n) {
         BP(c)
         c.arc(0, 160, 160, PI * 1.5, PI * 0.165, false)
@@ -98,10 +86,11 @@ const makeSlash = (n) => {
   o.visible = false
   return o
 }
-const makeHead = () => {
+const makeHead = (e = 0) => {
+  const color = randomNum(33, 99)
   const o = {
     c1: '#222',
-    c2: '#555',
+    c2: e ? `#${color}00ff` : '#555',
   }
   o.render = (c) => {
     const grad = c.createRadialGradient(2, -3, 27, 10, -20,0)
@@ -177,18 +166,14 @@ const makeThirdEye = (x = 0, y = 0) => {
   makeBasicObject(o, x, y)
   return o
 }
-const makeLeg = (x) => {
+const makeLeg = (x, e = 0) => {
   const o = {
     render(c) {
-      c.strokeStyle = '#000'
-      c.fillStyle = '#555'
+      c.strokeStyle = K.b
+      c.fillStyle = e? '#aaa' : '#733'
       c.lineWidth = 1
       BP(c)
-      MT(c, 0, 0)
-      L(c, 6, 0)
-      L(c, 6, 4)
-      L(c, 0, 4)
-      L(c, 0, 0)
+      c.rect(0, 0, 6, 4)
       FL(c)
       SK(c)
     } 
@@ -200,7 +185,7 @@ const makeBorder = (w, h) => {
   const o = {
     render(c) {
       const l = (x,y) => L(c, x, y)
-      c.strokeStyle = '#FFF'
+      c.strokeStyle = K.w
       c.lineWidth = 2
       BP(c)
       MT(c, 0, 0)
@@ -225,7 +210,7 @@ const makeBorder = (w, h) => {
 const makeHeadDetails = () => {
   const o = {
     render(c) {
-      c.strokeStyle = '#000'
+      c.strokeStyle = K.b
       c.lineWidth = 1.5
       BP(c)
       c.arc(-12, -13, 35, Math.PI * 0.20, Math.PI * 0.4, false)
@@ -448,29 +433,14 @@ const turret = (x, y, cellSize) => {
       barrel.muz = 8
       barrel.color = '#ff0'
 
-      const HZ = 700
-
-      g.soundEffect(
-        HZ,      //The sound's fequency pitch in Hertz
-        0,              //The time, in seconds, to fade the sound in
-        .2,               //The time, in seconds, to fade the sound out
-        'triangle',                //waveform type: "sine", "triangle", "square", "sawtooth"
-        .1,         //The sound's maximum volume
-        0,            //The speaker pan. left: -1, middle: 0, right: 1
-        0,                //The time, in seconds, to wait before playing the sound
-        HZ * .9,     //The number of Hz in which to bend the sound's pitch down
-        false,             //If `reverse` is true the pitch will bend up
-        0,         //A range, in Hz, within which to randomize the pitch
-        0        //A value in Hz. It creates 2 dissonant frequencies above and below the target pitch
-        // undefined,                //An array: [delayTimeInSeconds, feedbackTimeInSeconds, filterValueInHz]
-        // [.8, 0.5, false]             //An array: [durationInSeconds, decayRateInSeconds, reverse]
-      )
+      const HZ = 600
+      g.soundEffect(HZ, .3, 'triangle', .2, HZ * .9, false)
 
       target.getHit(o.damage)
 
       g.wait(50, () => {
         barrel.muz = 4
-        barrel.color = '#000'
+        barrel.color = K.b
       })
       g.wait(500, () => o.attacked = false)
     }
@@ -491,9 +461,9 @@ const turret = (x, y, cellSize) => {
     playerDie(o)
     removeItem(solids, o)
     gridMap[o.row][o.cel] = 0
-    // setCellValue(gridMap, o.row, o.cel, 0)
   }
   o.canBleed = false
+  o.canRet = true
   o.addChild(barrel)
   playerUnits.push(o)
   armedUnits.push(o)
@@ -601,11 +571,12 @@ const surfaceLine = (w, h, x, y, lineWidth = 2, yOff = 0) => {
   return o
 }
 const tempLaser = (x = 0, y = 0) => {
+  const c1 = randomNum(10, 99, 1)
   const o = {
-    length: 10,
+    length: 100,
     render(c) {
-      c.strokeStyle = '#F00'
-      c.lineWidth = 2
+      c.strokeStyle = `#ff${c1}a0`
+      c.lineWidth = 4
       BP(c)
       MT(c, 0, 0)
       L(c, this.length, 0)
@@ -625,7 +596,7 @@ const gun = (owner, rifle = true, x = -55, y = -30, w = 70, h = 5) => {
       MT(c, x, y)
       c.fillStyle = K.b
       FR(c, -w/2, -h/2, w, h)
-      c.fillStyle = '#222'
+      // c.fillStyle = K.b
       FR(c, -w * 0.1, h / 2, -w / 10, 17)
       SK(c)
       FL(c)
@@ -715,26 +686,13 @@ const tempEarth = (d, x, y) => {
 
   return b
 }
-const makeEnemyEyes = () => {
-  const o = {
-    render(c) {
-      c.strokeStyle = K.b
-      c.fillStyle = '#0F0'
-      c.lineWidth = 2
-      BP(c)
-      c.ellipse(0, -14, 10, 12, 0, 0, 2*PI, false)
-      SK(c)
-      FL(c)
-    }
-  }
-  makeBasicObject(o)
-  return o
-}
+
 const newMakeEnemyEyes = () => {
+  const color = randomNum(10, 99, 1)
   const o = {
     render(c) {
       c.strokeStyle = K.b
-      c.fillStyle = '#0F0'
+      c.fillStyle = `#${color}ffa0`
       c.lineWidth = 2
       BP(c)
       c.ellipse(0, -10, 10, 10, 0, 0, 2*PI, false)
@@ -801,7 +759,6 @@ const makeGold = (x = 0, y = 0) => {
     }
   }
   makeBasicObject(o, x, y)
-  // uiLayer.addChild(o)
   return o
 }
 
@@ -842,23 +799,6 @@ const renderTurret = (x, y) => {
 
 }
 
-// const makeMine = (x, y) => {
-//   const o = {
-//     render(c) {
-//       c.strokeStyle = K.b
-//       c.fillStyle = '#fb5'
-//       c.lineWidth = 5
-//       BP(c)
-//       c.rect(-6, -12, 12, 24)
-//       SK(c)
-//       FL(c)
-//     }
-//   }
-//   makeBasicObject(o, x, y)
-//   return o
-// }
-
-
 
 export { 
   makeCircle, 
@@ -880,7 +820,6 @@ export {
   surfaceLine,
   moonHole,
   tempEarth,
-  makeEnemyEyes,
   gun,
   newMakeEnemyEyes,
   turret,
@@ -890,6 +829,5 @@ export {
   makeMine,
   makeGold,
   renderTurret,
-  makeMine
   
  }

@@ -1,7 +1,7 @@
 import { currentAction, g, playerUnits, selectedUnits, movingUnits, enemies, attackingTarget, solids, bluePrint, cellSize, units, miners } from './main.js'
 import { gridMap, mine } from './main/mainSetUp/initMap.js'
 import { uiLayer, world, floorLayer } from './main/mainSetUp/initLayers.js'
-import { getUnitVector, sortUnits, setCellValue, setDirection, removeItem, checkNeighbors } from './functions.js'
+import { getUnitVector, sortUnits, setDirection, checkNeighbors, notEnough } from './functions.js'
 import { actionMark, makeRectangle, makeSelectionBox, turret } from './drawings.js'
 import { currentPlayer, UC } from './keyboard.js'
 import { buttons, currentGold, goldAmount, prices } from './main/mainSetUp/initBottomPanel.js'
@@ -53,24 +53,21 @@ const leftMouseDown = () => {
         const currentCell = gridMap[row][cel]
 
         if (currentCell || !checkNeighbors(gridMap, row, cel) || currentGold < prices[2]) {
+          notEnough()
           // console.log('cant build here')
         } else {
           goldAmount.sub(prices[2])
           currentAction.placingBuilding = false
           gridMap[row][cel] = 4
-          // setCellValue(gridMap, row, cel, 3)
           
           const T = turret(cel, row, cellSize)
           T.x += T.halfWidth / 4
           T.y += T.halfHeight
           floorLayer.addChild(T)
           solids.push(T)
-          // console.log('construction complete')
           bluePrint.visible = false
+          // console.log('construction complete')
         }
-        
-        // const building = makeRectangle(100, 100, '#321', 3, g.pointer.x - world.x, g.pointer.y - world.y)
-
         
       } else {
         selectionStarted = true

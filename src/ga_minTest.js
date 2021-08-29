@@ -18,11 +18,11 @@ export var GA = {
     g._lag = 0
     g.interpolate = true
 
-    let scaleToFit = Math.min(window.innerWidth / g.canvas.width,( window.innerHeight - 300) / g.canvas.height)
-    // g.canvas.style.transformOrigin = "0 0";
-    // g.canvas.style.transform = "scale(" + scaleToFit + ")";
-    // g.scale = scaleToFit
-    g.scale = 1
+    let scaleToFit = Math.min(window.innerWidth / g.canvas.width,( window.innerHeight) / g.canvas.height)
+    g.canvas.style.transformOrigin = "0 0";
+    g.canvas.style.transform = "scale(" + scaleToFit + ")";
+    g.scale = scaleToFit
+    // g.scale = 1
 
     g.render = (canvas, lagOffset) => {
       let ctx = canvas.ctx
@@ -215,8 +215,6 @@ export var GA = {
       return o
     }
 
-
-    
     g.wait = (d, c) => setTimeout(c, d)
     g.hitTestRectangle = (r1, r2, global = false) => {
       let hit = false, combinedHalfWidths, combinedHalfHeights, vx, vy
@@ -248,19 +246,21 @@ export var GA = {
     g.GlobalDistance = (a, b, aOffX = 0, aOffY = 0) => {return Math.sqrt( ( b.centerX - a.centerX + aOffX)**2 + ( b.centerY - a.centerY + aOffY)**2 )}
     
     g.actx = new AudioContext()
-    g.soundEffect = function(frequencyValue, attack, decay, type, volumeValue, panValue, wait, pitchBendAmount, reverse, randomValue,) {
-      var actx = g.actx
-      var oscillator, volume, pan
+
+    g.soundEffect = function(frequencyValue, decay, type, volumeValue, pitchBendAmount, reverse, randomValue) {
+      let actx = g.actx
+      let oscillator, volume, compressor
+
       oscillator = actx.createOscillator()
       volume = actx.createGain()
-      if (!actx.createStereoPanner) pan = actx.createPanner() 
-      else pan = actx.createStereoPanner()
+      compressor = actx.createDynamicsCompressor()
+
       oscillator.connect(volume)
-      volume.connect(pan)
-      pan.connect(actx.destination)
+      volume.connect(compressor)
+      compressor.connect(actx.destination)
+
+
       volume.gain.value = volumeValue;
-      if (!actx.createStereoPanner) pan.setPosition(panValue, 0, 1 - Math.abs(panValue)) 
-      else pan.pan.value = panValue
       oscillator.type = type
       let frequency
       if (randomValue > 0) {
@@ -270,29 +270,51 @@ export var GA = {
         )
       } else frequency = frequencyValue
       oscillator.frequency.value = frequency
+
+      fadeIn(volume)
       fadeOut(volume)
       if (pitchBendAmount > 0) pitchBend(oscillator)
-      play(oscillator)
 
-      function play(node) {node.start(actx.currentTime + wait)}
-      function fadeOut(volumeNode) {
-        volumeNode.gain.linearRampToValueAtTime(volumeValue, actx.currentTime + attack + wait)
-        volumeNode.gain.linearRampToValueAtTime(0, actx.currentTime + wait + attack + decay)
+      play(oscillator)
+      oscillator.stop(actx.currentTime + 0.5);
+
+      function fadeIn(volumeNode) {
+        volumeNode.gain.value = 0;
+        volumeNode.gain.linearRampToValueAtTime(
+          0, actx.currentTime
+        );
+        volumeNode.gain.linearRampToValueAtTime(
+          volumeValue, actx.currentTime + 0.05
+        );
       }
+
+      function fadeOut(volumeNode) {
+        volumeNode.gain.linearRampToValueAtTime(volumeValue, actx.currentTime)
+        volumeNode.gain.linearRampToValueAtTime(0, actx.currentTime + decay)
+      }
+
       function pitchBend(oscillatorNode) {
         var frequency = oscillatorNode.frequency.value
         if (!reverse) {
-          oscillatorNode.frequency.linearRampToValueAtTime(frequency, actx.currentTime + wait)
-          oscillatorNode.frequency.linearRampToValueAtTime(frequency - pitchBendAmount, actx.currentTime + wait + attack + decay)
+          oscillatorNode.frequency.linearRampToValueAtTime(frequency, actx.currentTime)
+          oscillatorNode.frequency.linearRampToValueAtTime(frequency - pitchBendAmount, actx.currentTime + decay)
         }
 
         else {
-          oscillatorNode.frequency.linearRampToValueAtTime(frequency, actx.currentTime + wait)
-          oscillatorNode.frequency.linearRampToValueAtTime(frequency + pitchBendAmount, actx.currentTime + wait + attack + decay)
+          oscillatorNode.frequency.linearRampToValueAtTime(frequency, actx.currentTime)
+          oscillatorNode.frequency.linearRampToValueAtTime(frequency + pitchBendAmount, actx.currentTime + decay)
         }
       }
 
+      function play(node) {
+        node.start(actx.currentTime);
+      }
+
     }
+
+
+
+    
 
     return g
   }

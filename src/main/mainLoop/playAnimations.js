@@ -1,11 +1,17 @@
 import { g, units, bloodDrops, fadeOuts, shots } from "../../main.js"
 import { removeItem } from "../../functions.js"
 
+
+let animate = true
 const animateUnits = () => {
-  units.forEach(unit => {
-    if (unit.isMoving) unit.moveAnimation()
-    else unit.idleAnimation()
-  })
+  if (animate) {
+    animate = false
+    units.forEach(unit => {
+      if (unit.isMoving) unit.moveAnimation()
+      else unit.idleAnimation()
+    })
+    g.wait(5, () => animate = true)
+  }
 }
 
 const animateBulletImpact = () => {
