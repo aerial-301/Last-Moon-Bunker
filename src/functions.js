@@ -1,22 +1,84 @@
+import { g, movingUnits, solids, playerUnits, armedUnits } from './main.js'
+import { world, objLayer } from './main/mainSetUp/initLayers.js'
 import { makeRectangle } from './drawings.js'
-import { g, movingUnits, solids, MK, currentPlayer, world, objLayer } from './main.js'
 import { makeText } from './unitObject.js'
+import { currentPlayer } from './keyboard.js'
 // import { tempIndicator } from '../extra/debug.js'
 
 const OBSDIST = 250
 const OBSDIST_UNDERGROUND = 400
 
+
+const directions = [
+  [1, 0],
+  [1, 1],
+  [0, 1],
+  [-1, 1],
+  [-1, 0],
+  [-1, -1],
+  [0, -1],
+  [1, -1]
+]
+
 const tempAngle = (a, b, bOffsetX = 0, bOffsetY = 0) => {return Math.atan2((b.centerX + bOffsetX - a.centerX), (b.centerY + bOffsetY - a.centerY))}
 const xDistance = (a, b) => Math.abs(b.centerX - a.centerX)
 const yDistance = (a, b) => Math.abs(b.centerY - a.centerY)
 
-const simpleButton = (text, action = () => console.log(text), textX = -56, textY = -20, yPos = 130, xPos = g.stage.width / 2 - 140, color = '#444444', width = 280, height = 120) => {
+const addVectors = (a, b) => {return [a[0] + b[0], a[1] + b[1]]}
+
+
+const canBuildHere = (gridMap, r, c) => {
+  try {if (!gridMap[r][c] && checkNeighbors(gridMap,r, c)) return true}
+  catch (e) { console.log('error')}
+  return false
+}
+
+
+// const setCellValue = (gridMap ,row, col, value) => {
+//   let n
+//   directions.forEach(d => {
+//     n = addVectors([row, col], d)
+//     try {
+//       gridMap[n[0]][n[1]] = value
+//     } catch (e) {null}
+//   })
+// }
+
+const checkNeighbors = (gridMap, row, col) => {
+  let n
+  for (let d of directions) {
+    n = addVectors([row, col], d)
+    try {
+      if (gridMap[n[0]][n[1]] != 0) return false
+    } catch (e) {null}
+  }
+  return true
+
+  // directions.forEach(d => {
+  //   n = addVectors([row, col], d)
+  //   try {
+  //     if (gridMap[n[0]][n[1]] != 0) 
+  //   } catch (e) {null}
+  // })
+}
+
+const simpleButton = (
+  text,
+  xPos = 10, 
+  yPos = 10, 
+  textX = 10, 
+  textY = 10, 
+  color = '#555',
+  size = 28,
+  action = () => console.log(text), 
+  width = 100, 
+  height = 80
+  ) => {
   const button = makeRectangle(width, height, color, 1, xPos, yPos)
   button.action = action
-  const tSize = 90 - (text.length * 5)
-  const t = makeText(text, `${tSize}px arial`, '#00ff00', 0, 0)
-  button.addChild(t)
-  button.putCenter(t, textX, textY)
+  // const tSize = 80 - (text.length * 10)
+  const tSize = size
+  if (text ) button.text = makeText(button, text, `${tSize}px arial`, '#FFF', textX, textY)
   return button
 }
 const aroundAll = (collider, H) => {
@@ -89,13 +151,13 @@ const checkCollisions = (side, collider = currentPlayer) => {
 }
 const randomNum = (min, max, int = 1) => {
     const r = Math.random() * (max - min) + min
-    return int ? Math.floor(r) : r
+    return int ? r | 0 : r
 }
 const removeItem = (array, item) => {
     const index = array.indexOf(item)
     if (index !== -1) array.splice(index, 1)
 }
-const getUnitVector = (a, b, toPointer = false) => {
+const getUnitVector = (a, b) => {
   let xv, yv
   xv = b.centerX - a.centerX
   yv = b.centerY - a.centerY
@@ -105,7 +167,7 @@ const getUnitVector = (a, b, toPointer = false) => {
 const sortUnits = (array, x, y, moveArray) => {
   const len = array.length
   if (len == 0) return
-  const size = Math.floor(Math.sqrt(len))
+  const size = Math.sqrt(len) | 0
   let z = 1
   while (z < size) {
     if ((len - z) % size !== size - 1) z++
@@ -119,26 +181,26 @@ const sortUnits = (array, x, y, moveArray) => {
   const firstX = x
   const firstY = y
   const lastX = x + ((len - z) % size) * (maxWidth + 4) + maxWidth
-  const lastY = y + Math.floor((len - z) / size) * (maxHeight + 4) + maxHeight
+  const lastY = y + (0 | ((len - z) / size)) * (maxHeight + 4) + maxHeight
   const midX = (lastX - firstX) / 2
   const midY = (lastY - firstY) / 2
   for (let i in array) {
     const u = array[i]
 
+    u.getInRange = false
     u.isCollided = false
     u.target = null
-    // u.attacked = false
+    u.isSeeking = false
 
-    const dX = x + (i % size) * (maxWidth + xSpace) - midX
-    const dY = y + Math.floor(i / size) * (maxHeight + ySpace) - midY
-    u.destinationX = dX //- world.x
-    u.destinationY = dY
-    // tempIndicator(dX, dY, 500, '#0FF', 50)
-    const xV = dX - u.x
-    const yV = dY - u.y
-    const mag = Math.sqrt((Math.pow(xV, 2)) + (Math.pow(yV, 2)))
-    u.vx = (xV / mag)
-    u.vy = (yV / mag)
+    if (u.isMining) {
+      u.isMining = false
+      u.readyForOrder = true
+    }
+    
+    u.destinationX = x + (i % size) * (maxWidth + xSpace) - midX
+    u.destinationY = y + (0 | (i / size)) * (maxHeight + ySpace) - midY
+    setDirection(u)
+
     if (moveArray.findIndex((e) => e == u) == -1) {
       u.isMoving = true
       moveArray.push(u)
@@ -146,17 +208,17 @@ const sortUnits = (array, x, y, moveArray) => {
   }
 }
 const setDirection = (u) => {
-  const xV = u.destinationX - u.x
-  const yV = u.destinationY - u.y
-  const mag = Math.sqrt((Math.pow(xV, 2)) + (Math.pow(yV, 2)))
-  u.vx = (xV / mag)
-  u.vy = (yV / mag)
+  const xD = u.destinationX - u.x
+  const yD = u.destinationY - u.y
+  const mag = Math.sqrt(xD**2 + yD**2)
+  u.vx = (xD / mag)
+  u.vy = (yD / mag)
 }
 const newMoveX = (u) => {
   const xD = u.destinationX - u.x
   const xd = Math.abs(xD)
   if (!u.isCollidingV) {
-    if (xd > u.speed) {
+    if (xd > u.speed + (u.getInRange ? u.range / Math.sqrt(2) - 95 : 0)) {
       u.x += u.vx * u.speed
       if (u.obstacles.length > 0) {
         if (xD != 0) aroundAll(u, 1)
@@ -171,7 +233,7 @@ const newMoveY = (u) => {
   const yD = u.destinationY - u.y
   const yd = Math.abs(yD)
   if (!u.isCollidingH) {
-    if (yd > u.speed) {
+    if (yd > u.speed + (u.getInRange ? u.range / Math.sqrt(2) - 45 : 0)) {
       u.y += u.vy * u.speed
       if (u.obstacles.length > 0) {
         if (yD != 0) aroundAll(u, 0)
@@ -187,7 +249,9 @@ const newMoveTest = (u) => {
 
   if (!x && !y) {
     removeItem(movingUnits, u)
+    u.getInRange = false
     u.isMoving = false
+    // u.scanForTargets(u.targets)
   }
 }
 const scan = (u, delay = 400, distance = OBSDIST_UNDERGROUND) => {
@@ -210,13 +274,13 @@ const roll = (t, vx, vy) => {
     g.wait(1, () => {
       t.rotation += 0.625
       t.x += vx * t.speed * 12.5
-      if (vx > 0) checkCollisions('left')
-      else if (vx < 0) checkCollisions('right')
+      if (vx > 0) checkCollisions('left', t)
+      else if (vx < 0) checkCollisions('right', t)
       t.y += vy * t.speed * 12.5
-      if (vy > 0) checkCollisions('top')
-      else if (vy < 0) checkCollisions('bot')
+      if (vy > 0) checkCollisions('top', t)
+      else if (vy < 0) checkCollisions('bot', t)
       t.rollCounter -= 1
-      t.roll()
+      roll(t, vx, vy)
     })
   }
   else {
@@ -225,5 +289,15 @@ const roll = (t, vx, vy) => {
     t.isRolling = false
   }
 }
+const playerDie = (o) => {
+  removeItem(playerUnits, o)
+  removeItem(armedUnits, o)
+}
 
-export { simpleButton, checkCollisions, removeItem, randomNum, getUnitVector, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle }
+const notEnough = () => {
+  const HZ = 150
+  g.soundEffect(HZ, .2, 'sawtooth', .05, 100, false)
+}
+
+
+export { notEnough, checkNeighbors, setDirection, simpleButton, checkCollisions, removeItem, randomNum, getUnitVector, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle, playerDie, canBuildHere }

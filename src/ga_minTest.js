@@ -1,31 +1,35 @@
+import { randomNum } from './functions.js'
+import { world } from './main/mainSetUp/initLayers.js'
+
 export var GA = {
   create(setup) {
     var g = {}
     g.canvas = document.getElementById('c')
-    g.canvas.style.backgroundColor = "black"
+    g.canvas.style.backgroundColor = '#333'
     g.canvas.ctx = g.canvas.getContext("2d")
     g.stage = makeStage()
     g.pointer = makePointer()
     g.state = undefined
     g.setup = setup
     g.paused = false
-    g._fps = 60
+    g._fps = 30
     g._startTime = Date.now()
     g._frameDuration = 1000 / g._fps
     g._lag = 0
     g.interpolate = true
 
-    let scaleToFit = Math.min(window.innerWidth / g.canvas.width, window.innerHeight / g.canvas.height)
-    // g.canvas.style.transformOrigin = "0 0";
-    // g.canvas.style.transform = "scale(" + scaleToFit + ")";
-    // g.scale = scaleToFit
-    g.scale = 1
+    let scaleToFit = Math.min(window.innerWidth / g.canvas.width,( window.innerHeight) / g.canvas.height)
+    g.canvas.style.transformOrigin = "0 0";
+    g.canvas.style.transform = "scale(" + scaleToFit + ")";
+    g.scale = scaleToFit
+    // g.scale = 1
 
     g.render = (canvas, lagOffset) => {
       let ctx = canvas.ctx
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       g.stage.children.forEach(c => displaySprite(c))
       function displaySprite(s) {
+
         if (s.alwaysVisible || s.visible && s.gx < canvas.width + s.width && s.gx + s.width >= -s.width && s.gy < canvas.height + s.height && s.gy + s.height >= -s.height) {
           ctx.save()
           if (g.interpolate) {
@@ -41,6 +45,7 @@ export var GA = {
           ctx.globalAlpha = s.alpha
           ctx.rotate(s.rotation)
           ctx.scale(s.scaleX, s.scaleY)
+          if (s.blendMode)  ctx.globalCompositeOperation = s.blendMode;
           if (s.render) s.render(ctx)
           if (s.children && s.children.length > 0) {
             ctx.translate(-s.width * s.pivotX, -s.height * s.pivotY)
@@ -95,19 +100,19 @@ export var GA = {
         },
       }
     })
-    g.remove = function (s) {
+    g.remove = function () {
       let sprites = Array.prototype.slice.call(arguments)
       if (!(sprites[0] instanceof Array)) {
         if (sprites.length > 1) sprites.forEach(s => s.parent.removeChild(s))
-        else sprites[0].parent.removeChild(sprites[0])
+        else sprites[0].parent.removeChild(sprites[0]) // KEEP THIS ONLY ?????????
       }
-      else {
-        let p = sprites[0]
-        p.forEach(s => {
-          s.parent.removeChild(s)
-          p.splice(p.indexOf(s), 1)
-        })
-      }
+      // else {
+      //   let p = sprites[0]
+      //   p.forEach(s => {
+      //     s.parent.removeChild(s)
+      //     p.splice(p.indexOf(s), 1)
+      //   })
+      // }
     }
     function makeBasicObject(o, x = 0, y = 0, w = 50, h = 50) {
       o.x= x
@@ -141,21 +146,7 @@ export var GA = {
         bottom: { get: () => { return o.y + o.parent.gy} }
       })
     }
-    function moreProperties(o) {
-      o.yOffset = 0
-      Object.defineProperties(o, {
-          gx: { get: () => { return o.parent ? o.x + o.parent.gx : o.x } },
-          gy: { get: () => { return o.parent ? o.y + o.parent.gy : o.y } },
-          centerX: { get: () => { return o.x + o.halfWidth } },
-          centerY: { get: () => { return o.y + o.halfHeight } },
-          Y: { get: () => { return o.y + o.parent.gy + o.yOffset } }
-      })
-      o.children = []
-      o.addChild = (c) => {
-          addC(c, o)
-      }
-      o.removeChild = (c) => remC(c, o)
-    }
+
     function makeStage() {
       const o = {}
       makeBasicObject(o, 0, 0, g.canvas.width, g.canvas.height)
@@ -212,6 +203,8 @@ export var GA = {
         halfHeight: { get: () => 0 },
         centerX: { get: () => o.x },
         centerY: { get: () => o.y },
+        shiftedX: {get: () => o._x - world.x},
+        shiftedY: {get: () => o._y - world.y}
       })
       o.moveHandler = function (e) {
         o._x = (e.pageX - e.target.offsetLeft)
@@ -221,71 +214,108 @@ export var GA = {
       g.canvas.addEventListener("mousemove", o.moveHandler.bind(o), false)
       return o
     }
+
     g.wait = (d, c) => setTimeout(c, d)
     g.hitTestRectangle = (r1, r2, global = false) => {
-        let hit = false, combinedHalfWidths, combinedHalfHeights, vx, vy
-        if (global) {
-            vx = (r1.gx + r1.halfWidth) - (r2.gx + r2.halfWidth)
-            vy = (r1.gy + r1.halfHeight) - (r2.gy + r2.halfHeight)
+      let hit = false, combinedHalfWidths, combinedHalfHeights, vx, vy
+      if (global) {
+        vx = (r1.gx + r1.halfWidth) - (r2.gx + r2.halfWidth)
+        vy = (r1.gy + r1.halfHeight) - (r2.gy + r2.halfHeight)
+      }
+      else {
+        vx = r1.centerX - r2.centerX
+        vy = r1.centerY - r2.centerY
+      }
+      if (Math.abs(vx) < r1.halfWidth + r2.halfWidth) {
+        if (Math.abs(vy) < r1.halfHeight + r2.halfHeight) {
+          hit = true
         }
         else {
-            vx = r1.centerX - r2.centerX
-            vy = r1.centerY - r2.centerY
+          hit = false
         }
-        combinedHalfWidths = r1.halfWidth + r2.halfWidth
-        combinedHalfHeights = r1.halfHeight + r2.halfHeight
-        //Check for a collision on the x axis
-        if (Math.abs(vx) < combinedHalfWidths) {
-            //A collision might be occuring. Check for a collision on the y axis
-            if (Math.abs(vy) < combinedHalfHeights) {
-                //There's definitely a collision happening
-                hit = true
-            }
-            else {
-                //There's no collision on the y axis
-                hit = false
-            }
-        }
-        else {
-            //There's no collision on the x axis
-            hit = false
-        }
-        //`hit` will be either `true` or `false`
-        return hit
+      }
+      else {
+        hit = false
+      }
+      return hit
     }
-    g.hitTestPoint = function (point, sprite) {
-        var shape, left, right, top, bottom, vx, vy, magnitude, hit
-        if (sprite.radius) {
-            shape = "circle"
-        }
-        else {
-            shape = "rectangle"
-        }
-        //Rectangle
-        if (shape === "rectangle") {
-            //Get the position of the sprite's edges
-            left = sprite.gx
-            right = sprite.gx + sprite.width
-            top = sprite.gy
-            bottom = sprite.gy + sprite.height
-            //Find out if the point is intersecting the rectangle
-            hit = point.x > left && point.x < right && point.y > top && point.y < bottom
-        }
-        //Circle
-        if (shape === "circle") {
-            //Find the distance between the point and the
-            //center of the circle
-            vx = point.x - sprite.centerX,
-                vy = point.y - sprite.centerY,
-                magnitude = Math.sqrt(vx * vx + vy * vy)
-            //The point is intersecting the circle if the magnitude
-            //(distance) is less than the circle's radius
-            hit = magnitude < sprite.radius
-        }
-        //`hit` will be either `true` or `false`
-        return hit
+    g.hitTestPoint = function (p, s) {
+      if (p.x < s.gx || p.x > s.gx + s.width || p.y < s.gy || p.y > s.gy + s.height) return false
+      return true
     }
-    g.GlobalDistance = (a, b, aOffX = 0, aOffY = 0) => {return Math.sqrt(Math.pow(((b.centerX) - (a.centerX + aOffX)), 2) + Math.pow(((b.centerY) - (a.centerY + aOffY)), 2))}
+    g.GlobalDistance = (a, b, aOffX = 0, aOffY = 0) => {return Math.sqrt( ( b.centerX - a.centerX + aOffX)**2 + ( b.centerY - a.centerY + aOffY)**2 )}
+    
+    g.actx = new AudioContext()
+
+    g.soundEffect = function(frequencyValue, decay, type, volumeValue, pitchBendAmount, reverse, randomValue) {
+      let actx = g.actx
+      let oscillator, volume, compressor
+
+      oscillator = actx.createOscillator()
+      volume = actx.createGain()
+      compressor = actx.createDynamicsCompressor()
+
+      oscillator.connect(volume)
+      volume.connect(compressor)
+      compressor.connect(actx.destination)
+
+
+      volume.gain.value = volumeValue;
+      oscillator.type = type
+      let frequency
+      if (randomValue > 0) {
+        frequency = randomNum(
+          frequencyValue - randomValue / 2,
+          frequencyValue + randomValue / 2, 1
+        )
+      } else frequency = frequencyValue
+      oscillator.frequency.value = frequency
+
+      fadeIn(volume)
+      fadeOut(volume)
+      if (pitchBendAmount > 0) pitchBend(oscillator)
+
+      play(oscillator)
+      oscillator.stop(actx.currentTime + 0.5);
+
+      function fadeIn(volumeNode) {
+        volumeNode.gain.value = 0;
+        volumeNode.gain.linearRampToValueAtTime(
+          0, actx.currentTime
+        );
+        volumeNode.gain.linearRampToValueAtTime(
+          volumeValue, actx.currentTime + 0.05
+        );
+      }
+
+      function fadeOut(volumeNode) {
+        volumeNode.gain.linearRampToValueAtTime(volumeValue, actx.currentTime)
+        volumeNode.gain.linearRampToValueAtTime(0, actx.currentTime + decay)
+      }
+
+      function pitchBend(oscillatorNode) {
+        var frequency = oscillatorNode.frequency.value
+        if (!reverse) {
+          oscillatorNode.frequency.linearRampToValueAtTime(frequency, actx.currentTime)
+          oscillatorNode.frequency.linearRampToValueAtTime(frequency - pitchBendAmount, actx.currentTime + decay)
+        }
+
+        else {
+          oscillatorNode.frequency.linearRampToValueAtTime(frequency, actx.currentTime)
+          oscillatorNode.frequency.linearRampToValueAtTime(frequency + pitchBendAmount, actx.currentTime + decay)
+        }
+      }
+
+      function play(node) {
+        node.start(actx.currentTime);
+      }
+
+    }
+
+
+
+    
+
     return g
   }
 }

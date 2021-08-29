@@ -1,9 +1,19 @@
-import { g, uiLayer, playerUnits, selectedUnits, movingUnits, MK, currentPlayer, enemies, world, attackingTarget } from './main.js'
-import { getUnitVector, removeItem, sortUnits } from './functions.js'
-import { actionMark, makeRectangle, makeSelectionBox } from './drawings.js'
+import { currentAction, g, playerUnits, selectedUnits, movingUnits, enemies, attackingTarget, solids, bluePrint, cellSize, units, miners } from './main.js'
+import { gridMap, mine } from './main/mainSetUp/initMap.js'
+import { uiLayer, world, floorLayer } from './main/mainSetUp/initLayers.js'
+import { getUnitVector, sortUnits, setDirection, checkNeighbors, notEnough } from './functions.js'
+import { actionMark, makeRectangle, makeSelectionBox, turret } from './drawings.js'
+import { currentPlayer, UC } from './keyboard.js'
+import { buttons, currentGold, goldAmount, prices } from './main/mainSetUp/initBottomPanel.js'
+
+// import { debugShape } from './debug.js'
 let selectionBox
 let selectionStarted
 let boxSet
+
+let marked = false
+
+
 const initSelectionBox = () => {
   selectionStarted = false
   boxSet = false
@@ -16,56 +26,168 @@ const pointerDown = (e) => {
   else if (e.button === 2) rightMouseDown()
 }
 const pointerUp = (e) => {
-  if (MK) return false
+  if (UC) return false
   if (e.button === 0) leftMouseUp()
   else if (e.button === 2) rightMouseUp()
 }
+const clickedBottomPanel = () => {
+  if (g.pointer.y > g.stage.height - 100) return true
+}
 const leftMouseDown = () => {
-  if (!MK) {
-    selectionStarted = true
-    selectionBox.alpha = 1
-  }
-  else currentPlayer.attack()
+  if (!UC) {
+    if (clickedBottomPanel()) {
+
+      buttons.forEach(button => {
+        if (g.hitTestPoint(g.pointer, button)) {
+          button.action()
+        }
+      })
+
+    } else {
+      if (currentAction.placingBuilding) {
+        
+        const row = ((g.pointer.y - world.y) / cellSize) | 0
+        if (row < 0) return
+        const cel = ((g.pointer.x - world.x) / cellSize) | 0
+
+        const currentCell = gridMap[row][cel]
+
+        if (currentCell || !checkNeighbors(gridMap, row, cel) || currentGold < prices[2]) {
+          notEnough()
+          // console.log('cant build here')
+        } else {
+          goldAmount.sub(prices[2])
+          currentAction.placingBuilding = false
+          gridMap[row][cel] = 4
+          
+          const T = turret(cel, row, cellSize)
+          T.x += T.halfWidth / 4
+          T.y += T.halfHeight
+          floorLayer.addChild(T)
+          solids.push(T)
+          bluePrint.visible = false
+          // console.log('construction complete')
+        }
+        
+      } else {
+        selectionStarted = true
+        g.wait(20, () => selectionBox.alpha = 1)
+      }
+    }
+  } else currentPlayer.attack()
 }
 const rightMouseDown = () => {
-  if (!MK) {
-    if (selectedUnits.length > 0) {
-      if (enemies.length > 0) {
-        for (const enemy of enemies) {
-          if (g.GlobalDistance(enemy, g.pointer) <= 25) {
-            const a = actionMark(0, 0, true)
-            enemy.addChild(a)
-            g.wait(300, () => g.remove(a))
-            selectedUnits.forEach(unit => {
-              unit.isMoving = false
-              unit.target = enemy
-              attackingTarget.push(unit)
-            })
-            return
+  if (!UC) {
+
+    if (g.pointer.shiftedY < 30) return
+
+    if (clickedBottomPanel()) {
+      // nothing
+    } else {
+
+      if (currentAction.placingBuilding) {
+        currentAction.placingBuilding = false
+        bluePrint.visible = false
+      }
+
+
+      if (selectedUnits.length > 0) {
+        if (enemies.length > 0) {
+          for (const enemy of enemies) {
+            if (g.GlobalDistance(enemy, g.pointer) <= 25) {
+
+              const a = actionMark(enemy, 0, 0, true)
+              enemy.addChild(a)
+
+              selectedUnits.forEach(unit => {
+                if (g.GlobalDistance(unit, enemy) > unit.range) {
+                  unit.destinationX = enemy.centerX - world.x
+                  unit.destinationY = enemy.centerY - world.y
+                  unit.goal = enemy
+                  setDirection(unit)
+                  unit.getInRange = true
+                  unit.isSeeking = true
+
+                  if (!unit.isMoving) {
+                    unit.isMoving = true
+                    movingUnits.push(unit)
+                  }
+
+                } else {
+                  unit.isMoving = false
+                  unit.target = enemy
+                  if (attackingTarget.indexOf(unit) == -1) {
+                    attackingTarget.push(unit)
+                  }
+                }
+
+              })
+
+              // selectedUnits.forEach(unit => {
+              // })
+              return
+            }   
           }
         }
+
+
+        const dis = g.GlobalDistance(mine, g.pointer)
+        // console.log(dis)
+
+        if (dis < 25) {
+          selectedUnits.forEach(unit => {
+            if (unit.type == 'Pleb') {
+
+              unit.readForOrders = true
+              
+              if (!unit.isMining) {
+                unit.isMining = true
+                miners.push(unit)
+              }
+              
+              
+
+              if (!unit.isMoving) {
+                unit.isMoving = true
+                movingUnits.push(unit)
+              }
+              // unit.destinationX = mine.centerX
+              // unit.destinationy = mine.centerY
+              // setDirection(unit)
+              // unit.isMoving = true
+            }
+          })
+
+          return
+        }
+
+
+        actionMark(floorLayer, g.pointer.shiftedX, g.pointer.shiftedY, false)
+        sortUnits(selectedUnits, g.pointer.shiftedX, g.pointer.shiftedY, movingUnits)
       }
-      // sortUnits(selectedUnits, g.pointer.x + pointerOffsetX, g.pointer.y + pointerOffsetY, movingUnits)
-      sortUnits(selectedUnits, g.pointer.x - world.x, g.pointer.y - world.y, movingUnits)
+
     }
+
   } else {
     // if (!g.state) return false
     // if (g.state.name !== 'play') return false
-    if (currentPlayer.type == 'main') {
+    if (currentPlayer.type == 'MK') {
       if (currentPlayer.rollOnCooldown) return false
       currentPlayer.rollOnCooldown = true
-      const uv = getUnitVector(currentPlayer, g.pointer, true)
+      const uv = getUnitVector(currentPlayer, g.pointer)
       currentPlayer.vx = uv.x
       currentPlayer.vy = uv.y
-      const sides = []
-      if (uv.x > 0) sides.push('left')
-      else sides.push('right')
-      if (uv.y > 0) sides.push('top')
-      else sides.push('down')
+      // const sides = []
+      // if (uv.x > 0) sides.push('left')
+      // else sides.push('right')
+      // if (uv.y > 0) sides.push('top')
+      // else sides.push('down')
       currentPlayer.isRolling = true
       currentPlayer.scan(1500, 350)
       currentPlayer.roll()
-      g.wait(200, () => currentPlayer.rollOnCooldown = false)
+      g.wait(200, () => {
+        if (currentPlayer) currentPlayer.rollOnCooldown = false
+      })
     }
   }
 }
@@ -77,7 +199,6 @@ const leftMouseUp = () => {
     const h = selectionBox.HEIGHT
     const tempBox = makeRectangle(w ? Math.abs(w) : 1, h ? Math.abs(h) : 1, '#FFF', 0, w < 0 ? selectionBox.gx + w : selectionBox.gx, h < 0 ? selectionBox.gy + h : selectionBox.gy)
     g.stage.addChild(tempBox)
-    // for (const unit of playerUnits) {
     playerUnits.forEach(unit => {
       if (g.hitTestRectangle(tempBox, unit, true)) {
         if (selectedUnits.findIndex((value) => value == unit) == -1) unit.select()
@@ -96,8 +217,18 @@ const beginSelection = () => {
       selectionBox.y = g.pointer.y
       boxSet = true
     }
-    selectionBox.WIDTH = g.pointer.x - selectionBox.x
-    selectionBox.HEIGHT = g.pointer.y - selectionBox.y
+
+    // if (g.pointer.y > g.stage.height - 100) return
+
+
+    const x = g.pointer.x - selectionBox.x
+    const y = g.pointer.y - selectionBox.y
+
+
+    selectionBox.WIDTH = x
+    selectionBox.HEIGHT = y
+    // selectionBox.WIDTH = g.pointer.x - selectionBox.x
+    // selectionBox.HEIGHT = g.pointer.y - selectionBox.y
   }
 }
 const rightMouseUp = () => {

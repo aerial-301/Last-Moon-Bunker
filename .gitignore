@@ -1,8 +1,7 @@
 oldStuff
 node_modules
-js
-dist
-extra
-
-webpack.config.js
-package-lock.json
+out
+test.js
+out
+out/out-advanced.zip
+out/out-advanced.js

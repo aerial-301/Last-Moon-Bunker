@@ -1,37 +1,50 @@
-import { randomNum, removeItem, tempAngle } from './functions.js'
-import { moveCamera, movePlayer } from './keyboard.js'
-import { initSelectionBox, beginSelection, pointerDown, pointerUp } from './mouse.js'
-import { initUnitCamera, centerUnitCamera } from './camera.js'
-import { makeText, newMainPlayer, createEnemyUnit, createPlayerUnit } from './unitObject.js'
-import { makeRectangle, makeCircle, HQ, moonGround, laser, tempDrawing, tempEarth, tempDrawing_2, gun } from './drawings.js'
 import { GA } from './ga_minTest.js'
-import { debugShape } from '../extra/debug.js'
-// import { tempIndicator } from '../extra/debug.js'
+import { initCanvasEvents } from './main/mainSetUp/initCanvas.js'
+import { initLayers, objLayer, uiLayer, world } from './main/mainSetUp/initLayers.js'
+import { HQ, initMap, mine } from './main/mainSetUp/initMap.js'
+import { buttons, goldAmount, initBottomPanel, prices } from './main/mainSetUp/initBottomPanel.js'
+import { initSelectionBox} from './mouse.js'
+import { initUnitCamera } from './camera.js'
+import { makeBluePrint, makeGold, makeMine} from './drawings.js'
 
-const moveSpeed = 8
+import { newMainPlayer, createEnemyUnit, makeText } from './unitObject.js'
 
+import { playerInput } from './main/mainLoop/handleInput.js'
+import { moveUnits } from './main/mainLoop/moveUnits.js'
+import { playAnimations } from './main/mainLoop/playAnimations.js'
+import { lookForTargets } from './main/mainLoop/lookForTargets.js'
+import { attackTarget } from './main/mainLoop/attackTarget.js'
+import { showBluePrint } from './main/mainLoop/showBluePrint.js'
+import { randomNum, removeItem, setDirection, simpleButton } from './functions.js'
+import { debugShape } from './debug.js'
+import { UC } from './keyboard.js'
 
+// import { debugShape } from './debug.js'
 
-const RAD_DEG = Math.PI / 180
-const initialAngle = -60
-const PI = Math.PI
-const C = {
-    P2: 360,
-    TREEBASEHEIGHT: 20,
-    hitAreaDiameter: 180,
-    idleSwordAngle: RAD_DEG * initialAngle,
-    attackSwordAngle: RAD_DEG * (initialAngle + 120),
-    SPLATGROW: 0.54,
+export const surfaceWidth = 2400
+export const surfaceHeight = 1000
+const cellSize = 73
+
+export const currentAction = {
+  placingBuilding: false,
+  // UIupdated: false,
 }
-let currentPlayer
+
+
+
+export const K = {
+  b : '#000',
+  w : '#fff',
+  r : '#f00',
+  y : '#ff0',
+  g : '#555'
+}
+
+const PI = Math.PI
 let player
-let MK = false
-let c
 let playerUnits = []
-let mazeEntrance
 let maze
 let g
-let world, uiLayer, floorLayer, objLayer, treeTops
 let debugText
 let units = []
 let armedUnits = []
@@ -40,271 +53,301 @@ let movingUnits = []
 let solids = []
 let enemies = []
 let alertedEnemies = []
-let movingEnemies = []
 let bloods = []
 let bloodSplats = []
 let shots = []
 let attackingTarget = []
-let moved = false
-let moveCycle = false
+let bloodDrops = []
+let fadeOuts = []
 
+let miners = []
 
-let readyToScanE = true
-let readyToScanP = true
-let enemiesScanned = false
-let currentScanner = -1
-let blackHB, yellowHB, HB
+let placingBuilding = false
+let bluePrint
 
-let ground
-let gridMap = []
-let sun, earth
-const surfaceWidth = 2400
-const surfaceHeight = 1000
-const cellSize = 100
+let tip
+
 
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const playerInput = () => {
-  if (MK) {
-    if (currentPlayer.isDead) switchMode()
-    centerUnitCamera()
-    if (!currentPlayer.attacked) {
-      if (!currentPlayer.attacked2) {
-        if (!currentPlayer.isRolling) {
-          movePlayer()
-          currentPlayer.weapon.rotation = -tempAngle(currentPlayer.playerHand, g.pointer, currentPlayer.angleOffX, currentPlayer.angleOffY) + currentPlayer.weaponAngle
+let maxSummons = 8
+let minSummons = 5
+let summons
+let enemyLevel = 5
+
+let readyToSummon = true
+
+let firstWaveDelay = false
+
+let wavePosition
+
+
+const sideWave = () => {
+  return Math.random() < .5 ? [-20, randomNum(50, surfaceHeight)]  : [surfaceWidth -20, randomNum(50, surfaceHeight)]
+}
+
+const bottomWave = () => {
+  return [randomNum(0, surfaceWidth - 30), surfaceHeight - 130]
+}
+
+let sides = [sideWave, bottomWave]
+let side
+
+
+const summonWave = () => {
+  if (readyToSummon) {
+    readyToSummon = false
+
+    if (firstWaveDelay) {
+
+      summons = randomNum(minSummons, maxSummons)
+      for (let i = 0; i < summons; i++) {
+
+        side = sides[Math.random() < .5 ? 0 : 1]()
+
+
+        const enemy = createEnemyUnit(side[0], side[1], enemyLevel)
+        // const enemy = createEnemyUnit(side[0], side[1], 100 * enemyLevel)
+        objLayer.addChild(enemy)
+        units.push(enemy)
+        enemies.push(enemy)
+        enemy.destinationX = HQ.centerX - world.x
+        enemy.destinationY = HQ.centerY - world.y
+        setDirection(enemy)
+        enemy.getInRange = true
+        enemy.isMoving = true
+        movingUnits.push(enemy)
+      }
+
+      if (Math.random() > .75) {
+        minSummons += 1
+        maxSummons += 1
+        enemyLevel += 0.5
+      }
+      
+    }
+
+
+    g.wait((summons * 5) * 100, () => readyToSummon = true)
+  }
+
+
+
+
+}
+
+
+
+
+const moveMiners = () => {
+  if (miners.length > 0) {
+    miners.forEach(miner => {
+      if (!miner.isMining || miner.isDead) {
+        removeItem(miners, miner)
+        return
+      }
+
+      if (miner.readyForOrder) {
+
+        if (miner.mined) {
+          miner.destinationX = HQ.centerX - world.x
+          miner.destinationY = HQ.centerY - world.y
+          setDirection(miner)
+          if (!miner.isMoving) {
+            miner.isMoving = true
+            movingUnits.push(miner)
+          }
+          miner.readyForOrder = false
+        } else {
+          miner.destinationX = mine.centerX - world.x
+          miner.destinationY = mine.centerY - world.y
+          setDirection(miner)
+          if (!miner.isMoving) {
+            miner.isMoving = true
+            movingUnits.push(miner)
+          }
+          miner.readyForOrder = false
+        }
+        
+      } else {
+        const distHQ = g.GlobalDistance(miner, HQ)
+        const distMI = g.GlobalDistance(miner, mine)
+  
+        if (miner.mined && distHQ < 85) {
+          miner.mined = false
+          miner.gb.visible = false
+          goldAmount.add(1)
+
+
+          miner.readyForOrder = true
+        } else if (!miner.mined && distMI < 60) {
+          miner.mined = true
+          miner.gb.visible = true
+          miner.readyForOrder = true
         }
       }
+    })
+  }
+}
+
+let tipSet = false
+
+
+
+const showTip = () => {
+
+  if (!UC) {
+    if (g.pointer.y > g.stage.height - 100) {
+      if (g.pointer.x < 440) {
+
+        for (let i in buttons) {
+          if (g.hitTestPoint(g.pointer, buttons[i])) {
+            tip.x = g.pointer.x
+            tip.y = g.pointer.y - tip.height
+            tip.text.content = `x${prices[i]}`
+            
+            if (!tipSet) {
+              tipSet = true
+              g.wait(150, () => tip.visible = true)
+            }
+            
+            
+          }
+        }
+        
+      } 
+      else {
+        tipSet = false
+        tip.visible = false
+      }
+      
+    } else {
+      if (tipSet) {
+        tipSet = false
+        tip.visible = false
+      }
     }
+
   }
-  else {
-    beginSelection()
-    moveCamera()
-  }
+
 }
 
-const animatePlayer = () => {
-  units.forEach(u => {
-    if (u.isMoving) u.moveAnimation()
-    else u.idleAnimation()
-  })
-}
-
-const moveUnits = () => {
-  if (movingUnits.length > 0) {
-    if (!moved) {
-      moved = true
-      movingUnits.forEach(unit => {
-        if (unit.isMoving) unit.move()
-        else removeItem(movingUnits, unit)
-      })
-      g.wait(moveSpeed, () => moved = false)
-    }
-  }
-}
-
-const runScanners = () => {
-  scanFor(armedUnits, enemies, readyToScanE)
-  scanFor(enemies, playerUnits, readyToScanP)
-}
-
-const scanFor = (scanners, scannees, ready) => {
-  if (ready) {
-    ready = false
-    scanners.forEach(unit => {if (!unit.target) unit.scanForTargets(scannees)})
-    g.wait(4000, () => ready = true)
-  }
-}
-
-
-
-const switchMode = () => {
-  if (!MK) {
-    if (selectedUnits.length === 1) {
-      MK = true
-      currentPlayer = selectedUnits[0]
-      currentPlayer.isMoving = false
-      removeItem(movingUnits, currentPlayer)
-      removeItem(attackingTarget, currentPlayer)
-      currentPlayer.deselect()
-      selectedUnits = []
-      ;[blackHB, yellowHB, HB].forEach(i => i.visible = true)
-    }
-  }
-  else {
-    MK = false
-    ;[blackHB, yellowHB, HB].forEach(i => i.visible = false)
-    if (!currentPlayer.isDead) {
-      currentPlayer.isMoving = false
-      currentPlayer.weapon.rotation = currentPlayer.weaponRotation
-      currentPlayer = null
-    }
-  }
-}
 
 const play = () => {
+
   playerInput()
-  animatePlayer()
+
   moveUnits()
+    
+  playAnimations()
+  
+  lookForTargets()
+  
+  attackTarget()
+  
+  showBluePrint()
 
-  if (shots.length > 0) {
-    shots.forEach(shot => {
-      shot.scaleX += 0.1
-      shot.scaleY += 0.1
-    })
-  }
+  moveMiners()
 
-  if (attackingTarget.length > 0) {
-    attackingTarget.forEach(unit => {
-      if (!unit.target || unit.isDead || unit.target.isDead) {
-        removeItem(attackingTarget, unit)
-        unit.target = null
-        g.wait(200, () => unit.weapon.rotation = unit.weaponRotation)
-      } else unit.attack(unit.target)
-    })
-  }
+  showTip()
 
-  runScanners()
+  // summonWave()
 
-  // if (moveSun) {
-  //   moveSun = false
-  //   sun.x += 0.8
-  //   sun.y += 0.15
-  //   g.wait(100, () => moveSun = true)
+
+
+
+
+
+  // const hx = HQ.centerX.toFixed(1)
+  // const hy = HQ.centerY.toFixed(1)
+  // const ex = enemies[0].centerX.toFixed(1)
+  // const ey = enemies[0].centerY.toFixed(1)
+  
+  // if (playerUnits.length > 0) {
+    // const u = playerUnits[0]
+    // debugText.content = `
+    // target = ${u.target}
+    // isMoving = ${u.isMoving}
+    // attackings = ${attackingTarget.length}
+    // `
   // }
 
-  // debugText.content = `
-  // world.xy = ${world.x}, ${world.y}\n\n
-  // pointer = ${g.pointer.x + world.x}, ${g.pointer.y + world.y}
-  // `
+
+
 }
 
-const initCanvasEvents = () => {
-  if (c) return
-  c = document.getElementById('c')
-  c.addEventListener('contextmenu', (e) => e.preventDefault())
-  c.addEventListener('pointerdown', (e) => pointerDown(e))
-  c.addEventListener('pointerup', (e) => pointerUp(e))
-}
+const initialStuff = () => {
 
-const initMap = () => {
-  let maxPlayerUnits = 4
-  const rows = ground.height / cellSize
-  const cols = ground.width / cellSize
 
-  for (let row = 0; row < rows; row++) {
-    gridMap.push([])
-    for (let cell = 0; cell < cols; cell++) {
-      const cellCenterX = cellSize * cell + cellSize / 2
-      const cellCenterY = cellSize * row + cellSize / 2
-      if (row < 2) {
-        if (cell > 8) {
-          if (cell < 12) {
-            if (row == 0 && cell == 10) {
-              gridMap[row].push([7, cellCenterX, cellCenterY])
-              // const tempHQ = HQ(400, 380)
-              const empty = makeRectangle(cellSize, cellSize, '#321', 2, cellCenterX - cellSize / 2, cellCenterY - cellSize / 2)
-              floorLayer.addChild(empty)
-              const tempHQ = HQ(cell * cellSize, row * cellSize)
-              objLayer.addChild(tempHQ)
-              solids.push(tempHQ)
-              empty.alpha = 0.5
-              continue
-            }
-          }
-        }
-      } else {
+  // const G = makeGold(65,20)
+  // bottomPanel.addChild(G)
 
-        if (Math.random() <= 0.20) {
-          gridMap[row].push([0, cellCenterX, cellCenterY])
-          // const empty = makeRectangle(cellSize, cellSize, '#321', 2, cellCenterX - cellSize / 2, cellCenterY - cellSize / 2)
-          // floorLayer.addChild(empty)
-          if (Math.random() <= 0.2) {
-            if (maxPlayerUnits) {
-              const v = createPlayerUnit(cellCenterX - 25, cellCenterX - 25)
-              objLayer.addChild(v)
-              playerUnits.push(v)
-              units.push(v)
-              v.speed = 2
-              maxPlayerUnits -= 1
-            }
-          }
-        } else {
-          if (row % 2 == 1) {
-            if (Math.random() > 0.5) {
-              tempDrawing_2(randomNum(10, 170, 0), 10, cell * cellSize, row * cellSize + randomNum(-100, 100), randomNum(1, 4), randomNum(0, 5, 0))
-              continue
-            }
-            if (cell % 2 == 0) {
-              gridMap[row].push([3, cellCenterX, cellCenterY])
-              const d = randomNum(5, cellSize * 0.25)
-              tempDrawing(d, cell * cellSize + d * 1.5 + randomNum(-35, 35), row * cellSize + d * 1.5 + randomNum(-35, 35))
-            }
-          }
-        }
-      } 
-    }
-  }
-}
 
-const initUIHealthBar = () => {
-  blackHB = makeRectangle(400, 5, 'black', 8, 100, 20)
-  blackHB.strokeStyle = 'darkgray'
-  yellowHB = makeRectangle(400, 5, 'Yellow', 0, 100, 20)
-  HB = makeRectangle(400, 5, 'red', 0, 100, 20)
-  uiLayer.addChild(blackHB)
-  uiLayer.addChild(yellowHB)
-  uiLayer.addChild(HB);
-  [blackHB, yellowHB, HB].forEach(i => i.visible = false)
-}
+  // player = newMainPlayer(200, 180)
+  // objLayer.addChild(player)
+  // playerUnits.push(player)
+  // units.push(player)
 
-const initLayers = () => {
-  sun = makeCircle(130, 'orange', 0, false, 500, -250)
-  earth = tempEarth(150, 260, -200)
-  ground = moonGround()
-  floorLayer = g.group()
-  objLayer = g.group()
-  world = g.group(sun, earth, ground, floorLayer, objLayer)
-  uiLayer = g.group()
-}
 
-const setup = () => {
-  initCanvasEvents()
-  initLayers()
-  initMap()
+  const enemy = createEnemyUnit(300, 100)
+  objLayer.addChild(enemy)
+  units.push(enemy)
 
-  player = newMainPlayer(200, 180)
-  objLayer.addChild(player)
-  playerUnits.push(player)
-  units.push(player)
 
-  for (let i = 0; i < 4; i++) {
-    const tempVill = createPlayerUnit(100, 400 + i * 55, true)
-    objLayer.addChild(tempVill)
-    playerUnits.push(tempVill)
-    units.push(tempVill)
-    armedUnits.push(tempVill)
-  }
-  for (let i = 0; i < 4; i++) {
 
-    const tempEnemy = createEnemyUnit(1400 + i * 50, 350)
-    objLayer.addChild(tempEnemy)
-    units.push(tempEnemy)
-    enemies.push(tempEnemy)
-  }
+  // const m = makeMine (100, 100)
+  // objLayer.addChild(m)
 
-  // const tempVill = createPlayerUnit(875, 250, true)
+  // const enemy = createEnemyUnit(100, 200)
+  // objLayer.addChild(enemy)
+  // units.push(enemy)
+  // enemies.push(enemy)
+
+  // const tempVill = createArmedPleb(275, 250)
   // objLayer.addChild(tempVill)
   // playerUnits.push(tempVill)
   // units.push(tempVill)
 
+  // const pleb = createPleb(400, 180)
+  // objLayer.addChild(pleb)
+  // playerUnits.push(pleb)
+  // units.push(pleb)
+}
+
+
+const setup = () => {
+
+
+  initCanvasEvents()
+  initLayers(surfaceWidth, surfaceHeight)
+  initMap(surfaceWidth, surfaceHeight, cellSize)
+  bluePrint = makeBluePrint(cellSize)
+  initBottomPanel()
+
+  initialStuff()
+
   initSelectionBox()
-  initUIHealthBar()
-  
-  // debugText = makeText(' ', '12px arial', 'white', 0, 100)
-  
+
+
+
+  debugText = makeText(uiLayer, ' ', '22px arial', 'white', 0, 100)
+
+
+  tip = simpleButton('x25', 0, 0, 30, 6, K.b, 32, 0, 90, 40)
+  tip.alpha = 0.7
+  const mg = makeGold(-8, -4)
+  tip.addChild(mg)
+  uiLayer.addChild(tip)
+  tip.visible = false
+
+
+
   objLayer.children.sort((a, b) => a.bottom - b.bottom)
   initUnitCamera()
+  g.wait(5000, () => {
+    firstWaveDelay = true
+    console.log('first wave')
+  })
   g.state = play
 }
 
@@ -312,5 +355,6 @@ g = GA.create(setup)
 g.start()
 
 
-export { g, world, floorLayer, uiLayer, objLayer, units, enemies, alertedEnemies, shots, selectedUnits, movingUnits, solids, playerUnits,
-C, bloods, bloodSplats, maze, gridMap, cellSize, PI, surfaceWidth, surfaceHeight, switchMode, MK, currentPlayer, attackingTarget, armedUnits }
+export { tip, miners, summonWave, PI, g, units, enemies, alertedEnemies, shots, selectedUnits, movingUnits, solids, playerUnits, bloods, bloodSplats, maze, UC, attackingTarget, armedUnits, placingBuilding, bluePrint, bloodDrops, fadeOuts, cellSize
+}
+
