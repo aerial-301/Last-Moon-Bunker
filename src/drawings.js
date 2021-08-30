@@ -1,8 +1,8 @@
-import { solids, g, playerUnits, armedUnits, enemies, bloodDrops, fadeOuts, K } from "./main.js"
-import { gridMap } from "./main/mainSetUp/initMap.js"
+import { solids, g, playerUnits, bloodDrops, fadeOuts, K, PI } from "./main.js"
+// import { gridMap } from "./main/mainSetUp/initMap.js"
 import { world, floorLayer, objLayer } from "./main/mainSetUp/initLayers.js"
 import { makeMovableObject, makeBasicObject, moreProperties } from "./unitObject.js"
-import { playerDie, randomNum, removeItem } from "./functions.js"
+import { randomNum, removeItem } from "./functions.js"
 
 const BP = (c) => c.beginPath()
 const MT = (c, x, y) => c.moveTo(x, y)
@@ -11,9 +11,7 @@ const FL = (c) => c.fill()
 const L = (c, x, y) => c.lineTo(x, y)
 const FR = (c, x, y, w, h) => c.fillRect(x, y, w, h)
 
-const PI = Math.PI
-
-const makeCircle = (d, k, l, movable = false, x = 0, y = 0) => {
+const circle = (d, k, l, movable = false, x = 0, y = 0) => {
   const o = {
     f: k,
     radius: d / 2 
@@ -30,7 +28,7 @@ const makeCircle = (d, k, l, movable = false, x = 0, y = 0) => {
   else makeMovableObject(o, x, y, d, d)
   return o
 }
-const makeRectangle = (w, h, k, s = 1, x = 0, y = 0) => {
+const rectangle = (w, h, k, s = 1, x = 0, y = 0) => {
   const o = {
     x: x,
     y: y,
@@ -65,7 +63,7 @@ const makeSelectionBox = () => {
   makeBasicObject(o, 0, 0, 1, 1)
   return o
 }
-const makeSlash = (n) => {
+const slash = (n) => {
   const o = {
     render(c) {
       c.fillStyle = K.w
@@ -92,6 +90,8 @@ const makeHead = (e = 0) => {
     c1: '#222',
     c2: e ? `#${color}00ff` : '#555',
   }
+  o.oc1 = o.c1
+  o.oc2 = o.c2
   o.render = (c) => {
     const grad = c.createRadialGradient(2, -3, 27, 10, -20,0)
     grad.addColorStop(0, o.c1)
@@ -226,7 +226,6 @@ const makeHeadDetails = () => {
   makeBasicObject(o, 0, 0)
   return o
 }
-
 const bulletImpact = (x, y) => {
   const o = {
     render(c) {
@@ -305,38 +304,6 @@ const actionMark = (p, x = 0, y = 0, attack = true) => {
 
   return o
 }
-// const moonSurface1 = (w, h) => {
-//   const o = {
-//     render(c) {
-//       c.strokeStyle = '#FFF'
-//       c.lineWidth = 2
-//       c.beginPath()
-//       c.rect(0, 0, 100, 100)
-//       c.stroke()
-//     }
-//   }
-//   makeBasicObject(o, 0, 0, w, h)
-//   return o
-// }
-const moonGround = (w, h) => {
-  const o = {
-    render(c) {
-      // const grad = c.createLinearGradient(0, 0, -100, 500)
-      // grad.addColorStop(0, '#444')
-      // grad.addColorStop(0.2, '#333')
-      // grad.addColorStop(1, '#222')
-
-      // c.fillStyle = '#444'
-
-      // BP(c)
-      // c.rect(-w / 2, -h/2, w, h)
-      // c.fillStyle = '#444'
-      // FL(c)
-    }
-  }
-  makeBasicObject(o, 0, 0, w, h)
-  return o
-}
 const makeHQ = (x, y, cellSize) => {
   const o = {
     health: 1000,
@@ -374,102 +341,6 @@ const makeHQ = (x, y, cellSize) => {
   playerUnits.push(o)
   return o
 }
-
-
-
-
-const turret = (x, y, cellSize) => {
-  const w = cellSize * .8
-  const barrel = {
-    muz: 4,
-    color: K.b,
-    render(c) {
-      c.lineWidth = 1
-      c.strokeStyle = '#999'
-      c.fillStyle = this.color
-      BP(c)
-      c.arc(0, 0, this.muz, 0, 2*PI)
-      FL(c)
-      SK(c)
-    }
-  }
-  const o = {
-    row: y,
-    cel: x,
-    health: 100,
-    baseHealth: 100,
-    range: 300,
-    damage: 10,
-    type: 'Building',
-    c1: '#333',
-    c2: '#111',
-    originalColor: '#333',
-    weapon: {rotation:0},
-    weaponRotation:0,
-    targets: enemies,
-  }
-  makeBasicObject(barrel, 0, 0, w, w * .6)
-  makeBasicObject(o, x * cellSize, y * cellSize, w, w *.6)
-
-  o.render = (c) => {
-    const grad = c.createLinearGradient(w, 0, 0, w)
-    grad.addColorStop(0, o.c1)
-    grad.addColorStop(1, o.c2)
-    c.fillStyle = grad
-    c.lineWidth = 2
-    BP(c)
-    c.ellipse(0, w * 0.3, w/2, w/2, 0, 0, PI, true)
-    c.closePath()
-    FL(c)
-    SK(c)
-  },
-  o.attack = (target) => {
-    if(!o.attacked) {
-      if (g.GlobalDistance(o, target) > o.range) {
-        o.target = null
-        return
-      }
-      o.attacked = true
-      barrel.muz = 8
-      barrel.color = '#ff0'
-
-      const HZ = 600
-      g.soundEffect(HZ, .3, 'triangle', .2, HZ * .9, false)
-
-      target.getHit(o.damage)
-
-      g.wait(50, () => {
-        barrel.muz = 4
-        barrel.color = K.b
-      })
-      g.wait(500, () => o.attacked = false)
-    }
-  }
-
-
-  moreProperties(o)
-  o.select = () => {}
-  o.deselect = () => {}
-  o.changeColor = () => {
-    o.c1 = o.c2 = K.w
-    g.wait(80, () => {
-      o.c1 = '#333'
-      o.c2 = '#111'
-    })
-  }
-  o.die = () => {
-    playerDie(o)
-    removeItem(solids, o)
-    gridMap[o.row][o.cel] = 0
-  }
-  o.canBleed = false
-  o.canRet = true
-  o.addChild(barrel)
-  playerUnits.push(o)
-  armedUnits.push(o)
-  return o
-}
-
 const makeMine = (x, y, cellSize) => {
   const o = {
     render(c) {
@@ -488,9 +359,6 @@ const makeMine = (x, y, cellSize) => {
   makeBasicObject(o, x, y, cellSize / 2, cellSize / 4)
   return o
 }
-
-
-
 const makeBluePrint = (width, x = 0, y = 0) => {
   const o = {
     f: '#FFF'
@@ -686,7 +554,6 @@ const tempEarth = (d, x, y) => {
 
   return b
 }
-
 const newMakeEnemyEyes = () => {
   const color = randomNum(10, 99, 1)
   const o = {
@@ -703,7 +570,6 @@ const newMakeEnemyEyes = () => {
   makeBasicObject(o, 0, 0)
   return o
 }
-
 const bloodDrop = (x, y) => {
   const o = {
     l: 3,
@@ -728,7 +594,6 @@ const bloodDrop = (x, y) => {
     bloodLake(o.x, o.y)
   })
 }
-
 const bloodLake = (x, y) => {
   const o = {
     h: randomNum(15, 40),
@@ -745,7 +610,6 @@ const bloodLake = (x, y) => {
   o.fadeRate = 0.003
   fadeOuts.push(o)
 }
-
 const makeGold = (x = 0, y = 0) => {
   const o = {
     render(c) {
@@ -761,7 +625,6 @@ const makeGold = (x = 0, y = 0) => {
   makeBasicObject(o, x, y)
   return o
 }
-
 const renderTurret = (x, y) => {
   const w = 40
   const barrel = {
@@ -798,13 +661,33 @@ const renderTurret = (x, y) => {
  return o
 
 }
-
+const drawTurretBarrel = (c, o) => {
+  c.lineWidth = 1
+  c.strokeStyle = '#999'
+  c.fillStyle = o.color
+  BP(c)
+  c.arc(0, 0, o.muz, 0, 2*PI)
+  FL(c)
+  SK(c)
+}
+const drawTurretBase = (c, o, w) => {
+  const grad = c.createLinearGradient(w, 0, 0, w)
+  grad.addColorStop(0, o.c1)
+  grad.addColorStop(1, o.c2)
+  c.fillStyle = grad
+  c.lineWidth = 2
+  BP(c)
+  c.ellipse(0, w * 0.3, w/2, w/2, 0, 0, PI, true)
+  c.closePath()
+  FL(c)
+  SK(c)
+}
 
 export { 
-  makeCircle, 
-  makeRectangle, 
+  circle, 
+  rectangle, 
   makeSelectionBox, 
-  makeSlash, 
+  slash, 
   makeTwoEyes, 
   makeThirdEye, 
   makeLeg, 
@@ -814,7 +697,6 @@ export {
   flash, 
   actionMark,
   makeHQ,
-  moonGround,
   laser,
   makeHead,
   surfaceLine,
@@ -822,12 +704,12 @@ export {
   tempEarth,
   gun,
   newMakeEnemyEyes,
-  turret,
   makeBluePrint,
   bloodDrop,
   bloodLake,
   makeMine,
   makeGold,
   renderTurret,
-  
+  drawTurretBarrel,
+  drawTurretBase
  }

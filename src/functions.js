@@ -1,13 +1,11 @@
 import { g, movingUnits, solids, playerUnits, armedUnits } from './main.js'
 import { world, objLayer } from './main/mainSetUp/initLayers.js'
-import { makeRectangle } from './drawings.js'
+import { rectangle } from './drawings.js'
 import { makeText } from './unitObject.js'
 import { currentPlayer } from './keyboard.js'
-// import { tempIndicator } from '../extra/debug.js'
 
 const OBSDIST = 250
 const OBSDIST_UNDERGROUND = 400
-
 
 const directions = [
   [1, 0],
@@ -23,27 +21,13 @@ const directions = [
 const tempAngle = (a, b, bOffsetX = 0, bOffsetY = 0) => {return Math.atan2((b.centerX + bOffsetX - a.centerX), (b.centerY + bOffsetY - a.centerY))}
 const xDistance = (a, b) => Math.abs(b.centerX - a.centerX)
 const yDistance = (a, b) => Math.abs(b.centerY - a.centerY)
-
 const addVectors = (a, b) => {return [a[0] + b[0], a[1] + b[1]]}
-
 
 const canBuildHere = (gridMap, r, c) => {
   try {if (!gridMap[r][c] && checkNeighbors(gridMap,r, c)) return true}
   catch (e) { console.log('error')}
   return false
 }
-
-
-// const setCellValue = (gridMap ,row, col, value) => {
-//   let n
-//   directions.forEach(d => {
-//     n = addVectors([row, col], d)
-//     try {
-//       gridMap[n[0]][n[1]] = value
-//     } catch (e) {null}
-//   })
-// }
-
 const checkNeighbors = (gridMap, row, col) => {
   let n
   for (let d of directions) {
@@ -53,30 +37,21 @@ const checkNeighbors = (gridMap, row, col) => {
     } catch (e) {null}
   }
   return true
-
-  // directions.forEach(d => {
-  //   n = addVectors([row, col], d)
-  //   try {
-  //     if (gridMap[n[0]][n[1]] != 0) 
-  //   } catch (e) {null}
-  // })
 }
-
 const simpleButton = (
   text,
-  xPos = 10, 
-  yPos = 10, 
-  textX = 10, 
-  textY = 10, 
+  xPos = 10,
+  yPos = 10,
+  textX = 10,
+  textY = 10,
   color = '#555',
   size = 28,
-  action = () => console.log(text), 
-  width = 100, 
+  action = () => console.log(text),
+  width = 100,
   height = 80
   ) => {
-  const button = makeRectangle(width, height, color, 1, xPos, yPos)
+  const button = rectangle(width, height, color, 1, xPos, yPos)
   button.action = action
-  // const tSize = 80 - (text.length * 10)
   const tSize = size
   if (text ) button.text = makeText(button, text, `${tSize}px arial`, '#FFF', textX, textY)
   return button
@@ -251,7 +226,6 @@ const newMoveTest = (u) => {
     removeItem(movingUnits, u)
     u.getInRange = false
     u.isMoving = false
-    // u.scanForTargets(u.targets)
   }
 }
 const scan = (u, delay = 400, distance = OBSDIST_UNDERGROUND) => {
@@ -293,11 +267,9 @@ const playerDie = (o) => {
   removeItem(playerUnits, o)
   removeItem(armedUnits, o)
 }
-
 const notEnough = () => {
   const HZ = 150
   g.soundEffect(HZ, .2, 'sawtooth', .05, 100, false)
 }
-
 
 export { notEnough, checkNeighbors, setDirection, simpleButton, checkCollisions, removeItem, randomNum, getUnitVector, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle, playerDie, canBuildHere }

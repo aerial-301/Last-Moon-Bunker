@@ -1,4 +1,4 @@
-import { makeRectangle } from "./drawings.js"
+import { rectangle } from "./drawings.js"
 import { g, surfaceHeight, surfaceWidth } from "./main.js"
 import { world } from './main/mainSetUp/initLayers.js'
 import { currentPlayer } from './keyboard.js'
@@ -7,7 +7,7 @@ let middlePoint, camCenterX, camCenterY
 const initUnitCamera = () => {
   camCenterX = g.stage.width / 2
   camCenterY = g.stage.height / 2
-  middlePoint = makeRectangle(1, 1, '', 0)
+  middlePoint = rectangle(1, 1, '', 0)
   middlePoint.alpha = 0
 
   world.x = -g.stage.width / 4

@@ -1,27 +1,35 @@
 import { uiLayer, objLayer } from "./initLayers.js"
-import { makeGold, makeRectangle, makeThirdEye, makeTwoEyes, renderTurret } from "../../drawings.js"
+import { makeGold, rectangle, makeThirdEye, makeTwoEyes, renderTurret } from "../../drawings.js"
 import { notEnough, randomNum, simpleButton } from "../../functions.js"
-import { g, currentAction, bluePrint, armedUnits, playerUnits, units, K } from "../../main.js"
+import { g, currentAction, armedUnits, playerUnits, units, K } from "../../main.js"
 import { createArmedPleb, createPleb, newMainPlayer } from "../../unitObject.js"
 import { HQ } from './initMap.js'
+import { bluePrint } from "../mainLoop/showBluePrint.js"
 
-let bottomPanel, buttons = []
+let tip, bottomPanel, buttons = []
 const panelHeight = 100
 export let goldAmount 
 export let currentGold = 100
-export let prices = [3, 7, 15, 77]
+export let prices = [3, 7, 25, 77]
+
+
+const initTipBox = () => {
+  tip = simpleButton('x25', 0, 0, 30, 6, K.b, 32, 0, 90, 40)
+  tip.alpha = 0.7
+  const mg = makeGold(-8, -4)
+  tip.addChild(mg)
+  uiLayer.addChild(tip)
+  tip.visible = false
+}
 
 const initBottomPanel = () => {
-  bottomPanel = makeRectangle(g.stage.width, panelHeight, '#311', 10, 0, g.stage.height - panelHeight)
+  bottomPanel = rectangle(g.stage.width, panelHeight, '#311', 10, 0, g.stage.height - panelHeight)
   uiLayer.addChild(bottomPanel)
 
   const summonSound = () => {
     const HZ = 150
     g.soundEffect(HZ, .2, 'triangle', .2, 20, true)
   }
-  
-
-
 
   const b1 = simpleButton(0, 10, 10, 100, 23)
   const b2 = simpleButton(0, 120, 10, 100, 23)
@@ -59,8 +67,8 @@ const initBottomPanel = () => {
 
   const thirdeye = makeThirdEye(25, 15)
   const twoeyes = makeTwoEyes(25, 15)
-  const swrd = makeRectangle(55, 2, K.w, 0, 46, 46)
-  const sh = makeRectangle(40, 4, '#ea5', 1, 10, 45)
+  const swrd = rectangle(55, 2, K.w, 0, 46, 46)
+  const sh = rectangle(40, 4, '#ea5', 1, 10, 45)
   b4.addChild(twoeyes)
   b4.addChild(thirdeye)
   b4.addChild(swrd)
@@ -118,5 +126,4 @@ const initBottomPanel = () => {
   buttons.push(b1, b2, b3, b4)
 }
 
-
-export { bottomPanel, buttons, initBottomPanel}
+export { bottomPanel, buttons, initBottomPanel, initTipBox, tip}

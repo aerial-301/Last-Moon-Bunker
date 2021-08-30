@@ -1,10 +1,17 @@
-import { g, currentAction, cellSize, bluePrint } from "../../main.js"
+import { g, currentAction, cellSize } from "../../main.js"
 import { gridMap } from "../mainSetUp/initMap.js"
 import { canBuildHere } from '../../functions.js'
 import { currentGold, prices } from "../mainSetUp/initBottomPanel.js"
+import { makeBluePrint } from "../../drawings.js"
 
+export let bluePrint
 let oldCol = -1, oldRow = -1
 let bluePrintMoved = false
+
+export const initBluePrint = () => {
+  bluePrint = makeBluePrint(cellSize)
+}
+
 
 export const showBluePrint = () => {
   if (currentAction.placingBuilding) {

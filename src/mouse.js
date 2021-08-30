@@ -1,18 +1,16 @@
-import { currentAction, g, playerUnits, selectedUnits, movingUnits, enemies, attackingTarget, solids, bluePrint, cellSize, units, miners } from './main.js'
+import { currentAction, g, playerUnits, selectedUnits, movingUnits, enemies, attackingTarget, solids, cellSize, miners, menu, started } from './main.js'
 import { gridMap, mine } from './main/mainSetUp/initMap.js'
 import { uiLayer, world, floorLayer } from './main/mainSetUp/initLayers.js'
 import { getUnitVector, sortUnits, setDirection, checkNeighbors, notEnough } from './functions.js'
-import { actionMark, makeRectangle, makeSelectionBox, turret } from './drawings.js'
+import { actionMark, rectangle, makeSelectionBox } from './drawings.js'
 import { currentPlayer, UC } from './keyboard.js'
 import { buttons, currentGold, goldAmount, prices } from './main/mainSetUp/initBottomPanel.js'
+import { bluePrint } from './main/mainLoop/showBluePrint.js'
+import { turret } from './unitObject.js'
 
-// import { debugShape } from './debug.js'
 let selectionBox
 let selectionStarted
 let boxSet
-
-let marked = false
-
 
 const initSelectionBox = () => {
   selectionStarted = false
@@ -28,15 +26,24 @@ const pointerDown = (e) => {
 const pointerUp = (e) => {
   if (UC) return false
   if (e.button === 0) leftMouseUp()
-  else if (e.button === 2) rightMouseUp()
 }
 const clickedBottomPanel = () => {
   if (g.pointer.y > g.stage.height - 100) return true
 }
 const leftMouseDown = () => {
+
+  if (!started) {
+    buttons.forEach(button => {
+      if (g.hitTestPoint(g.pointer, button)) {
+        button.action()
+      }
+    })
+    return
+  }
+
+
   if (!UC) {
     if (clickedBottomPanel()) {
-
       buttons.forEach(button => {
         if (g.hitTestPoint(g.pointer, button)) {
           button.action()
@@ -81,24 +88,18 @@ const rightMouseDown = () => {
 
     if (g.pointer.shiftedY < 30) return
 
-    if (clickedBottomPanel()) {
-      // nothing
-    } else {
-
+    if (!clickedBottomPanel()) {
       if (currentAction.placingBuilding) {
         currentAction.placingBuilding = false
         bluePrint.visible = false
       }
 
-
       if (selectedUnits.length > 0) {
         if (enemies.length > 0) {
           for (const enemy of enemies) {
             if (g.GlobalDistance(enemy, g.pointer) <= 25) {
-
               const a = actionMark(enemy, 0, 0, true)
               enemy.addChild(a)
-
               selectedUnits.forEach(unit => {
                 if (g.GlobalDistance(unit, enemy) > unit.range) {
                   unit.destinationX = enemy.centerX - world.x
@@ -107,12 +108,10 @@ const rightMouseDown = () => {
                   setDirection(unit)
                   unit.getInRange = true
                   unit.isSeeking = true
-
                   if (!unit.isMoving) {
                     unit.isMoving = true
                     movingUnits.push(unit)
                   }
-
                 } else {
                   unit.isMoving = false
                   unit.target = enemy
@@ -120,11 +119,7 @@ const rightMouseDown = () => {
                     attackingTarget.push(unit)
                   }
                 }
-
               })
-
-              // selectedUnits.forEach(unit => {
-              // })
               return
             }   
           }
@@ -132,36 +127,22 @@ const rightMouseDown = () => {
 
 
         const dis = g.GlobalDistance(mine, g.pointer)
-        // console.log(dis)
-
         if (dis < 25) {
           selectedUnits.forEach(unit => {
             if (unit.type == 'Pleb') {
-
               unit.readForOrders = true
-              
               if (!unit.isMining) {
                 unit.isMining = true
                 miners.push(unit)
               }
-              
-              
-
               if (!unit.isMoving) {
                 unit.isMoving = true
                 movingUnits.push(unit)
               }
-              // unit.destinationX = mine.centerX
-              // unit.destinationy = mine.centerY
-              // setDirection(unit)
-              // unit.isMoving = true
             }
           })
-
           return
         }
-
-
         actionMark(floorLayer, g.pointer.shiftedX, g.pointer.shiftedY, false)
         sortUnits(selectedUnits, g.pointer.shiftedX, g.pointer.shiftedY, movingUnits)
       }
@@ -169,19 +150,12 @@ const rightMouseDown = () => {
     }
 
   } else {
-    // if (!g.state) return false
-    // if (g.state.name !== 'play') return false
     if (currentPlayer.type == 'MK') {
       if (currentPlayer.rollOnCooldown) return false
       currentPlayer.rollOnCooldown = true
       const uv = getUnitVector(currentPlayer, g.pointer)
       currentPlayer.vx = uv.x
       currentPlayer.vy = uv.y
-      // const sides = []
-      // if (uv.x > 0) sides.push('left')
-      // else sides.push('right')
-      // if (uv.y > 0) sides.push('top')
-      // else sides.push('down')
       currentPlayer.isRolling = true
       currentPlayer.scan(1500, 350)
       currentPlayer.roll()
@@ -191,23 +165,26 @@ const rightMouseDown = () => {
     }
   }
 }
+
 const leftMouseUp = () => {
-  if (selectionStarted) {
-    selectedUnits.forEach(v => v.deselect())
-    selectedUnits.length = 0
-    const w = selectionBox.WIDTH
-    const h = selectionBox.HEIGHT
-    const tempBox = makeRectangle(w ? Math.abs(w) : 1, h ? Math.abs(h) : 1, '#FFF', 0, w < 0 ? selectionBox.gx + w : selectionBox.gx, h < 0 ? selectionBox.gy + h : selectionBox.gy)
-    g.stage.addChild(tempBox)
-    playerUnits.forEach(unit => {
-      if (g.hitTestRectangle(tempBox, unit, true)) {
-        if (selectedUnits.findIndex((value) => value == unit) == -1) unit.select()
-      }
-    })
-    selectionStarted = false
-    selectionBox.alpha = 0
-    boxSet = false
-    g.wait(80, () => g.remove(tempBox))
+  if (started) {
+    if (selectionStarted) {
+      selectedUnits.forEach(v => v.deselect())
+      selectedUnits.length = 0
+      const w = selectionBox.WIDTH
+      const h = selectionBox.HEIGHT
+      const tempBox = rectangle(w ? Math.abs(w) : 1, h ? Math.abs(h) : 1, '#FFF', 0, w < 0 ? selectionBox.gx + w : selectionBox.gx, h < 0 ? selectionBox.gy + h : selectionBox.gy)
+      g.stage.addChild(tempBox)
+      playerUnits.forEach(unit => {
+        if (g.hitTestRectangle(tempBox, unit, true)) {
+          if (selectedUnits.findIndex((value) => value == unit) == -1) unit.select()
+        }
+      })
+      selectionStarted = false
+      selectionBox.alpha = 0
+      boxSet = false
+      g.wait(80, () => g.remove(tempBox))
+    }
   }
 }
 const beginSelection = () => {
@@ -217,21 +194,11 @@ const beginSelection = () => {
       selectionBox.y = g.pointer.y
       boxSet = true
     }
-
-    // if (g.pointer.y > g.stage.height - 100) return
-
-
     const x = g.pointer.x - selectionBox.x
     const y = g.pointer.y - selectionBox.y
-
-
     selectionBox.WIDTH = x
     selectionBox.HEIGHT = y
-    // selectionBox.WIDTH = g.pointer.x - selectionBox.x
-    // selectionBox.HEIGHT = g.pointer.y - selectionBox.y
   }
 }
-const rightMouseUp = () => {
-    // rightClicked = false
-}
+
 export { initSelectionBox, beginSelection, pointerDown, pointerUp, }

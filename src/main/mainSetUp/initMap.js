@@ -1,11 +1,11 @@
 import { checkNeighbors, randomNum } from '../../functions.js'
 import { surfaceLine, moonHole, makeHQ, makeMine } from '../../drawings.js'
-import { solids} from '../../main.js'
+import { cellSize, solids, surfaceHeight, surfaceWidth} from '../../main.js'
 import { floorLayer } from './initLayers.js'
 
 let mine, HQ, gridMap = []
 
-const initMap = (surfaceWidth, surfaceHeight, cellSize) => {
+const initMap = () => {
 
   const rows = (surfaceHeight / cellSize) | 0
   const cols = (surfaceWidth / cellSize) | 0
@@ -30,7 +30,7 @@ const initMap = (surfaceWidth, surfaceHeight, cellSize) => {
       // const cellCenterX = cellSize * cel + cellSize / 2
       // const cellCenterY = cellSize * row + cellSize / 2
 
-      // const empty = makeRectangle(cellSize, cellSize, '#321', 2, cellCenterX - cellSize / 2, cellCenterY - cellSize / 2)
+      // const empty = rectangle(cellSize, cellSize, '#321', 2, cellCenterX - cellSize / 2, cellCenterY - cellSize / 2)
       // empty.alpha = 0.4
       // floorLayer.addChild(empty)
 
