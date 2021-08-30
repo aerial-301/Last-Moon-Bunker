@@ -1,15 +1,15 @@
-import { uiLayer, objLayer } from "./initLayers.js"
+import { uiLayer } from "./initLayers.js"
 import { makeGold, rectangle, makeThirdEye, makeTwoEyes, renderTurret } from "../../drawings.js"
 import { notEnough, randomNum, simpleButton } from "../../functions.js"
-import { g, currentAction, armedUnits, playerUnits, units, K } from "../../main.js"
+import { g, currentAction, K } from "../../main.js"
 import { createArmedPleb, createPleb, newMainPlayer } from "../../unitObject.js"
 import { HQ } from './initMap.js'
 import { bluePrint } from "../mainLoop/showBluePrint.js"
 
-let tip, bottomPanel, buttons = []
+let tip, bottomPanel, buttons = [], goldDisplay, killsDisplay, currentKills = 0
 const panelHeight = 100
-export let goldAmount 
-export let currentGold = 100
+export let currentGold = 13
+export let totalGold = currentGold
 export let prices = [3, 7, 25, 77]
 
 
@@ -36,28 +36,40 @@ const initBottomPanel = () => {
   const b3 = simpleButton(0, 230, 10, 100, 23)
   const b4 = simpleButton(0, 340, 10, 100, 23, K.b)
 
-  goldAmount = simpleButton(`${currentGold}`, 460, 10, 30, 8, '#555', 27, () => {}, 200, 40)
-  goldAmount.add = (x) => {
+  goldDisplay = simpleButton(`${currentGold}`, 460, 10, 30, 8, '#555', 27, 0, 200, 40)
+  goldDisplay.add = (x) => {
     currentGold += x
-    goldAmount.text.content = `${currentGold}`
+    totalGold += x
+    goldDisplay.text.content = `${currentGold}`
   }
-
-  goldAmount.sub = (x) => {
+  goldDisplay.sub = (x) => {
     if (x <= currentGold) {
       currentGold -= x
-      goldAmount.text.content = `${currentGold}`
+      goldDisplay.text.content = `${currentGold}`
       return true
     } else return false
   }
-
   const gb = makeGold(-10, -5)
-  goldAmount.addChild(gb)
-  bottomPanel.addChild(goldAmount)
+  goldDisplay.addChild(gb)
+  bottomPanel.addChild(goldDisplay)
 
-  const pleb = createPleb(25, 15)
+
+  killsDisplay = simpleButton(`K ${currentKills}`, 460, 50, 8, 8, '#555', 27, 0,200, 40)
+  killsDisplay.add = (x) => {
+    currentKills += x
+    killsDisplay.text.content = `K ${currentKills}`
+  }
+
+  bottomPanel.addChild(killsDisplay)
+
+
+
+
+
+  const pleb = createPleb(25, 15, 0)
   b1.addChild(pleb)
   
-  const armed = createArmedPleb(25, 15)
+  const armed = createArmedPleb(25, 15, 0)
   armed.weapon.rotation = -.2
   b2.addChild(armed)
   
@@ -75,30 +87,18 @@ const initBottomPanel = () => {
   b4.addChild(sh)
 
   b1.action = () => {
-
-    if (goldAmount.sub(prices[0])) {
-
+    if (goldDisplay.sub(prices[0])) {
       summonSound()
-
-      const u = createPleb(HQ.x - 60 - randomNum(0, 100, 0), HQ.y)
-      objLayer.addChild(u)
-      playerUnits.push(u)
-      units.push(u)
-      armedUnits.push(u)
+      createPleb(HQ.x - 60 - randomNum(0, 100, 0), HQ.y)
     } else notEnough()
   }
   
   b2.action = () => {
-    if (goldAmount.sub(prices[1])) {
+    if (goldDisplay.sub(prices[1])) {
       summonSound()
-      const u = createArmedPleb(HQ.x + 80 + randomNum(0, 100, 0), HQ.y)
-      objLayer.addChild(u)
-      playerUnits.push(u)
-      units.push(u)
-      armedUnits.push(u)
+      createArmedPleb(HQ.x + 80 + randomNum(0, 100, 0), HQ.y)
     } else notEnough()
   }
-  
   
   b3.action = () => {
     currentAction.placingBuilding = true  
@@ -107,14 +107,9 @@ const initBottomPanel = () => {
 
 
   b4.action = () => {
-    if (goldAmount.sub(prices[3])) {
+    if (goldDisplay.sub(prices[3])) {
       summonSound()
-
-      const u = newMainPlayer(HQ.x + 25, HQ.y + 150)
-      objLayer.addChild(u)
-      playerUnits.push(u)
-      units.push(u)
-      armedUnits.push(u)
+      newMainPlayer(HQ.x + 25, HQ.y + 150)
     } else notEnough()
   }
   
@@ -126,4 +121,4 @@ const initBottomPanel = () => {
   buttons.push(b1, b2, b3, b4)
 }
 
-export { bottomPanel, buttons, initBottomPanel, initTipBox, tip}
+export { currentKills, killsDisplay, goldDisplay, bottomPanel, buttons, initBottomPanel, initTipBox, tip}

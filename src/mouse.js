@@ -4,7 +4,7 @@ import { uiLayer, world, floorLayer } from './main/mainSetUp/initLayers.js'
 import { getUnitVector, sortUnits, setDirection, checkNeighbors, notEnough } from './functions.js'
 import { actionMark, rectangle, makeSelectionBox } from './drawings.js'
 import { currentPlayer, UC } from './keyboard.js'
-import { buttons, currentGold, goldAmount, prices } from './main/mainSetUp/initBottomPanel.js'
+import { buttons, currentGold, goldDisplay, prices } from './main/mainSetUp/initBottomPanel.js'
 import { bluePrint } from './main/mainLoop/showBluePrint.js'
 import { turret } from './unitObject.js'
 
@@ -63,7 +63,7 @@ const leftMouseDown = () => {
           notEnough()
           // console.log('cant build here')
         } else {
-          goldAmount.sub(prices[2])
+          goldDisplay.sub(prices[2])
           currentAction.placingBuilding = false
           gridMap[row][cel] = 4
           

@@ -2,7 +2,7 @@ import { GA } from './ga_minTest.js'
 import { initCanvasEvents } from './main/mainSetUp/initCanvas.js'
 import { initLayers, objLayer, uiLayer, world } from './main/mainSetUp/initLayers.js'
 import { HQ, initMap } from './main/mainSetUp/initMap.js'
-import { buttons, initBottomPanel, initTipBox } from './main/mainSetUp/initBottomPanel.js'
+import { buttons, currentKills, initBottomPanel, initTipBox, totalGold } from './main/mainSetUp/initBottomPanel.js'
 import { initSelectionBox} from './mouse.js'
 import { initUnitCamera } from './camera.js'
 
@@ -17,8 +17,8 @@ import { showTip } from './main/mainLoop/showTip.js'
 import { summonWave } from './main/mainLoop/summonWaves.js'
 
 import { UC } from './keyboard.js'
-import { makeText } from './unitObject.js'
-import { rectangle } from './drawings.js'
+import { createPleb, makeText } from './unitObject.js'
+import { makeGold, rectangle } from './drawings.js'
 import { removeItem, simpleButton } from './functions.js'
 
 const surfaceWidth = 2400
@@ -85,7 +85,13 @@ const play = () => {
     uiLayer.children.length = 0
     const b = rectangle(g.stage.width, g.stage.height, '#900')
     b.alpha = 0.5
-    makeText(b, 'GAME OVER', "99px sans-serif", K.r, g.stage.width / 2 - 300, g.stage.height / 2 - 100)
+    const x = g.stage.width / 2
+    const y = g.stage.height / 2
+    makeText(b, 'GAME OVER', "99px sans-serif", K.r, x - 300, y - 200)
+    const k = makeGold(x - 237, y + 70)
+    b.addChild(k)
+    makeText(b, `${totalGold}`, '35px sans-serif', K.w, x - 193, y + 78)
+    makeText(b, `k ${currentKills}`, '35px sans-serif', K.w, x - 220, y + 120)
     uiLayer.addChild(b)
   }
 
@@ -98,7 +104,7 @@ const initialStuff = () => {
   // playerUnits.push(tempVill)
   // units.push(tempVill)
 
-  // const pleb = createPleb(400, 180)
+  // createPleb(400, 180)
   // objLayer.addChild(pleb)
   // playerUnits.push(pleb)
   // units.push(pleb)

@@ -511,12 +511,12 @@ const gun = (owner, rifle = true, x = -55, y = -30, w = 70, h = 5) => {
   }
  
 }
-const tempEarth = (d, x, y) => {
+const makeEarth = (d, x, y) => {
   const b = {
     render(c) {
       BP(c)
       c.arc(0, 0, d, 0, 2 * PI, false)
-      c.fillStyle = '#00F'
+      c.fillStyle = '#008'
       FL(c)
     }
   }
@@ -524,8 +524,9 @@ const tempEarth = (d, x, y) => {
   const l = {
     render(c) {
       BP(c)
-      c.fillStyle = '#080'
+      c.fillStyle = '#070'
       MT(c, -2,-35)
+      
       L(c, 75, -28)
       L(c, 75, 15)
       L(c, 24, 65)
@@ -701,7 +702,7 @@ export {
   makeHead,
   surfaceLine,
   moonHole,
-  tempEarth,
+  makeEarth,
   gun,
   newMakeEnemyEyes,
   makeBluePrint,

@@ -29,23 +29,22 @@ export const summonWave = () => {
       summons = randomNum(minSummons, maxSummons)
       for (let i = 0; i < summons; i++) {
         side = sides[Math.random() < .5 ? 0 : 1]()
-        createEnemyUnit(side[0], side[1], enemyLevel * 100, enemyLevel * 13)
+        createEnemyUnit(side[0], side[1], enemyLevel * 100, enemyLevel * 5)
       }
 
       if (Math.random() > .65) {
         minSummons += 1
         maxSummons += 2
-        enemyLevel += 0.5
+        enemyLevel += 0.25
       }
       
     } else {
       g.wait(5000, () => {
         firstWaveDelay = true
-        // console.log('first wave')
       })
     }
 
-    g.wait((summons * 3) * 1000, () => readyToSummon = true)
+    g.wait(15000, () => readyToSummon = true)
   }
 }
 

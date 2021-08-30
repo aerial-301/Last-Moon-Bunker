@@ -1,6 +1,6 @@
 import { removeItem, setDirection } from "../../functions.js"
 import { g, miners, movingUnits } from "../../main.js"
-import { goldAmount } from "../mainSetUp/initBottomPanel.js"
+import { goldDisplay } from "../mainSetUp/initBottomPanel.js"
 import { world } from "../mainSetUp/initLayers.js"
 import { HQ, mine } from "../mainSetUp/initMap.js"
 
@@ -45,7 +45,7 @@ export const moveMiners = () => {
         if (miner.mined && distHQ < 85) {
           miner.mined = false
           miner.gb.visible = false
-          goldAmount.add(1)
+          goldDisplay.add(1)
           miner.readyForOrder = true
 
         } else if (!miner.mined && !miner.mining && distMI < 60) {

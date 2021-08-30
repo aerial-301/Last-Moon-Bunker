@@ -51,7 +51,7 @@ const simpleButton = (
   height = 80
   ) => {
   const button = rectangle(width, height, color, 1, xPos, yPos)
-  button.action = action
+  if (action) button.action = action
   const tSize = size
   if (text ) button.text = makeText(button, text, `${tSize}px arial`, '#FFF', textX, textY)
   return button

@@ -4,6 +4,7 @@ import { gun, makeLeg, makeHeadDetails, makeBorder, rectangle, makeTwoEyes, make
 import { world, floorLayer, space, objLayer } from './main/mainSetUp/initLayers.js'
 import { currentPlayer, UC } from './keyboard.js'
 import { gridMap, HQ } from './main/mainSetUp/initMap.js'
+import { killsDisplay } from './main/mainSetUp/initBottomPanel.js'
 
 
 const attackSwordAngle = Math.PI / 180 * (-60 + 120)
@@ -102,15 +103,11 @@ const moreProperties = (o) => {
         o.decreaseHB()
       }
       o.changeColor()
-
-
-      
-
     }
   }
   o.decreaseHB = () => {
     if (o.damagedAmount > 0) {
-      g.wait(30, () => {
+      g.wait(15, () => {
         o.yellowHB.width -= 1 * 100 / o.baseHealth
         o.damagedAmount -= 1
         o.decreaseHB()
@@ -417,6 +414,13 @@ const newMainPlayer = (x = 0, y = 0) => {
   o.weapon = swordHandle
   playerHand.x = -1
   playerHand.y = 28
+
+
+  objLayer.addChild(o)
+  playerUnits.push(o)
+  units.push(o)
+  armedUnits.push(o)
+
   return o
 }
 
@@ -449,7 +453,8 @@ const makeArmed = (o) => {
         }
         rate = o.attackRate
         o.weapon.rotation = -tempAngle(o.playerHand, target, o.angleOffX, o.angleOffY) + o.weaponAngle
-        target.getHit(o.damage)
+        if (target.getHit(o.damage)) levelUp(o)
+        
       }
 
       o.weapon.fire()
@@ -479,35 +484,50 @@ const makePleb = (o) => {
   o.twoEyes.addChild(playerHand)
 }
 
-const createArmedPleb = (x = 0, y = 0) => {
+const createArmedPleb = (x = 0, y = 0, a = 1) => {
   const o = {}
   o.health = 100
   o.baseHealth = o.health
   makePlayerUnitObject(o, 0, x, y)
   makePleb(o)
   makeArmed(o)
+
+  if (a) {
+    objLayer.addChild(o)
+    playerUnits.push(o)
+    units.push(o)
+    armedUnits.push(o)
+  }
+
   return o
 }
 
-const createPleb = (x, y) => {
- const o = {}
- o.type = 'Pleb'
- o.mined = false
- o.isMining = false
- o.readyForOrder = true
- o.hasGold = false
- o.health = 50
- o.baseHealth = o.health
- o.attack = () => {}
- makePlayerUnitObject(o, 0, x, y)
- makePleb(o)
+const createPleb = (x, y, a = 1) => {
+  const o = {}
+  o.type = 'Pleb'
+  o.mined = false
+  o.isMining = false
+  o.readyForOrder = true
+  o.hasGold = false
+  o.health = 50
+  o.baseHealth = o.health
+  o.attack = () => {}
+  makePlayerUnitObject(o, 0, x, y)
+  makePleb(o)
 
- o.scanForTargets = () => {}
- const gb = makeGold(0, 10)
- gb.visible = false
- gb.rotation = PI/2
- o.playerHand.addChild(gb)
- o.gb = gb
+  o.scanForTargets = () => {}
+  const gb = makeGold(0, 10)
+  gb.visible = false
+  gb.rotation = PI/2
+  o.playerHand.addChild(gb)
+  o.gb = gb
+
+  if (a) {
+    objLayer.addChild(o)
+    playerUnits.push(o)
+    units.push(o)
+  }
+
  return o
 }
 
@@ -558,7 +578,10 @@ const createEnemyUnit = (x = 0, y = 0, hp, dmg) => {
   }
 
   o.canRet = true
-  o.die = () => removeItem(enemies, o)
+  o.die = () => {
+    removeItem(enemies, o)
+    killsDisplay.add(1)
+  }
   o.twoEyes = newMakeEnemyEyes()
   o.addChild(o.twoEyes)
   o.twoEyes.addChild(o.playerHand)
@@ -619,7 +642,7 @@ const turret = (x, y, cellSize) => {
       barrel.color = '#ff0'
 
       const HZ = 600
-      g.soundEffect(HZ, .3, 'triangle', .2, HZ * .9, false)
+      g.soundEffect(HZ, .25, 'triangle', .15, HZ * .7, false)
 
       target.getHit(o.damage)
 
@@ -670,6 +693,15 @@ const changeColor = (o) => {
     o.c2 = o.oc2
   })
 }
+
+const levelUp = (o) => {
+  o.health += 2
+  o.baseHealth += 2
+  if (o.attackRate > 10 ) o.attackRate -= 5
+  o.damage += 1
+  o.range += 2
+}
+
 
 export { 
   makeBasicObject,
