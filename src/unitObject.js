@@ -1,6 +1,6 @@
-import { enemies, g, PI, selectedUnits, shots, attackingTarget, playerUnits, units, movingUnits, K, solids, armedUnits } from './main.js'
+import { enemies, g, PI, selectedUnits, shots, attackingTarget, playerUnits, units, movingUnits, K, solids, armedUnits, cellSize } from './main.js'
 import { playerDie, newMoveTest, randomNum, removeItem, roll, scan, tempAngle, setDirection } from './functions.js'
-import { gun, makeLeg, makeHeadDetails, makeBorder, rectangle, makeTwoEyes, makeThirdEye, slash, bulletImpact, makeHead, newMakeEnemyEyes, bloodDrop, makeGold, drawTurretBarrel, drawTurretBase } from './drawings.js'
+import { gun, makeLeg, makeHeadDetails, makeBorder, rectangle, makeTwoEyes, makeThirdEye, slash, bulletImpact, makeHead, newMakeEnemyEyes, bloodDrop, makeGold, drawTurretBarrel, drawTurretBase, drawRank } from './drawings.js'
 import { world, floorLayer, space, objLayer } from './main/mainSetUp/initLayers.js'
 import { currentPlayer, UC } from './keyboard.js'
 import { gridMap, HQ } from './main/mainSetUp/initMap.js'
@@ -60,18 +60,22 @@ const moreProperties = (o) => {
   o.HB.y = -10
   o.HB.visible = false
   o.yellowHB.visible = false
+  o.updateHB = () => {
+    o.yellowHB.width = (o.health / o.baseHealth) * 100 * o.HBscale
+    o.HB.width = (o.health / o.baseHealth) * 100 * o.HBscale
+  }
   o.scanForTargets = (targets) => {
     if (o == currentPlayer) return
     targets.forEach(target => {
-      if (g.GlobalDistance(o, target) / Math.sqrt(2) <= o.range) {
-        o.target = target
+      if (g.GlobalDistance(o, target) <= o.range) {
         if (attackingTarget.indexOf(o) == -1) {
+          o.target = target
           attackingTarget.push(o)
         }
       }
     })
   }
-  o.getHit = (damage) => {
+  o.getHit = (damage, attacker) => {
 
     o.health -= damage
     if (o.canBleed) {
@@ -79,8 +83,14 @@ const moreProperties = (o) => {
     }
 
     if (o.canRet) {
-      if (!o.target || o.target.isDead) {
-        o.scanForTargets(o.targets)
+      if (!o.target && !o.attacker) {
+        if (g.GlobalDistance(o, attacker) <= o.range) {
+          o.isMoving = false
+          o.target = attacker
+          attackingTarget.push(o)
+        } else {
+          o.attacker = attacker
+        }
       }
     }
 
@@ -123,8 +133,6 @@ const moreProperties = (o) => {
 
 const makeUnitObject = (o, n = 0, x = 0, y = 0, e = 0) => {
   makeMovableObject(o, x, y)
-  
-
   o.leftLeg = makeLeg(5, e)
   o.rightLeg = makeLeg(30, e)
   o.head = makeHead(e)
@@ -205,17 +213,12 @@ const makePlayerUnitObject = (o, n = 1, x = 0, y = 0, w = 50, h = 50) => {
   o.border.y -= o.halfHeight
   o.border.visible = false
   o.select = () => {
+    [o.border, o.HB, o.yellowHB].forEach(i => i.visible = true)
     selectedUnits.push(o)
-    o.border.visible = true
-    o.HB.visible = true
-    o.yellowHB.visible = true
   }
   o.deselect = () => {
-    o.border.visible = false
-    o.HB.visible = false
-    o.yellowHB.visible = false
+    [o.border, o.HB, o.yellowHB].forEach(i => i.visible = false)
   }
-  // o.obstacles.push(space)
 }
 
 const makeMovableObject = (o, x = 0, y = 0, w = 50, h = 50) => {
@@ -230,16 +233,15 @@ const makeMovableObject = (o, x = 0, y = 0, w = 50, h = 50) => {
   o.scaned = false
   o.isMoving = false
   o.obstacles = [space]
-  o.isCollided = false
-  o.isColliding = false
+  // o.isCollided = false
+  // o.isColliding = false
   o.isCollidingH = false
   o.isCollidingV = false
-  o.stillCheck = false
-  o.xChanged = false
-  o.yChanged = false
-  o.changedDirection = false
+  // o.stillCheck = false
+  // o.xChanged = false
+  // o.yChanged = false
+  // o.changedDirection = false
   o.collidedWith = null
-  o.collisionSide = null
   o.move = () => newMoveTest(o)
   o.scan = () => scan(o)
   makeBasicObject(o, x, y, w, h)
@@ -301,6 +303,7 @@ const newMainPlayer = (x = 0, y = 0) => {
   const o = {
     type: 'MK',
     health: 999,
+    baseHealth: 999,
     damage: 0,
     range: 400,
     twoEyes: twoEyes,
@@ -316,11 +319,11 @@ const newMainPlayer = (x = 0, y = 0) => {
     alertSent: false,
     
   }
-  o.baseHealth = o.health
+  
   makePlayerUnitObject(o, 1, x, y)
   
   o.attack = (target = g.pointer) => {
-    if (UC || o.inRange) {
+    if (o == currentPlayer || o.inRange) {
       handPointerAngle = -tempAngle(o.playerHand, target)
       if (!o.attacked && !o.attacked2) slice1(o, target)
       else if (!o.attacked2) slice2(o, target)
@@ -363,7 +366,7 @@ const newMainPlayer = (x = 0, y = 0) => {
         const smallest = difference > PI ? 2 * PI - difference : difference < -PI ? 2 * PI + difference : difference
         //  Calculated angles are all in Radians. 1.14 Radians is around 65 Degrees
         if (Math.abs(smallest) <= 1.14) {
-          if (enemy.getHit(damage)) {
+          if (enemy.getHit(damage, o)) {
             g.wait(500, () => {
               if (!o.target) {
                 o.destinationX = HQ.x + 25
@@ -436,7 +439,7 @@ const makeArmed = (o) => {
           hit = false
           for (const enemy of enemies) {
             if (g.GlobalDistance(target, enemy) < enemy.halfWidth + r) {
-              enemy.getHit(o.damage)
+              if (enemy.getHit(o.damage, o)) levelUp(o)
               hit = true
               break
             }
@@ -453,7 +456,7 @@ const makeArmed = (o) => {
         }
         rate = o.attackRate
         o.weapon.rotation = -tempAngle(o.playerHand, target, o.angleOffX, o.angleOffY) + o.weaponAngle
-        if (target.getHit(o.damage)) levelUp(o)
+        if (target.getHit(o.damage, o)) levelUp(o)
         
       }
 
@@ -468,7 +471,7 @@ const makeArmed = (o) => {
   o.range = 300
   o.attackRate = 500
   o.targets = enemies
-  o.canRet = true
+  o.kills = 0
   o.weaponAngle = (PI / 2) + 0.1
   o.weaponRotation = 0.4
   gun(o)
@@ -487,7 +490,7 @@ const makePleb = (o) => {
 const createArmedPleb = (x = 0, y = 0, a = 1) => {
   const o = {}
   o.health = 100
-  o.baseHealth = o.health
+  o.baseHealth = 100
   makePlayerUnitObject(o, 0, x, y)
   makePleb(o)
   makeArmed(o)
@@ -510,7 +513,7 @@ const createPleb = (x, y, a = 1) => {
   o.readyForOrder = true
   o.hasGold = false
   o.health = 50
-  o.baseHealth = o.health
+  o.baseHealth = 50
   o.attack = () => {}
   makePlayerUnitObject(o, 0, x, y)
   makePleb(o)
@@ -535,13 +538,14 @@ const createEnemyUnit = (x = 0, y = 0, hp, dmg) => {
   const o = {
     type: 'invader',
     health: hp,
+    baseHealth: hp,
     damage: dmg,
     range: 300,
     weaponAngle: (PI / 2),
     weaponRotation: 0.4,
     targets: playerUnits,
   }
-  o.baseHealth = o.health
+  // o.baseHealth = hp
   makeUnitObject(o, 0, x, y, 1)
   o.attack = (target) => {
     if(!o.attacked) {
@@ -562,7 +566,7 @@ const createEnemyUnit = (x = 0, y = 0, hp, dmg) => {
       const HZ = 10
       g.soundEffect(HZ, .25, 'sine', .04, HZ * 120, true, 50)
 
-      if (target.getHit(o.damage)) {
+      if (target.getHit(o.damage, o)) {
         o.isMoving = true
         movingUnits.push(o)
       }
@@ -605,7 +609,7 @@ const createEnemyUnit = (x = 0, y = 0, hp, dmg) => {
   return o
 }
 
-const turret = (x, y, cellSize) => {
+const turret = (x, y) => {
   const w = cellSize * .8
   const barrel = {
     muz: 4,
@@ -613,6 +617,7 @@ const turret = (x, y, cellSize) => {
     render(c) {drawTurretBarrel(c, this)}
   }
   const o = {
+    ignore: 1,
     row: y,
     cel: x,
     health: 450,
@@ -644,7 +649,7 @@ const turret = (x, y, cellSize) => {
       const HZ = 600
       g.soundEffect(HZ, .25, 'triangle', .15, HZ * .7, false)
 
-      target.getHit(o.damage)
+      target.getHit(o.damage, o)
 
       g.wait(50, () => {
         barrel.muz = 4
@@ -666,8 +671,12 @@ const turret = (x, y, cellSize) => {
     gridMap[o.row][o.cel] = 0
   }
   o.canBleed = false
-  o.canRet = true
   o.addChild(barrel)
+  o.x += o.halfWidth / 4
+  o.y += o.halfHeight
+  floorLayer.addChild(o)
+  solids.push(o)
+
   playerUnits.push(o)
   armedUnits.push(o)
   return o
@@ -695,11 +704,37 @@ const changeColor = (o) => {
 }
 
 const levelUp = (o) => {
-  o.health += 2
-  o.baseHealth += 2
-  if (o.attackRate > 10 ) o.attackRate -= 5
-  o.damage += 1
-  o.range += 2
+  // TODO : FIX 
+  o.kills += 1
+  console.log('health = ', o.health, 'base = ', o.baseHealth)
+  o.baseHealth += 55
+  o.health = o.baseHealth
+  console.log('health = ', o.health, 'base = ', o.baseHealth)
+
+  if (o.kills == 4) {
+    drawRank(o.border, 11, 47)
+    o.health = o.baseHealth
+    o.attackRate = 400
+    o.damage += 5
+    o.range += 10
+  }
+
+  if (o.kills == 9) {
+    drawRank(o.border, 11, 41)
+    o.health = o.baseHealth
+    o.attackRate = 300
+    o.damage += 15
+    o.range += 15
+  }
+
+  if (o.kills == 15) {
+    drawRank(o.border, 11, 35)
+    o.health = o.baseHealth
+    o.attackRate = 200
+    o.damage += 25
+    o.range += 30
+  }
+  o.updateHB()
 }
 
 
