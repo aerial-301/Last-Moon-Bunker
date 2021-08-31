@@ -25,7 +25,7 @@ const addVectors = (a, b) => {return [a[0] + b[0], a[1] + b[1]]}
 
 const canBuildHere = (gridMap, r, c) => {
   try {if (!gridMap[r][c] && checkNeighbors(gridMap,r, c)) return true}
-  catch (e) { console.log('error')}
+  catch (e) {}
   return false
 }
 const checkNeighbors = (gridMap, row, col) => {
@@ -56,7 +56,7 @@ const simpleButton = (
   if (text ) button.text = makeText(button, text, `${tSize}px arial`, '#FFF', textX, textY)
   return button
 }
-const aroundAll = (collider, H) => {
+const avoidObstacles = (collider, H) => {
   collider.obstacles.forEach(obst => {
     if (g.hitTestRectangle(collider, obst)) {
       const desX = collider.destinationX + world.x
@@ -99,12 +99,19 @@ const aroundAll = (collider, H) => {
     }
   })
 }
-const checkCollisions = (side, collider = currentPlayer) => {
+const checkCollisions = (side, collider = currentPlayer, exception = null) => {
   if (!collider.obstacles) return false
   collider.obstacles.forEach(obst => {
+
     if (g.hitTestRectangle(collider, obst)) {
+
+      if (exception) {
+        if (obst.ignore) {
+          return
+        }
+      }
+
       collider.collidedWith = obst
-      collider.collisionSide = side
       switch (side) {
         case 'top':
           collider.y = obst.y - collider.height - 1
@@ -163,7 +170,7 @@ const sortUnits = (array, x, y, moveArray) => {
     const u = array[i]
 
     u.getInRange = false
-    u.isCollided = false
+    // u.isCollided = false
     u.target = null
     u.isSeeking = false
 
@@ -196,7 +203,7 @@ const newMoveX = (u) => {
     if (xd > u.speed + (u.getInRange ? u.range / Math.sqrt(2) - 95 : 0)) {
       u.x += u.vx * u.speed
       if (u.obstacles.length > 0) {
-        if (xD != 0) aroundAll(u, 1)
+        if (xD != 0) avoidObstacles(u, 1)
       }
       u.scan(1500, OBSDIST)
       return true
@@ -211,7 +218,7 @@ const newMoveY = (u) => {
     if (yd > u.speed + (u.getInRange ? u.range / Math.sqrt(2) - 45 : 0)) {
       u.y += u.vy * u.speed
       if (u.obstacles.length > 0) {
-        if (yD != 0) aroundAll(u, 0)
+        if (yD != 0) avoidObstacles(u, 0)
       }
       u.scan(1500, OBSDIST)
       return true
@@ -248,16 +255,20 @@ const roll = (t, vx, vy) => {
     g.wait(1, () => {
       t.rotation += 0.625
       t.x += vx * t.speed * 12.5
-      if (vx > 0) checkCollisions('left', t)
-      else if (vx < 0) checkCollisions('right', t)
+      if (vx > 0) checkCollisions('left', t, 1)
+      else if (vx < 0) checkCollisions('right', t, 1)
       t.y += vy * t.speed * 12.5
-      if (vy > 0) checkCollisions('top', t)
-      else if (vy < 0) checkCollisions('bot', t)
+      if (vy > 0) checkCollisions('top', t, 1)
+      else if (vy < 0) checkCollisions('bot', t, 1)
       t.rollCounter -= 1
       roll(t, vx, vy)
     })
   }
   else {
+    if (vx > 0) checkCollisions('left', t)
+    else if (vx < 0) checkCollisions('right', t)
+    if (vy > 0) checkCollisions('top', t)
+    else if (vy < 0) checkCollisions('bot', t)
     t.rollCounter = t.rollDistance
     t.rotation = 0
     t.isRolling = false

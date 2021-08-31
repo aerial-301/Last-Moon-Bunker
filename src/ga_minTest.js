@@ -1,9 +1,9 @@
 import { randomNum } from './functions.js'
 import { world } from './main/mainSetUp/initLayers.js'
 
-export var GA = {
+export let GA = {
   create(setup) {
-    var g = {}
+    let g = {}
     g.canvas = document.getElementById('c')
     g.canvas.style.backgroundColor = '#333'
     g.canvas.ctx = g.canvas.getContext("2d")
@@ -17,12 +17,10 @@ export var GA = {
     g._frameDuration = 1000 / g._fps
     g._lag = 0
     g.interpolate = true
-
     let scaleToFit = Math.min(window.innerWidth / g.canvas.width,( window.innerHeight) / g.canvas.height)
     g.canvas.style.transformOrigin = "0 0";
     g.canvas.style.transform = "scale(" + scaleToFit + ")";
     g.scale = scaleToFit
-    // g.scale = 1
 
     g.render = (canvas, lagOffset) => {
       let ctx = canvas.ctx
@@ -100,20 +98,7 @@ export var GA = {
         },
       }
     })
-    g.remove = function () {
-      let sprites = Array.prototype.slice.call(arguments)
-      if (!(sprites[0] instanceof Array)) {
-        if (sprites.length > 1) sprites.forEach(s => s.parent.removeChild(s))
-        else sprites[0].parent.removeChild(sprites[0]) // KEEP THIS ONLY ?????????
-      }
-      // else {
-      //   let p = sprites[0]
-      //   p.forEach(s => {
-      //     s.parent.removeChild(s)
-      //     p.splice(p.indexOf(s), 1)
-      //   })
-      // }
-    }
+    g.remove = (s) => s.parent.removeChild(s)
     function makeBasicObject(o, x = 0, y = 0, w = 50, h = 50) {
       o.x= x
       o.y= y
@@ -203,8 +188,8 @@ export var GA = {
         halfHeight: { get: () => 0 },
         centerX: { get: () => o.x },
         centerY: { get: () => o.y },
-        shiftedX: {get: () => o._x - world.x},
-        shiftedY: {get: () => o._y - world.y}
+        shiftedX: {get: () => o.x - world.x},
+        shiftedY: {get: () => o.y - world.y}
       })
       o.moveHandler = function (e) {
         o._x = (e.pageX - e.target.offsetLeft)
@@ -217,7 +202,7 @@ export var GA = {
 
     g.wait = (d, c) => setTimeout(c, d)
     g.hitTestRectangle = (r1, r2, global = false) => {
-      let hit = false, combinedHalfWidths, combinedHalfHeights, vx, vy
+      let hit, vx, vy
       if (global) {
         vx = (r1.gx + r1.halfWidth) - (r2.gx + r2.halfWidth)
         vy = (r1.gy + r1.halfHeight) - (r2.gy + r2.halfHeight)
@@ -226,6 +211,7 @@ export var GA = {
         vx = r1.centerX - r2.centerX
         vy = r1.centerY - r2.centerY
       }
+
       if (Math.abs(vx) < r1.halfWidth + r2.halfWidth) {
         if (Math.abs(vy) < r1.halfHeight + r2.halfHeight) {
           hit = true
@@ -311,11 +297,6 @@ export var GA = {
       }
 
     }
-
-
-
-    
-
     return g
   }
 }
