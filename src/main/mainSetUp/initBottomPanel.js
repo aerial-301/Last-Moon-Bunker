@@ -8,7 +8,7 @@ import { bluePrint } from "../mainLoop/showBluePrint.js"
 
 let tip, bottomPanel, buttons = [], goldDisplay, killsDisplay, currentKills = 0
 const panelHeight = 100
-export let currentGold = 13
+export let currentGold = 24
 export let totalGold = currentGold
 export let prices = [3, 7, 25, 77]
 
