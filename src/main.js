@@ -17,8 +17,8 @@ import { showTip } from './main/mainLoop/showTip.js'
 import { summonWave } from './main/mainLoop/summonWaves.js'
 
 import { UC } from './keyboard.js'
-import { createPleb, makeText } from './unitObject.js'
-import { makeGold, rectangle } from './drawings.js'
+import { createArmedPleb, createPleb, makeText } from './unitObject.js'
+import { drawRank, makeGold, rectangle } from './drawings.js'
 import { removeItem, simpleButton } from './functions.js'
 
 const surfaceWidth = 2400
@@ -98,16 +98,13 @@ const play = () => {
 }
 
 const initialStuff = () => {
+  const p = createPleb(HQ.x - 100, HQ.y + 100)
+  p.isMining = true
+  miners.push(p)
+  createArmedPleb(HQ.x + 70, HQ.y + 100)
+  createArmedPleb(HQ.x - 350, HQ.y + 250)
 
-  // const tempVill = createArmedPleb(275, 250)
-  // objLayer.addChild(tempVill)
-  // playerUnits.push(tempVill)
-  // units.push(tempVill)
-
-  // createPleb(400, 180)
-  // objLayer.addChild(pleb)
-  // playerUnits.push(pleb)
-  // units.push(pleb)
+  
 }
 
 
@@ -145,6 +142,17 @@ const mainMenu = () => {
   buttons.push(menu)
   uiLayer.addChild(menu)
   g.pause()
+
+
+  // const t = createArmedPleb(100, 100, 0)
+  // uiLayer.addChild(t)
+  // t.twoEyes.y -= 8
+  // drawRank(t.border, 11, 35)
+  // drawRank(t.border, 11, 41)
+  // drawRank(t.border, 11, 47)
+  // drawRank(t.border, 53, 61)
+  // const r = drawRank(10, 10)
+  // uiLayer.addChild(r)
 }
 
 g = GA.create(mainMenu)
