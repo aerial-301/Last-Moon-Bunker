@@ -1,4 +1,4 @@
-import { currentAction, g, playerUnits, selectedUnits, movingUnits, enemies, attackingTarget, solids, cellSize, miners, menu, started } from './main.js'
+import { currentAction, g, playerUnits, selectedUnits, movingUnits, enemies, attackingTarget, cellSize, miners, started } from './main.js'
 import { gridMap, mine } from './main/mainSetUp/initMap.js'
 import { uiLayer, world, floorLayer } from './main/mainSetUp/initLayers.js'
 import { getUnitVector, sortUnits, setDirection, checkNeighbors, notEnough } from './functions.js'
@@ -66,12 +66,7 @@ const leftMouseDown = () => {
           goldDisplay.sub(prices[2])
           currentAction.placingBuilding = false
           gridMap[row][cel] = 4
-          
-          const T = turret(cel, row, cellSize)
-          T.x += T.halfWidth / 4
-          T.y += T.halfHeight
-          floorLayer.addChild(T)
-          solids.push(T)
+          turret(cel, row, cellSize)
           bluePrint.visible = false
           // console.log('construction complete')
         }
@@ -165,7 +160,6 @@ const rightMouseDown = () => {
     }
   }
 }
-
 const leftMouseUp = () => {
   if (started) {
     if (selectionStarted) {
