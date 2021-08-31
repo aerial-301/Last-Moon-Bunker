@@ -14,13 +14,13 @@ const scanFor = (forEnemies = true) => {
     if (readyToScanE) {
       readyToScanE = false
       scanLoop()
-      g.wait(350, () => readyToScanE = true)
+      g.wait(377, () => readyToScanE = true)
     }
   } else {
     if (readyToScanP) {
       readyToScanP = false
       scanLoop(enemies, playerUnits)
-      g.wait(320, () => readyToScanP = true)
+      g.wait(325, () => readyToScanP = true)
     }
   }
 }
