@@ -1,6 +1,5 @@
 import { solids, g, playerUnits, bloodDrops, fadeOuts, K, PI } from "./main.js"
-// import { gridMap } from "./main/mainSetUp/initMap.js"
-import { world, floorLayer, objLayer } from "./main/mainSetUp/initLayers.js"
+import { world, floorLayer, objLayer, uiLayer } from "./main/mainSetUp/initLayers.js"
 import { makeMovableObject, makeBasicObject, moreProperties } from "./unitObject.js"
 import { randomNum, removeItem } from "./functions.js"
 
@@ -310,6 +309,7 @@ const makeHQ = (x, y, cellSize) => {
     baseHealth: 1000,
     c1: '#900',
     c2: '#888',
+    ignore: 1,
     render(c) {
       c.lineWidth = 5
       c.fillStyle = this.c1
@@ -343,6 +343,7 @@ const makeHQ = (x, y, cellSize) => {
 }
 const makeMine = (x, y, cellSize) => {
   const o = {
+    ignore: 1,
     render(c) {
       c.lineWidth = 5
       c.fillStyle = '#fb5'
@@ -414,7 +415,7 @@ const moonHole = (d, x, y) => {
   o.rotation = PI
   b.rotation = PI
 
-  const base = {}
+  const base = {ignore: 1}
   makeBasicObject(base, (x - d / 1.8) | 0, (y - d * 0.1) | 0, (d * 2.2) | 0, (d * 1.2) | 0)
   objLayer.addChild(base)
   solids.push(base)
@@ -684,7 +685,24 @@ const drawTurretBase = (c, o, w) => {
   SK(c)
 }
 
+const drawRank = (p, x = 0, y = 0) => {
+  const o = {
+    render(c) {
+      c.strokeStyle = '#fd0'
+      c.lineWidth = 3
+      BP(c)
+      MT(c, 0, 0)
+      L(c, -4, -4)
+      L(c, -8, 0)
+      SK(c)
+    }
+  }
+  makeBasicObject(o, x, y)
+  p.addChild(o)
+}
+
 export { 
+
   circle, 
   rectangle, 
   makeSelectionBox, 
@@ -712,5 +730,6 @@ export {
   makeGold,
   renderTurret,
   drawTurretBarrel,
-  drawTurretBase
+  drawTurretBase,
+  drawRank
  }
