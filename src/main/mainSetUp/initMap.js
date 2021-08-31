@@ -2,6 +2,7 @@ import { checkNeighbors, randomNum } from '../../functions.js'
 import { surfaceLine, moonHole, makeHQ, makeMine } from '../../drawings.js'
 import { cellSize, solids, surfaceHeight, surfaceWidth} from '../../main.js'
 import { floorLayer } from './initLayers.js'
+import { turret } from '../../unitObject.js'
 
 let mine, HQ, gridMap = []
 
@@ -23,6 +24,12 @@ const initMap = () => {
   gridMap[mRow][mCol] = 5
   gridMap[hqrow][hqcol] = 5
 
+
+  const tr = 2
+  const tc = 11
+  gridMap[tr][tc] = 4
+  
+  
   for (let row = 0; row < rows; row++) {
     for (let cel = 0; cel < cols; cel++) {
       if (row % 2 == 1) {
@@ -42,6 +49,9 @@ const initMap = () => {
     }
   }
 
+
+  turret(tc, tr)
+
   HQ = makeHQ(cellSize * hqcol , cellSize * hqrow, cellSize)
   floorLayer.addChild(HQ)
   solids.push(HQ)
@@ -52,7 +62,9 @@ const initMap = () => {
   floorLayer.addChild(mine)
   solids.push(mine)
 
-  // debugShape(mine)
+
+  // TODO : make area around HQ as occupied
+  gridMap.forEach(i => console.log(i.join('')))
 }
 
 export {
