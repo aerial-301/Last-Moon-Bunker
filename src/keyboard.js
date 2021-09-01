@@ -1,7 +1,8 @@
 import { world, objLayer } from './main/mainSetUp/initLayers.js'
-import { g, selectedUnits, movingUnits, attackingTarget, tip, summonWave} from './main.js'
+import { g, selectedUnits, movingUnits, attackingTarget } from './main.js'
 import { checkCollisions, removeItem } from './functions.js'
-import { bottomPanel } from './main/mainSetUp/initBottomPanel.js'
+import { bottomPanel, tip } from './main/mainSetUp/initBottomPanel.js'
+import { summonWave } from './main/mainLoop/summonWaves.js'
 // import { gridMap } from './main/mainSetUp/initMap.js'
 // import { debugShape, tempIndicator } from '../extra/debug.js'
 let currentPlayer, UC

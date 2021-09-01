@@ -1,10 +1,10 @@
 import { g } from './main.js'
-import { makeRectangle } from "./drawings.js"
+import { rectangle } from "./drawings.js"
 import { makeBasicObject } from "./unitObject.js"
 
 
 const debugShape = (shape) => {
-  const s = makeRectangle(
+  const s = rectangle(
     shape.width,
     shape.height,
     'white',

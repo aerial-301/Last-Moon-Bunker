@@ -1,13 +1,11 @@
 import { g, movingUnits, solids, playerUnits, armedUnits } from './main.js'
 import { world, objLayer } from './main/mainSetUp/initLayers.js'
-import { makeRectangle } from './drawings.js'
+import { rectangle } from './drawings.js'
 import { makeText } from './unitObject.js'
 import { currentPlayer } from './keyboard.js'
-// import { tempIndicator } from '../extra/debug.js'
 
 const OBSDIST = 250
 const OBSDIST_UNDERGROUND = 400
-
 
 const directions = [
   [1, 0],
@@ -23,27 +21,13 @@ const directions = [
 const tempAngle = (a, b, bOffsetX = 0, bOffsetY = 0) => {return Math.atan2((b.centerX + bOffsetX - a.centerX), (b.centerY + bOffsetY - a.centerY))}
 const xDistance = (a, b) => Math.abs(b.centerX - a.centerX)
 const yDistance = (a, b) => Math.abs(b.centerY - a.centerY)
-
 const addVectors = (a, b) => {return [a[0] + b[0], a[1] + b[1]]}
-
 
 const canBuildHere = (gridMap, r, c) => {
   try {if (!gridMap[r][c] && checkNeighbors(gridMap,r, c)) return true}
-  catch (e) { console.log('error')}
+  catch (e) {}
   return false
 }
-
-
-// const setCellValue = (gridMap ,row, col, value) => {
-//   let n
-//   directions.forEach(d => {
-//     n = addVectors([row, col], d)
-//     try {
-//       gridMap[n[0]][n[1]] = value
-//     } catch (e) {null}
-//   })
-// }
-
 const checkNeighbors = (gridMap, row, col) => {
   let n
   for (let d of directions) {
@@ -53,35 +37,26 @@ const checkNeighbors = (gridMap, row, col) => {
     } catch (e) {null}
   }
   return true
-
-  // directions.forEach(d => {
-  //   n = addVectors([row, col], d)
-  //   try {
-  //     if (gridMap[n[0]][n[1]] != 0) 
-  //   } catch (e) {null}
-  // })
 }
-
 const simpleButton = (
   text,
-  xPos = 10, 
-  yPos = 10, 
-  textX = 10, 
-  textY = 10, 
+  xPos = 10,
+  yPos = 10,
+  textX = 10,
+  textY = 10,
   color = '#555',
   size = 28,
-  action = () => console.log(text), 
-  width = 100, 
+  action = () => console.log(text),
+  width = 100,
   height = 80
   ) => {
-  const button = makeRectangle(width, height, color, 1, xPos, yPos)
-  button.action = action
-  // const tSize = 80 - (text.length * 10)
+  const button = rectangle(width, height, color, 1, xPos, yPos)
+  if (action) button.action = action
   const tSize = size
   if (text ) button.text = makeText(button, text, `${tSize}px arial`, '#FFF', textX, textY)
   return button
 }
-const aroundAll = (collider, H) => {
+const avoidObstacles = (collider, H) => {
   collider.obstacles.forEach(obst => {
     if (g.hitTestRectangle(collider, obst)) {
       const desX = collider.destinationX + world.x
@@ -124,12 +99,19 @@ const aroundAll = (collider, H) => {
     }
   })
 }
-const checkCollisions = (side, collider = currentPlayer) => {
+const checkCollisions = (side, collider = currentPlayer, exception = null) => {
   if (!collider.obstacles) return false
   collider.obstacles.forEach(obst => {
+
     if (g.hitTestRectangle(collider, obst)) {
+
+      if (exception) {
+        if (obst.ignore) {
+          return
+        }
+      }
+
       collider.collidedWith = obst
-      collider.collisionSide = side
       switch (side) {
         case 'top':
           collider.y = obst.y - collider.height - 1
@@ -188,7 +170,7 @@ const sortUnits = (array, x, y, moveArray) => {
     const u = array[i]
 
     u.getInRange = false
-    u.isCollided = false
+    // u.isCollided = false
     u.target = null
     u.isSeeking = false
 
@@ -221,7 +203,7 @@ const newMoveX = (u) => {
     if (xd > u.speed + (u.getInRange ? u.range / Math.sqrt(2) - 95 : 0)) {
       u.x += u.vx * u.speed
       if (u.obstacles.length > 0) {
-        if (xD != 0) aroundAll(u, 1)
+        if (xD != 0) avoidObstacles(u, 1)
       }
       u.scan(1500, OBSDIST)
       return true
@@ -236,7 +218,7 @@ const newMoveY = (u) => {
     if (yd > u.speed + (u.getInRange ? u.range / Math.sqrt(2) - 45 : 0)) {
       u.y += u.vy * u.speed
       if (u.obstacles.length > 0) {
-        if (yD != 0) aroundAll(u, 0)
+        if (yD != 0) avoidObstacles(u, 0)
       }
       u.scan(1500, OBSDIST)
       return true
@@ -251,7 +233,6 @@ const newMoveTest = (u) => {
     removeItem(movingUnits, u)
     u.getInRange = false
     u.isMoving = false
-    // u.scanForTargets(u.targets)
   }
 }
 const scan = (u, delay = 400, distance = OBSDIST_UNDERGROUND) => {
@@ -274,16 +255,20 @@ const roll = (t, vx, vy) => {
     g.wait(1, () => {
       t.rotation += 0.625
       t.x += vx * t.speed * 12.5
-      if (vx > 0) checkCollisions('left', t)
-      else if (vx < 0) checkCollisions('right', t)
+      if (vx > 0) checkCollisions('left', t, 1)
+      else if (vx < 0) checkCollisions('right', t, 1)
       t.y += vy * t.speed * 12.5
-      if (vy > 0) checkCollisions('top', t)
-      else if (vy < 0) checkCollisions('bot', t)
+      if (vy > 0) checkCollisions('top', t, 1)
+      else if (vy < 0) checkCollisions('bot', t, 1)
       t.rollCounter -= 1
       roll(t, vx, vy)
     })
   }
   else {
+    if (vx > 0) checkCollisions('left', t)
+    else if (vx < 0) checkCollisions('right', t)
+    if (vy > 0) checkCollisions('top', t)
+    else if (vy < 0) checkCollisions('bot', t)
     t.rollCounter = t.rollDistance
     t.rotation = 0
     t.isRolling = false
@@ -293,11 +278,9 @@ const playerDie = (o) => {
   removeItem(playerUnits, o)
   removeItem(armedUnits, o)
 }
-
 const notEnough = () => {
   const HZ = 150
   g.soundEffect(HZ, .2, 'sawtooth', .05, 100, false)
 }
-
 
 export { notEnough, checkNeighbors, setDirection, simpleButton, checkCollisions, removeItem, randomNum, getUnitVector, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle, playerDie, canBuildHere }
