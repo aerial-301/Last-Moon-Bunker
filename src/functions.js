@@ -7,7 +7,7 @@ import { currentPlayer } from './keyboard.js'
 const OBSDIST = 250
 const OBSDIST_UNDERGROUND = 400
 
-const directions = [
+export const directions = [
   [1, 0],
   [1, 1],
   [0, 1],
@@ -58,6 +58,10 @@ const simpleButton = (
 }
 const avoidObstacles = (collider, H) => {
   collider.obstacles.forEach(obst => {
+    if (obst.isDead) {
+      removeItem(collider.obstacles, obst)
+      return
+    }
     if (g.hitTestRectangle(collider, obst)) {
       const desX = collider.destinationX + world.x
       const desY = collider.destinationY + world.y
