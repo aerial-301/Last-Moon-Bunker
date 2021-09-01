@@ -1,4 +1,4 @@
-import { checkNeighbors, randomNum } from '../../functions.js'
+import { checkNeighbors, directions, randomNum } from '../../functions.js'
 import { surfaceLine, moonHole, makeHQ, makeMine } from '../../drawings.js'
 import { cellSize, solids, surfaceHeight, surfaceWidth} from '../../main.js'
 import { floorLayer } from './initLayers.js'
@@ -23,6 +23,12 @@ const initMap = () => {
 
   gridMap[mRow][mCol] = 5
   gridMap[hqrow][hqcol] = 5
+  
+  directions.forEach(d => {
+    try {
+      gridMap[hqrow + d[0]][hqcol + d[1]] = 5
+    } catch (e) {}
+  })
 
 
   const tr = 2
@@ -56,15 +62,9 @@ const initMap = () => {
   floorLayer.addChild(HQ)
   solids.push(HQ)
 
-
-
   mine = makeMine(cellSize * mCol, cellSize * mRow, cellSize)
   floorLayer.addChild(mine)
   solids.push(mine)
-
-
-  // TODO : make area around HQ as occupied
-  gridMap.forEach(i => console.log(i.join('')))
 }
 
 export {
