@@ -2,7 +2,7 @@ import { enemies, g, PI, selectedUnits, shots, attackingTarget, playerUnits, uni
 import { playerDie, newMoveTest, randomNum, removeItem, roll, scan, tempAngle, setDirection } from './functions.js'
 import { gun, makeLeg, makeHeadDetails, makeBorder, rectangle, makeTwoEyes, makeThirdEye, slash, bulletImpact, makeHead, newMakeEnemyEyes, bloodDrop, makeGold, drawTurretBarrel, drawTurretBase, drawRank } from './drawings.js'
 import { world, floorLayer, space, objLayer } from './main/mainSetUp/initLayers.js'
-import { currentPlayer, UC } from './keyboard.js'
+import { currentPlayer } from './keyboard.js'
 import { gridMap, HQ } from './main/mainSetUp/initMap.js'
 import { killsDisplay } from './main/mainSetUp/initBottomPanel.js'
 
@@ -674,6 +674,8 @@ const turret = (x, y) => {
   o.addChild(barrel)
   o.x += o.halfWidth / 4
   o.y += o.halfHeight
+
+
   floorLayer.addChild(o)
   solids.push(o)
 
@@ -704,36 +706,31 @@ const changeColor = (o) => {
 }
 
 const levelUp = (o) => {
-  // TODO : FIX 
   o.kills += 1
-  console.log('health = ', o.health, 'base = ', o.baseHealth)
-  o.baseHealth += 55
-  o.health = o.baseHealth
-  console.log('health = ', o.health, 'base = ', o.baseHealth)
 
-  if (o.kills == 4) {
+  if (o.kills == 7) {
     drawRank(o.border, 11, 47)
+    o.baseHealth += 50
     o.health = o.baseHealth
     o.attackRate = 400
     o.damage += 5
     o.range += 10
-  }
-
-  if (o.kills == 9) {
+  } else if (o.kills == 15) {
     drawRank(o.border, 11, 41)
+    o.baseHealth += 75
     o.health = o.baseHealth
     o.attackRate = 300
     o.damage += 15
     o.range += 15
-  }
-
-  if (o.kills == 15) {
+  } else if (o.kills == 23) {
     drawRank(o.border, 11, 35)
+    o.baseHealth += 175
     o.health = o.baseHealth
     o.attackRate = 200
     o.damage += 25
     o.range += 30
   }
+
   o.updateHB()
 }
 
