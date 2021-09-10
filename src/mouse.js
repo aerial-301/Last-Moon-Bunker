@@ -1,7 +1,7 @@
-import { currentAction, g, playerUnits, selectedUnits, movingUnits, enemies, attackingTarget, cellSize, miners, started } from './main.js'
+import { currentAction, g, playerUnits, selectedUnits, movingUnits, enemies, attackingTarget, cellSize, miners } from './main.js'
 import { gridMap, mine } from './main/mainSetUp/initMap.js'
 import { uiLayer, world, floorLayer } from './main/mainSetUp/initLayers.js'
-import { getUnitVector, sortUnits, setDirection, checkNeighbors, notEnough } from './functions.js'
+import { getUnitVector, sortUnits, setDirection, checkNeighbors, notEnough, addNewItem } from './functions.js'
 import { actionMark, rectangle, makeSelectionBox } from './drawings.js'
 import { currentPlayer, UC } from './keyboard.js'
 import { buttons, currentGold, goldDisplay, prices } from './main/mainSetUp/initBottomPanel.js'
@@ -32,7 +32,7 @@ const clickedBottomPanel = () => {
 }
 const leftMouseDown = () => {
 
-  if (!started) {
+  if (!currentAction.started) {
     buttons.forEach(button => {
       if (g.hitTestPoint(g.pointer, button)) {
         button.action()
@@ -161,7 +161,7 @@ const rightMouseDown = () => {
   }
 }
 const leftMouseUp = () => {
-  if (started) {
+  if (currentAction.started) {
     if (selectionStarted) {
       selectedUnits.forEach(v => v.deselect())
       selectedUnits.length = 0

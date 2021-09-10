@@ -1,5 +1,5 @@
 import { solids, g, playerUnits, bloodDrops, fadeOuts, K, PI } from "./main.js"
-import { world, floorLayer, objLayer, uiLayer } from "./main/mainSetUp/initLayers.js"
+import { world, floorLayer, objLayer } from "./main/mainSetUp/initLayers.js"
 import { makeMovableObject, makeBasicObject, moreProperties } from "./unitObject.js"
 import { randomNum, removeItem } from "./functions.js"
 
@@ -684,7 +684,6 @@ const drawTurretBase = (c, o, w) => {
   FL(c)
   SK(c)
 }
-
 const drawRank = (p, x = 0, y = 0) => {
   const o = {
     render(c) {
@@ -702,7 +701,6 @@ const drawRank = (p, x = 0, y = 0) => {
 }
 
 export { 
-
   circle, 
   rectangle, 
   makeSelectionBox, 

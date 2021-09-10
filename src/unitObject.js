@@ -1,5 +1,5 @@
 import { enemies, g, PI, selectedUnits, shots, attackingTarget, playerUnits, units, movingUnits, K, solids, armedUnits, cellSize } from './main.js'
-import { playerDie, newMoveTest, randomNum, removeItem, roll, scan, tempAngle, setDirection } from './functions.js'
+import { playerDie, moveUnit, randomNum, removeItem, roll, scan, tempAngle, setDirection } from './functions.js'
 import { gun, makeLeg, makeHeadDetails, makeBorder, rectangle, makeTwoEyes, makeThirdEye, slash, bulletImpact, makeHead, newMakeEnemyEyes, bloodDrop, makeGold, drawTurretBarrel, drawTurretBase, drawRank } from './drawings.js'
 import { world, floorLayer, space, objLayer } from './main/mainSetUp/initLayers.js'
 import { currentPlayer } from './keyboard.js'
@@ -233,16 +233,10 @@ const makeMovableObject = (o, x = 0, y = 0, w = 50, h = 50) => {
   o.scaned = false
   o.isMoving = false
   o.obstacles = [space]
-  // o.isCollided = false
-  // o.isColliding = false
   o.isCollidingH = false
   o.isCollidingV = false
-  // o.stillCheck = false
-  // o.xChanged = false
-  // o.yChanged = false
-  // o.changedDirection = false
   o.collidedWith = null
-  o.move = () => newMoveTest(o)
+  o.move = () => moveUnit(o)
   o.scan = () => scan(o)
   makeBasicObject(o, x, y, w, h)
 }
@@ -291,7 +285,7 @@ const slice2 = (o, t) => {
   g.wait(120, () => o.attacked2 = false)
 }
 
-const newMainPlayer = (x = 0, y = 0) => {
+const moonKeeper = (x = 0, y = 0) => {
   
   const twoEyes = makeTwoEyes()
   const thirdEye = makeThirdEye()
@@ -540,12 +534,11 @@ const createEnemyUnit = (x = 0, y = 0, hp, dmg) => {
     health: hp,
     baseHealth: hp,
     damage: dmg,
-    range: 300,
+    range: 230,
     weaponAngle: (PI / 2),
     weaponRotation: 0.4,
     targets: playerUnits,
   }
-  // o.baseHealth = hp
   makeUnitObject(o, 0, x, y, 1)
   o.attack = (target) => {
     if(!o.attacked) {
@@ -741,7 +734,7 @@ export {
   makeText,
   moreProperties,
   createEnemyUnit,
-  newMainPlayer,
+  moonKeeper,
   createPleb,
   createArmedPleb,
   turret

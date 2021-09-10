@@ -1,6 +1,6 @@
-import { g } from './main.js'
-import { rectangle } from "./drawings.js"
-import { makeBasicObject } from "./unitObject.js"
+import { g } from './src/main.js'
+import { rectangle } from "./src/drawings.js"
+import { makeBasicObject } from "./src/unitObject.js"
 
 
 const debugShape = (shape) => {

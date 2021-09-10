@@ -2,13 +2,13 @@ import { uiLayer } from "./initLayers.js"
 import { makeGold, rectangle, makeThirdEye, makeTwoEyes, renderTurret } from "../../drawings.js"
 import { notEnough, randomNum, simpleButton } from "../../functions.js"
 import { g, currentAction, K } from "../../main.js"
-import { createArmedPleb, createPleb, newMainPlayer } from "../../unitObject.js"
+import { createArmedPleb, createPleb, moonKeeper } from "../../unitObject.js"
 import { HQ } from './initMap.js'
 import { bluePrint } from "../mainLoop/showBluePrint.js"
 
 let tip, bottomPanel, buttons = [], goldDisplay, killsDisplay, currentKills = 0
 const panelHeight = 100
-export let currentGold = 24
+export let currentGold = 30
 export let totalGold = currentGold
 export let prices = [3, 7, 25, 77]
 
@@ -62,10 +62,6 @@ const initBottomPanel = () => {
 
   bottomPanel.addChild(killsDisplay)
 
-
-
-
-
   const pleb = createPleb(25, 15, 0)
   b1.addChild(pleb)
   
@@ -109,7 +105,7 @@ const initBottomPanel = () => {
   b4.action = () => {
     if (goldDisplay.sub(prices[3])) {
       summonSound()
-      newMainPlayer(HQ.x + 25, HQ.y + 150)
+      moonKeeper(HQ.x + 25, HQ.y + 150)
     } else notEnough()
   }
   

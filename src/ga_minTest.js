@@ -23,6 +23,7 @@ export let GA = {
     g.scale = scaleToFit
 
     g.render = (canvas, lagOffset) => {
+      // if (g.paused) return
       let ctx = canvas.ctx
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       g.stage.children.forEach(c => displaySprite(c))

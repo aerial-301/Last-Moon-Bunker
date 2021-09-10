@@ -34,7 +34,7 @@ const checkNeighbors = (gridMap, row, col) => {
     n = addVectors([row, col], d)
     try {
       if (gridMap[n[0]][n[1]] != 0) return false
-    } catch (e) {null}
+    } catch (e) {}
   }
   return true
 }
@@ -143,6 +143,9 @@ const removeItem = (array, item) => {
     const index = array.indexOf(item)
     if (index !== -1) array.splice(index, 1)
 }
+const addNewItem = (array, item) => {
+  if (array.findIndex(i => i == item) == -1) array.push(item)
+}
 const getUnitVector = (a, b) => {
   let xv, yv
   xv = b.centerX - a.centerX
@@ -174,7 +177,6 @@ const sortUnits = (array, x, y, moveArray) => {
     const u = array[i]
 
     u.getInRange = false
-    // u.isCollided = false
     u.target = null
     u.isSeeking = false
 
@@ -187,10 +189,12 @@ const sortUnits = (array, x, y, moveArray) => {
     u.destinationY = y + (0 | (i / size)) * (maxHeight + ySpace) - midY
     setDirection(u)
 
-    if (moveArray.findIndex((e) => e == u) == -1) {
-      u.isMoving = true
-      moveArray.push(u)
-    }
+    u.isMoving = true
+    addNewItem(moveArray, u)
+    // if (moveArray.findIndex((e) => e == u) == -1) {
+    //   u.isMoving = true
+    //   moveArray.push(u)
+    // }
   }
 }
 const setDirection = (u) => {
@@ -200,7 +204,7 @@ const setDirection = (u) => {
   u.vx = (xD / mag)
   u.vy = (yD / mag)
 }
-const newMoveX = (u) => {
+const moveX = (u) => {
   const xD = u.destinationX - u.x
   const xd = Math.abs(xD)
   if (!u.isCollidingV) {
@@ -214,7 +218,7 @@ const newMoveX = (u) => {
     } else return false
   } else u.x += u.vx * u.speed
 }
-const newMoveY = (u) => {
+const moveY = (u) => {
   objLayer.children.sort((a, b) => a.bottom - b.bottom)
   const yD = u.destinationY - u.y
   const yd = Math.abs(yD)
@@ -229,9 +233,9 @@ const newMoveY = (u) => {
     } else return false
   } else u.y += u.vy * u.speed
 }
-const newMoveTest = (u) => {
-  const x = newMoveX(u)
-  const y = newMoveY(u)
+const moveUnit = (u) => {
+  const x = moveX(u)
+  const y = moveY(u)
 
   if (!x && !y) {
     removeItem(movingUnits, u)
@@ -245,7 +249,8 @@ const scan = (u, delay = 400, distance = OBSDIST_UNDERGROUND) => {
     for (const obj of solids) {
       if (xDistance(u, obj) < distance) {
         if (yDistance(u, obj) < distance) {
-          if (u.obstacles.findIndex((value) => value == obj) == -1) u.obstacles.push(obj)
+          addNewItem(u.obstacles, obj)
+          // if (u.obstacles.findIndex((value) => value == obj) == -1) u.obstacles.push(obj)
           continue
         }
       }
@@ -287,4 +292,23 @@ const notEnough = () => {
   g.soundEffect(HZ, .2, 'sawtooth', .05, 100, false)
 }
 
-export { notEnough, checkNeighbors, setDirection, simpleButton, checkCollisions, removeItem, randomNum, getUnitVector, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle, playerDie, canBuildHere }
+export {
+  notEnough,
+  checkNeighbors,
+  setDirection,
+  simpleButton,
+  checkCollisions,
+  addNewItem,
+  removeItem,
+  randomNum,
+  getUnitVector,
+  sortUnits,
+  xDistance,
+  yDistance,
+  scan,
+  roll,
+  moveUnit,
+  tempAngle,
+  playerDie,
+  canBuildHere
+}

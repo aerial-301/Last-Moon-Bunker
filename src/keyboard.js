@@ -1,11 +1,8 @@
 import { world, objLayer } from './main/mainSetUp/initLayers.js'
-import { g, selectedUnits, movingUnits, attackingTarget, playerUnits, solids } from './main.js'
+import { g, selectedUnits, movingUnits, attackingTarget } from './main.js'
 import { checkCollisions, removeItem } from './functions.js'
 import { bottomPanel, tip } from './main/mainSetUp/initBottomPanel.js'
-import { summonWave } from './main/mainLoop/summonWaves.js'
-import { gridMap } from './main/mainSetUp/initMap.js'
-// import { gridMap } from './main/mainSetUp/initMap.js'
-// import { debugShape, tempIndicator } from '../extra/debug.js'
+
 let currentPlayer, UC
 
 const keys = {
@@ -13,6 +10,8 @@ const keys = {
   's': false,
   'a': false,
   'd': false,
+  'q': false,
+  'z': false
 }
 
 window.addEventListener('keydown', (k) => {
@@ -29,43 +28,21 @@ window.addEventListener('keyup', (k) => {
     }
 
   } else if (k.key === 'r') switchMode()
-
-
-
-
-
-
-  // if (k.key === 'p') summonWave()
-
-  // if (k.key === 'o') {
-  //   for (const unit of playerUnits) {
-  //     if (g.hitTestPoint(g.pointer, unit)) {
-  //       console.log(solids.length)
-  //       unit.getHit(500)
-  //       console.log(solids.length)
-  //       console.log(' ')
-
-  //     }
-  //   }
-  // }
-
-  // if (k.key === 'g') {
-  //   gridMap.forEach(c => console.log(c.join('')))
-  // }
-  // if (k.key === 'o') {
-  //   gridMap.forEach(r => console.log(r.join('')))
-  // }
+  // else if (k.key === 'p') {
+  //   if (!g.paused) g.pause()
+  //   else g.resume()
+  }
   
 })
 
 const moveCamera = (surfaceWidth, surfaceHeight) => {
-  if (keys['w']) {
+  if (keys['w'] || keys['z']) {
     if (world.y < 300) world.y += 20
   }
   if (keys['s']) {
     if (world.y > g.stage.height - surfaceHeight) world.y -= 20
   }
-  if (keys['a']) {
+  if (keys['a'] || keys['q']) {
     if (world.x < 0) world.x += 20
   }
   if (keys['d']) {
@@ -73,7 +50,7 @@ const moveCamera = (surfaceWidth, surfaceHeight) => {
   }
 }
 const movePlayer = () => {
-  if (keys['w']) {
+  if (keys['w'] || keys['z']) {
     currentPlayer.y -= currentPlayer.speed
     checkCollisions('bot')
     currentPlayer.scan()
@@ -85,7 +62,7 @@ const movePlayer = () => {
     currentPlayer.scan()
     objLayer.children.sort((a, b) => a.bottom - b.bottom)
   }
-  if (keys['a']) {
+  if (keys['a'] || keys['q']) {
     currentPlayer.x -= currentPlayer.speed
     checkCollisions('right')
     currentPlayer.scan()
