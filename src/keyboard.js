@@ -31,7 +31,7 @@ window.addEventListener('keyup', (k) => {
   // else if (k.key === 'p') {
   //   if (!g.paused) g.pause()
   //   else g.resume()
-  }
+  // }
   
 })
 
