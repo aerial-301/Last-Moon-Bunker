@@ -1,4 +1,4 @@
-import { g, surfaceHeight, surfaceWidth } from "../../main.js"
+import { g, SURFACE_HEIGHT, SURFACE_WIDTH } from "../../main.js"
 import { centerUnitCamera } from "../../camera.js"
 import { movePlayer, moveCamera, currentPlayer, UC, switchMode } from "../../keyboard.js"
 import { tempAngle } from "../../functions.js"
@@ -17,6 +17,6 @@ export const playerInput = ( player = currentPlayer) => {
   }
   else {
     beginSelection()
-    moveCamera(surfaceWidth, surfaceHeight)
+    moveCamera(SURFACE_WIDTH, SURFACE_HEIGHT)
   }
 }
