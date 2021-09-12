@@ -1,12 +1,12 @@
 import { currentAction, g, playerUnits, selectedUnits, movingUnits, enemies, attackingTarget, cellSize, miners } from './main.js'
 import { gridMap, mine } from './main/mainSetUp/initMap.js'
 import { uiLayer, world, floorLayer } from './main/mainSetUp/initLayers.js'
-import { getUnitVector, sortUnits, setDirection, checkNeighbors, notEnough, addNewItem } from './functions.js'
+import { getUnitVector, sortUnits, setDirection, checkNeighbors, notEnough } from './functions.js'
 import { actionMark, rectangle, makeSelectionBox } from './drawings.js'
 import { currentPlayer, UC } from './keyboard.js'
 import { buttons, currentGold, goldDisplay, prices } from './main/mainSetUp/initBottomPanel.js'
 import { bluePrint } from './main/mainLoop/showBluePrint.js'
-import { turret } from './unitObject.js'
+import { turret } from './objects.js'
 
 let selectionBox
 let selectionStarted
@@ -35,7 +35,7 @@ const leftMouseDown = () => {
   if (!currentAction.started) {
     buttons.forEach(button => {
       if (g.hitTestPoint(g.pointer, button)) {
-        button.action()
+        button.onPress()
       }
     })
     return
@@ -46,7 +46,7 @@ const leftMouseDown = () => {
     if (clickedBottomPanel()) {
       buttons.forEach(button => {
         if (g.hitTestPoint(g.pointer, button)) {
-          button.action()
+          button.onPress()
         }
       })
 
@@ -66,7 +66,7 @@ const leftMouseDown = () => {
           goldDisplay.sub(prices[2])
           currentAction.placingBuilding = false
           gridMap[row][cel] = 4
-          turret(cel, row, cellSize)
+          turret(cel, row)
           bluePrint.visible = false
           // console.log('construction complete')
         }
@@ -81,7 +81,7 @@ const leftMouseDown = () => {
 const rightMouseDown = () => {
   if (!UC) {
 
-    if (g.pointer.shiftedY < 30) return
+    if (g.pointer.shiftedY < -20) return
 
     if (!clickedBottomPanel()) {
       if (currentAction.placingBuilding) {
