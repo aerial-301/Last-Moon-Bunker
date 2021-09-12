@@ -1,15 +1,15 @@
-import { checkNeighbors, directions, randomNum } from '../../functions.js'
+import { checkNeighbors, DIRECTIONS, randomNum } from '../../functions.js'
 import { surfaceLine, moonHole, makeHQ, makeMine } from '../../drawings.js'
-import { cellSize, solids, surfaceHeight, surfaceWidth} from '../../main.js'
+import { CELLSIZE, SURFACE_HEIGHT, SURFACE_WIDTH} from '../../main.js'
 import { floorLayer } from './initLayers.js'
-import { turret } from '../../unitObject.js'
+import { solids, turret } from '../../objects.js'
 
 let mine, HQ, gridMap = []
 
 const initMap = () => {
 
-  const rows = (surfaceHeight / cellSize) | 0
-  const cols = (surfaceWidth / cellSize) | 0
+  const rows = (SURFACE_HEIGHT / CELLSIZE) | 0
+  const cols = (SURFACE_WIDTH / CELLSIZE) | 0
 
   for (let i = 0; i < rows; i++) {
     gridMap[i] = Array(cols).fill(0)
@@ -24,7 +24,7 @@ const initMap = () => {
   gridMap[mRow][mCol] = 5
   gridMap[hqrow][hqcol] = 5
   
-  directions.forEach(d => {
+  DIRECTIONS.forEach(d => {
     try {
       gridMap[hqrow + d[0]][hqcol + d[1]] = 5
     } catch (e) {}
@@ -39,14 +39,14 @@ const initMap = () => {
   for (let row = 0; row < rows; row++) {
     for (let cel = 0; cel < cols; cel++) {
       if (row % 2 == 1) {
-        if (Math.random() < 0.5) surfaceLine(randomNum(10, 170, 1), 10, cel * cellSize, row * cellSize + randomNum(-cellSize, cellSize, 1), randomNum(1, 4), randomNum(0, 5, 1))
+        if (Math.random() < 0.5) surfaceLine(randomNum(10, 170, 1), 10, cel * CELLSIZE, row * CELLSIZE + randomNum(-CELLSIZE, CELLSIZE, 1), randomNum(1, 4), randomNum(0, 5, 1))
 
         if (Math.random() < 0.2) {
           if (cel % 2 == 0) {
             if (gridMap[row][cel] === 0 && checkNeighbors(gridMap, row,cel)) {
               gridMap[row][cel] = 4
-              const d = randomNum(10, cellSize * 0.4)
-              moonHole(d, cel * cellSize + d, row * cellSize + d)
+              const diameter = randomNum(10, CELLSIZE * 0.4)
+              moonHole(diameter, cel * CELLSIZE + diameter, row * CELLSIZE + diameter)
             }
           }
         }
@@ -58,11 +58,11 @@ const initMap = () => {
 
   turret(tc, tr)
 
-  HQ = makeHQ(cellSize * hqcol , cellSize * hqrow, cellSize)
+  HQ = makeHQ(CELLSIZE * hqcol , CELLSIZE * hqrow, CELLSIZE)
   floorLayer.addChild(HQ)
   solids.push(HQ)
 
-  mine = makeMine(cellSize * mCol, cellSize * mRow, cellSize)
+  mine = makeMine(CELLSIZE * mCol, CELLSIZE * mRow, CELLSIZE)
   floorLayer.addChild(mine)
   solids.push(mine)
 }

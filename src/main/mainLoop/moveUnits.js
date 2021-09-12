@@ -1,9 +1,10 @@
-import { g, movingUnits } from '../../main.js'
+import { g } from '../../main.js'
 import { removeItem, setDirection } from '../../functions.js'
 import { world } from '../mainSetUp/initLayers.js'
 
-const moveSpeed = 10
+const MOVE_DELAY = 10
 let moved = false
+export let movingUnits = []
 
 export const moveUnits = () => {
   if (movingUnits.length > 0) {
@@ -21,7 +22,7 @@ export const moveUnits = () => {
           unit.scanForTargets(unit.targets)
         }
       })
-      g.wait(moveSpeed, () => moved = false)
+      g.wait(MOVE_DELAY, () => moved = false)
     }
   }
 }

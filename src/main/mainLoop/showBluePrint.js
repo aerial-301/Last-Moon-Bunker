@@ -1,7 +1,7 @@
-import { g, currentAction, cellSize } from "../../main.js"
+import { g, currentAction, CELLSIZE } from "../../main.js"
 import { gridMap } from "../mainSetUp/initMap.js"
 import { canBuildHere } from '../../functions.js'
-import { currentGold, prices } from "../mainSetUp/initBottomPanel.js"
+import { currentGold, PRICES } from "../mainSetUp/initBottomPanel.js"
 import { makeBluePrint } from "../../drawings.js"
 
 export let bluePrint
@@ -9,21 +9,21 @@ let oldCol = -1, oldRow = -1
 let bluePrintMoved = false
 
 export const initBluePrint = () => {
-  bluePrint = makeBluePrint(cellSize)
+  bluePrint = makeBluePrint(CELLSIZE)
 }
 
 
 export const showBluePrint = () => {
   if (currentAction.placingBuilding) {
-    const col = ((g.pointer.shiftedX) / cellSize) | 0
-    const row = ((g.pointer.shiftedY) / cellSize) | 0
+    const col = ((g.pointer.shiftedX) / CELLSIZE) | 0
+    const row = ((g.pointer.shiftedY) / CELLSIZE) | 0
     if (col != oldCol) {
-      bluePrint.x = col * cellSize - cellSize / 2
+      bluePrint.x = CELLSIZE * (col - .5)
       oldCol = col
       bluePrintMoved = true
     }
     if (row != oldRow) {
-      bluePrint.y = row * cellSize - cellSize / 2
+      bluePrint.y = CELLSIZE * (row - .5)
       oldRow = row
       bluePrintMoved = true
     }
@@ -33,7 +33,7 @@ export const showBluePrint = () => {
         bluePrint.f = '#F00'
         return
       }
-      if (canBuildHere(gridMap, row, col) && currentGold >= prices[2]) bluePrint.f = '#FFF'
+      if (canBuildHere(gridMap, row, col) && currentGold >= PRICES[2]) bluePrint.f = '#FFF'
       else bluePrint.f = '#F00'
     }
   }

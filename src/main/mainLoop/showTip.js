@@ -1,6 +1,6 @@
-import { UC } from "../../keyboard.js"
 import { g } from "../../main.js"
-import { buttons, prices, tip } from "../mainSetUp/initBottomPanel.js"
+import { UC } from "../../keyboard.js"
+import { buttons, PRICES, tip } from "../mainSetUp/initBottomPanel.js"
 
 let tipSet = false
 
@@ -13,7 +13,7 @@ export const showTip = () => {
           if (g.hitTestPoint(g.pointer, buttons[i])) {
             tip.x = g.pointer.x
             tip.y = g.pointer.y - tip.height
-            tip.text.content = `x${prices[i]}`
+            tip.text.content = `x${PRICES[i]}`
             if (!tipSet) {
               tipSet = true
               g.wait(150, () => tip.visible = true)
