@@ -1,8 +1,8 @@
-import { miners } from "../../main.js"
-import { createArmedPleb, createPleb } from "../../unitObject.js"
+import { createArmedPleb, createPleb } from "../../objects.js"
+import { miners } from "../mainLoop/moveMiners.js"
 import { HQ } from "./initMap.js"
 
-export const startUnits = () => {
+export const startingUnits = () => {
   const p = createPleb(HQ.x - 100, HQ.y + 100)
   p.isMining = true
   miners.push(p)
