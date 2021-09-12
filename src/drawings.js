@@ -1,7 +1,11 @@
-import { solids, g, playerUnits, bloodDrops, fadeOuts, K, PI } from "./main.js"
+import { g, K, PI } from "./main.js"
 import { world, floorLayer, objLayer } from "./main/mainSetUp/initLayers.js"
-import { makeMovableObject, makeBasicObject, moreProperties } from "./unitObject.js"
+import { makeMovableObject, makeBasicObject, moreProperties, playerUnits, solids } from "./objects.js"
 import { randomNum, removeItem } from "./functions.js"
+import { gameOver } from "./main/mainLoop/gameOver.js"
+import { fadeOuts } from "./main/mainLoop/playAnimations.js"
+
+export let bloodDrops = []
 
 const BP = (c) => c.beginPath()
 const MT = (c, x, y) => c.moveTo(x, y)
@@ -20,7 +24,7 @@ const circle = (d, k, l, movable = false, x = 0, y = 0) => {
     c.fillStyle = o.f
     BP(c)
     c.arc(o.radius + (-o.radius * 2 * o.pivotX), o.radius + (-o.radius * 2 * o.pivotY), o.radius, 0, 2 * PI, false)
-    if (l) SK()
+    if (l) SK(c)
     FL(c)
   }
   if (!movable) makeBasicObject(o, x, y, d, d)
@@ -52,8 +56,8 @@ const makeSelectionBox = () => {
     WIDTH: 1,
     HEIGHT: 1,
     render(c) {
-      c.strokeStyle = K.w
-      c.lineWidth = 4
+      c.strokeStyle = '#0F0'
+      c.lineWidth = 2
       BP(c)
       c.rect(o.WIDTH, o.HEIGHT, -o.WIDTH, -o.HEIGHT)
       SK(c)
@@ -303,7 +307,7 @@ const actionMark = (p, x = 0, y = 0, attack = true) => {
 
   return o
 }
-const makeHQ = (x, y, cellSize) => {
+const makeHQ = (x, y, CELLSIZE) => {
   const o = {
     health: 1000,
     baseHealth: 1000,
@@ -314,7 +318,7 @@ const makeHQ = (x, y, cellSize) => {
       c.lineWidth = 5
       c.fillStyle = this.c1
       BP(c)
-      c.rect(-cellSize/2, -cellSize/2, cellSize, cellSize)
+      c.rect(-CELLSIZE/2, -CELLSIZE/2, CELLSIZE, CELLSIZE)
       SK(c)
       FL(c)
       c.fillStyle = K.b
@@ -325,7 +329,7 @@ const makeHQ = (x, y, cellSize) => {
       FR(c, -14, 30, -16,  -32)
     }
   }
-  makeBasicObject(o, x, y, cellSize, cellSize)
+  makeBasicObject(o, x, y, CELLSIZE, CELLSIZE)
   moreProperties(o)
   o.select = () => {}
   o.deselect = () => {}
@@ -337,11 +341,14 @@ const makeHQ = (x, y, cellSize) => {
     })
   }
 
+  o.die = () => {
+    gameOver()
+  }
   o.canBleed = false
   playerUnits.push(o)
   return o
 }
-const makeMine = (x, y, cellSize) => {
+const makeMine = (x, y, CELLSIZE) => {
   const o = {
     ignore: 1,
     render(c) {
@@ -357,7 +364,7 @@ const makeMine = (x, y, cellSize) => {
       FL(c)
     }
   }
-  makeBasicObject(o, x, y, cellSize / 2, cellSize / 4)
+  makeBasicObject(o, x, y, CELLSIZE / 2, CELLSIZE / 4)
   return o
 }
 const makeBluePrint = (width, x = 0, y = 0) => {
@@ -572,7 +579,7 @@ const newMakeEnemyEyes = () => {
   makeBasicObject(o, 0, 0)
   return o
 }
-const bloodDrop = (x, y) => {
+const bloodDrop = (bleeder) => {
   const o = {
     l: 3,
     vx: randomNum(-.5, .5, false),
@@ -587,13 +594,14 @@ const bloodDrop = (x, y) => {
     SK(c)
     FL(c)
   }
-  makeBasicObject(o, x, y)
+  makeBasicObject(o, bleeder.x, bleeder.y)
   world.addChild(o)
   bloodDrops.push(o)
   g.wait(randomNum(300, 450), () => {
     g.remove(o)
     removeItem(bloodDrops, o)
     bloodLake(o.x, o.y)
+    bleeder.isBleeded = false
   })
 }
 const bloodLake = (x, y) => {

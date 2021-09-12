@@ -9,5 +9,8 @@
         "sourceType": "module"
     },
     "rules": {
+      "block-scoped-var": "error",
+      "camelcase":"error",
+      "no-empty":"warn"
     }
 }

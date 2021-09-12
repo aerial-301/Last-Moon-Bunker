@@ -9,11 +9,7 @@ export const initCanvasEvents = () => {
   c.addEventListener('pointerup', (e) => pointerUp(e))
 }
 
-
-
-
 window.onresize = resizeWindow
-
 
 function resizeWindow() {
   let scaleToFit = Math.min(window.innerWidth / g.canvas.width,( window.innerHeight) / g.canvas.height)

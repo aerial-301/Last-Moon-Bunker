@@ -1,4 +1,4 @@
-import { GA } from './ga_minTest.js'
+import { GA } from './modifiedGA.js'
 import { initCanvasEvents } from './main/mainSetUp/initCanvas.js'
 import { initLayers, objLayer, uiLayer } from './main/mainSetUp/initLayers.js'
 import { initMap } from './main/mainSetUp/initMap.js'
@@ -16,14 +16,12 @@ import { initBluePrint, showBluePrint } from './main/mainLoop/showBluePrint.js'
 import { showTip } from './main/mainLoop/showTip.js'
 import { summonWave } from './main/mainLoop/summonWaves.js'
 
-import { UC } from './keyboard.js'
-import { removeItem, simpleButton } from './functions.js'
-import { startUnits } from './main/mainSetUp/startUnits.js'
-import { gameOver } from './main/mainLoop/gameOver.js'
+import { simpleButton, removeItem } from './functions.js'
+import { startingUnits } from './main/mainSetUp/startingUnits.js'
 
-const surfaceWidth = 2400
-const surfaceHeight = 1000
-const cellSize = 73
+const SURFACE_WIDTH = 2400
+const SURFACE_HEIGHT = 1000
+const CELLSIZE = 73
 const PI = Math.PI
 
 const currentAction = {
@@ -41,18 +39,6 @@ const K = {
 
 let g
 let menu
-let solids = []
-let units = []
-let playerUnits = []
-let selectedUnits = []
-let movingUnits = []
-let armedUnits = []
-let enemies = []
-let attackingTarget = []
-let shots = []
-let bloodDrops = []
-let fadeOuts = []
-let miners = []
 
 g = GA.create(mainMenu)
 g.start()
@@ -60,13 +46,27 @@ g.start()
 function mainMenu(){
   initCanvasEvents()
   initLayers()
-  menu = simpleButton('>', g.stage.width / 2 - 100, g.stage.height / 2 - 100, 70, 5, '#800', 99, () => {
-    removeItem(buttons, menu)
-    currentAction.started = true
-    g.remove(menu)
-    g.resume()
-    setup()
-  }, 200, 100)
+
+  menu = simpleButton({
+    x: g.stage.width / 2 - 100,
+    y: g.stage.height / 2 - 100,
+    width: 200,
+    height: 100,
+    color: '#800',
+    text: '>',
+    textX: 70,
+    textY: 5,
+    textSize: 99,
+    onPress: () => {
+      g.actx = new AudioContext()
+      removeItem(buttons, menu)
+      currentAction.started = true
+      g.remove(menu)
+      g.resume()
+      setup()
+    },
+  })
+
   buttons.push(menu)
   uiLayer.addChild(menu)
   g.pause()
@@ -80,7 +80,7 @@ function setup(){
 
   initBottomPanel()
 
-  startUnits()
+  startingUnits()
 
   initSelectionBox()
 
@@ -112,8 +112,6 @@ function play(){
   showTip()
 
   summonWave()
-
-  gameOver()
 }
 
 export { 
@@ -121,20 +119,7 @@ export {
   K,
   PI,
   currentAction,
-  surfaceHeight,
-  surfaceWidth,
-  units,
-  playerUnits,
-  selectedUnits,
-  movingUnits,
-  miners,
-  enemies,
-  shots,
-  solids,
-  UC,
-  attackingTarget,
-  armedUnits,
-  bloodDrops,
-  fadeOuts,
-  cellSize
+  SURFACE_HEIGHT,
+  SURFACE_WIDTH,
+  CELLSIZE
 }

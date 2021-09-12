@@ -1,5 +1,10 @@
-import { randomNum } from './functions.js'
+/*
+modified version of the GA library: https://github.com/kittykatattack/ga
+*/
+
 import { world } from './main/mainSetUp/initLayers.js'
+import { randomNum } from './functions.js'
+import { makeBasicObject } from './objects.js'
 
 export let GA = {
   create(setup) {
@@ -12,7 +17,7 @@ export let GA = {
     g.state = undefined
     g.setup = setup
     g.paused = false
-    g._fps = 30
+    g._fps = 40
     g._startTime = Date.now()
     g._frameDuration = 1000 / g._fps
     g._lag = 0
@@ -23,7 +28,6 @@ export let GA = {
     g.scale = scaleToFit
 
     g.render = (canvas, lagOffset) => {
-      // if (g.paused) return
       let ctx = canvas.ctx
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       g.stage.children.forEach(c => displaySprite(c))
@@ -57,22 +61,16 @@ export let GA = {
 
     function gameLoop() {
       requestAnimationFrame(gameLoop, g.canvas)
-      if (g._fps === undefined) {
+      var current = Date.now(), elapsed = current - g._startTime
+      if (elapsed > 1000) elapsed = g._frameDuration
+      g._startTime = current
+      g._lag += elapsed
+      while (g._lag >= g._frameDuration) {
+        capturePreviousSpritePositions()
         update()
-        g.render(g.canvas, 0)
+        g._lag -= g._frameDuration
       }
-      else {
-        var current = Date.now(), elapsed = current - g._startTime
-        if (elapsed > 1000) elapsed = g._frameDuration
-        g._startTime = current
-        g._lag += elapsed
-        while (g._lag >= g._frameDuration) {
-          capturePreviousSpritePositions()
-          update()
-          g._lag -= g._frameDuration
-        }
-        g.render(g.canvas, g._lag / g._frameDuration)
-      }
+      g.render(g.canvas, g._lag / g._frameDuration)
     }
     function capturePreviousSpritePositions() {
       g.stage.children.forEach(s => setPosition(s))
@@ -100,38 +98,38 @@ export let GA = {
       }
     })
     g.remove = (s) => s.parent.removeChild(s)
-    function makeBasicObject(o, x = 0, y = 0, w = 50, h = 50) {
-      o.x= x
-      o.y= y
-      o.width= w
-      o.height= h
-      o.halfWidth= w / 2
-      o.halfHeight= h / 2
-      o.scaleX= 1
-      o.scaleY= 1
-      o.pivotX= 0.5
-      o.pivotY= 0.5
-      o.rotation= 0
-      o.alpha= 1
-      o.stage= false
-      o.visible= true
-      o.children = []
-      o.parent= undefined
-      o.blendMode= undefined
-      o.addChild = (c) => {
-        if (c.parent) c.parent.removeChild(c)
-        c.parent = o
-        o.children.push(c)
-      }
-      o.removeChild = (c) => { if (c.parent === o) o.children.splice(o.children.indexOf(c), 1) }
-      Object.defineProperties(o, {
-        gx: { get: () => { return (o.x + (o.parent? o.parent.gx : 0) ) } },
-        gy: { get: () => { return (o.y + (o.parent? o.parent.gy : 0) ) } },
-        centerX: { get: () => { return o.gx + o.halfWidth } },
-        centerY: { get: () => { return o.gy + o.halfHeight } },
-        bottom: { get: () => { return o.y + o.parent.gy} }
-      })
-    }
+    // function makeBasicObject(o, x = 0, y = 0, w = 50, h = 50) {
+    //   o.x= x
+    //   o.y= y
+    //   o.width= w
+    //   o.height= h
+    //   o.halfWidth= w / 2
+    //   o.halfHeight= h / 2
+    //   o.scaleX= 1
+    //   o.scaleY= 1
+    //   o.pivotX= 0.5
+    //   o.pivotY= 0.5
+    //   o.rotation= 0
+    //   o.alpha= 1
+    //   o.stage= false
+    //   o.visible= true
+    //   o.children = []
+    //   o.parent= undefined
+    //   o.blendMode= undefined
+    //   o.addChild = (c) => {
+    //     if (c.parent) c.parent.removeChild(c)
+    //     c.parent = o
+    //     o.children.push(c)
+    //   }
+    //   o.removeChild = (c) => { if (c.parent === o) o.children.splice(o.children.indexOf(c), 1) }
+    //   Object.defineProperties(o, {
+    //     gx: { get: () => { return (o.x + (o.parent? o.parent.gx : 0) ) } },
+    //     gy: { get: () => { return (o.y + (o.parent? o.parent.gy : 0) ) } },
+    //     centerX: { get: () => { return o.gx + o.halfWidth } },
+    //     centerY: { get: () => { return o.gy + o.halfHeight } },
+    //     bottom: { get: () => { return o.y + o.parent.gy} }
+    //   })
+    // }
 
     function makeStage() {
       const o = {}
@@ -232,8 +230,6 @@ export let GA = {
     }
     g.GlobalDistance = (a, b, aOffX = 0, aOffY = 0) => {return Math.sqrt( ( b.centerX - a.centerX + aOffX)**2 + ( b.centerY - a.centerY + aOffY)**2 )}
     
-    g.actx = new AudioContext()
-
     g.soundEffect = function(frequencyValue, decay, type, volumeValue, pitchBendAmount, reverse, randomValue) {
       let actx = g.actx
       let oscillator, volume, compressor
