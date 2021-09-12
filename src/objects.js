@@ -1,16 +1,24 @@
-import { enemies, g, PI, selectedUnits, shots, attackingTarget, playerUnits, units, movingUnits, K, solids, armedUnits, cellSize } from './main.js'
+import {g, PI, K, CELLSIZE } from './main.js'
 import { playerDie, moveUnit, randomNum, removeItem, roll, scan, tempAngle, setDirection } from './functions.js'
 import { gun, makeLeg, makeHeadDetails, makeBorder, rectangle, makeTwoEyes, makeThirdEye, slash, bulletImpact, makeHead, newMakeEnemyEyes, bloodDrop, makeGold, drawTurretBarrel, drawTurretBase, drawRank } from './drawings.js'
 import { world, floorLayer, space, objLayer } from './main/mainSetUp/initLayers.js'
 import { currentPlayer } from './keyboard.js'
 import { gridMap, HQ } from './main/mainSetUp/initMap.js'
 import { killsDisplay } from './main/mainSetUp/initBottomPanel.js'
+import { attackingTarget } from './main/mainLoop/attackTarget.js'
+import { movingUnits } from './main/mainLoop/moveUnits.js'
+import { selectedUnits } from './mouse.js'
 
-
-const attackSwordAngle = Math.PI / 180 * (-60 + 120)
-const idleSwordAngle = Math.PI / 180 * -60
+const SWORD_ATTACK_ANGLE = Math.PI / 180 * (-60 + 120)
+const SWORD_IDLE_ANGLE = Math.PI / 180 * -60
 let handPointerAngle
 let hit = false
+let solids = []
+let units = []
+let playerUnits = []
+let armedUnits = []
+let enemies = []
+let shots = []
 
 const makeBasicObject = (o, x = 0, y = 0, w = 50, h = 50) => {
   o.x= x
@@ -47,8 +55,9 @@ const makeBasicObject = (o, x = 0, y = 0, w = 50, h = 50) => {
 
 const moreProperties = (o) => {
   o.target = null
-  o.attacked = false,
+  o.attacked = false
   o.isDamaged = false
+  o.isBleeded = false
   o.isDead = false
   o.damagedAmount = 0
   o.HBscale = 0.5
@@ -78,8 +87,9 @@ const moreProperties = (o) => {
   o.getHit = (damage, attacker) => {
 
     o.health -= damage
-    if (o.canBleed) {
-      bloodDrop(o.x, o.y)
+    if (o.canBleed && !o.isBleeded) {
+      o.isBleeded = true
+      bloodDrop(o)
     }
 
     if (o.canRet) {
@@ -264,7 +274,7 @@ const makeText = (parent, content, font, fillStyle, x, y) => {
 
 const slice1 = (o, t) => {
   o.attacked = true
-  o.swordHandle.rotation = handPointerAngle + attackSwordAngle
+  o.swordHandle.rotation = handPointerAngle + SWORD_ATTACK_ANGLE
   o.rotation = 0
   o.attackHit(t, randomNum(45, 63))
   const HZ = 100
@@ -276,7 +286,7 @@ const slice1 = (o, t) => {
 
 const slice2 = (o, t) => {
   o.attacked2 = true
-  o.swordHandle.rotation = handPointerAngle + idleSwordAngle
+  o.swordHandle.rotation = handPointerAngle + SWORD_IDLE_ANGLE
   o.attackHit(t, randomNum(57, 82))
   const HZ = 100
   g.soundEffect(HZ, .14, 'triangle', .17, HZ * 5, true, 50)
@@ -307,7 +317,7 @@ const moonKeeper = (x = 0, y = 0) => {
     slash1: slash1,
     slash2: slash2,
     weaponRotation: 3,
-    weaponAngle: idleSwordAngle,
+    weaponAngle: SWORD_IDLE_ANGLE,
     rollDistance: 10, 
     rollCounter: 10, 
     alertSent: false,
@@ -332,9 +342,7 @@ const moonKeeper = (x = 0, y = 0) => {
           o.destinationY = target.centerY - world.y
           setDirection(o)
           o.isRolling = true
-          o.roll(o, o.vx, o.vy)
-          // const HZ = 1
-          // g.soundEffect(HZ, 0, .001, 'triangle', .09, 0, 0, HZ * 700, true)
+          o.roll()
           return
         }
       } else {
@@ -366,7 +374,7 @@ const moonKeeper = (x = 0, y = 0) => {
                 o.destinationX = HQ.x + 25
                 o.destinationY = HQ.y + 200
                 setDirection(o)
-                o.roll(o, o.vx, o.vy)
+                o.roll()
               }
             })
           }
@@ -411,7 +419,6 @@ const moonKeeper = (x = 0, y = 0) => {
   o.weapon = swordHandle
   playerHand.x = -1
   playerHand.y = 28
-
 
   objLayer.addChild(o)
   playerUnits.push(o)
@@ -528,13 +535,13 @@ const createPleb = (x, y, a = 1) => {
  return o
 }
 
-const createEnemyUnit = (x = 0, y = 0, hp, dmg) => {
+const createEnemyUnit = (x, y, hp, dmg) => {
   const o = {
     type: 'invader',
     health: hp,
     baseHealth: hp,
     damage: dmg,
-    range: 230,
+    range: 260,
     weaponAngle: (PI / 2),
     weaponRotation: 0.4,
     targets: playerUnits,
@@ -603,7 +610,7 @@ const createEnemyUnit = (x = 0, y = 0, hp, dmg) => {
 }
 
 const turret = (x, y) => {
-  const w = cellSize * .8
+  const w = CELLSIZE * .8
   const barrel = {
     muz: 4,
     color: K.b,
@@ -626,7 +633,7 @@ const turret = (x, y) => {
     targets: enemies,
   }
   makeBasicObject(barrel, 0, 0, w, w * .6)
-  makeBasicObject(o, x * cellSize, y * cellSize, w, w *.6)
+  makeBasicObject(o, x * CELLSIZE, y * CELLSIZE, w, w *.6)
 
   o.render = (c) => {drawTurretBase(c, o, w)},
   o.attack = (target) => {
@@ -640,7 +647,7 @@ const turret = (x, y) => {
       barrel.color = '#ff0'
 
       const HZ = 600
-      g.soundEffect(HZ, .25, 'triangle', .15, HZ * .7, false)
+      g.soundEffect(HZ, .15, 'triangle', .10, HZ * .7, false)
 
       target.getHit(o.damage, o)
 
@@ -648,7 +655,7 @@ const turret = (x, y) => {
         barrel.muz = 4
         barrel.color = K.b
       })
-      g.wait(500, () => o.attacked = false)
+      g.wait(550, () => o.attacked = false)
     }
   }
 
@@ -678,7 +685,6 @@ const turret = (x, y) => {
 }
 
 const shotHit = (tx = g.pointer.shiftedX, ty = g.pointer.shiftedY) => {
-  // const shot = bulletImpact(tx, ty)
   const shot = bulletImpact(tx, ty)
   floorLayer.addChild(shot)
   shots.push(shot)
@@ -737,5 +743,12 @@ export {
   moonKeeper,
   createPleb,
   createArmedPleb,
-  turret
+  turret,
+  playerUnits,
+  solids,
+  units,
+  armedUnits,
+  enemies,
+  shots
+
 }
