@@ -1,5 +1,9 @@
-import { g, attackingTarget, movingUnits } from "../../main.js"
+import { g } from "../../main.js"
 import { removeItem } from "../../functions.js"
+import { movingUnits } from "./moveUnits.js"
+
+
+export let attackingTarget = []
 
 export const attackTarget = () => {
   if (attackingTarget.length > 0) {
