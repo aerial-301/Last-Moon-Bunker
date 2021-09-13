@@ -98,38 +98,6 @@ export let GA = {
       }
     })
     g.remove = (s) => s.parent.removeChild(s)
-    // function makeBasicObject(o, x = 0, y = 0, w = 50, h = 50) {
-    //   o.x= x
-    //   o.y= y
-    //   o.width= w
-    //   o.height= h
-    //   o.halfWidth= w / 2
-    //   o.halfHeight= h / 2
-    //   o.scaleX= 1
-    //   o.scaleY= 1
-    //   o.pivotX= 0.5
-    //   o.pivotY= 0.5
-    //   o.rotation= 0
-    //   o.alpha= 1
-    //   o.stage= false
-    //   o.visible= true
-    //   o.children = []
-    //   o.parent= undefined
-    //   o.blendMode= undefined
-    //   o.addChild = (c) => {
-    //     if (c.parent) c.parent.removeChild(c)
-    //     c.parent = o
-    //     o.children.push(c)
-    //   }
-    //   o.removeChild = (c) => { if (c.parent === o) o.children.splice(o.children.indexOf(c), 1) }
-    //   Object.defineProperties(o, {
-    //     gx: { get: () => { return (o.x + (o.parent? o.parent.gx : 0) ) } },
-    //     gy: { get: () => { return (o.y + (o.parent? o.parent.gy : 0) ) } },
-    //     centerX: { get: () => { return o.gx + o.halfWidth } },
-    //     centerY: { get: () => { return o.gy + o.halfHeight } },
-    //     bottom: { get: () => { return o.y + o.parent.gy} }
-    //   })
-    // }
 
     function makeStage() {
       const o = {}
