@@ -83,6 +83,7 @@ const switchMode = () => {
       currentPlayer = selectedUnits[0]
       currentPlayer.isMoving = false
       currentPlayer.target = null
+      currentPlayer.rollOnCooldown = false
       removeItem(movingUnits, currentPlayer)
       removeItem(attackingTarget, currentPlayer)
       currentPlayer.deselect()
