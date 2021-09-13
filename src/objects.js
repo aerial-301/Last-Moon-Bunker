@@ -320,8 +320,7 @@ const moonKeeper = (x = 0, y = 0) => {
     weaponAngle: SWORD_IDLE_ANGLE,
     rollDistance: 10, 
     rollCounter: 10, 
-    alertSent: false,
-    
+    alertSent: false
   }
   
   makePlayerUnitObject(o, 1, x, y)
