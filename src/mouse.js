@@ -1,4 +1,4 @@
-import { currentAction, g, CELLSIZE } from './main.js'
+import { currentAction, g, CELLSIZE, K } from './main.js'
 import { gridMap, mine } from './main/mainSetUp/initMap.js'
 import { uiLayer, world, floorLayer } from './main/mainSetUp/initLayers.js'
 import { getUnitVector, sortUnits, setDirection, checkNeighbors, notEnough } from './functions.js'
@@ -173,7 +173,7 @@ const leftMouseUp = () => {
       selectedUnits.length = 0
       const w = selectionBox.WIDTH
       const h = selectionBox.HEIGHT
-      const tempBox = rectangle(w ? Math.abs(w) : 1, h ? Math.abs(h) : 1, '#FFF', 0, w < 0 ? selectionBox.gx + w : selectionBox.gx, h < 0 ? selectionBox.gy + h : selectionBox.gy)
+      const tempBox = rectangle(w ? Math.abs(w) : 1, h ? Math.abs(h) : 1, K.w, 0, w < 0 ? selectionBox.gx + w : selectionBox.gx, h < 0 ? selectionBox.gy + h : selectionBox.gy)
       tempBox.visible = false
       g.stage.addChild(tempBox)
       playerUnits.forEach(unit => {

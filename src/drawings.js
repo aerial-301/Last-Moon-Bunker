@@ -91,7 +91,7 @@ const makeHead = (e = 0) => {
   const color = randomNum(33, 99)
   const o = {
     c1: '#222',
-    c2: e ? `#${color}00ff` : '#555',
+    c2: e ? `#${color}00ff` : K.g,
   }
   o.oc1 = o.c1
   o.oc2 = o.c2
@@ -369,7 +369,7 @@ const makeMine = (x, y, CELLSIZE) => {
 }
 const makeBluePrint = (width, x = 0, y = 0) => {
   const o = {
-    f: '#FFF'
+    f: K.w
   }
   makeBasicObject(o, x, y, width, width)
   o.render = (c) => {
@@ -408,7 +408,7 @@ const moonHole = (d, x, y) => {
       SK(c)
       c.clip(circlePath)
       c.ellipse(...z)
-      c.fillStyle = '#555'
+      c.fillStyle = K.g
       FL(c)
     }
   }
@@ -651,7 +651,7 @@ const renderTurret = (x, y) => {
   const o = {
     render(c) {
       const grad = c.createLinearGradient(w, 0, 0, w)
-      grad.addColorStop(0, '#555')
+      grad.addColorStop(0, K.g)
       grad.addColorStop(1, '#222')
       c.fillStyle = grad
       c.lineWidth = 1

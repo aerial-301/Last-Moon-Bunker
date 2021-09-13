@@ -299,7 +299,7 @@ const moonKeeper = (x = 0, y = 0) => {
   
   const twoEyes = makeTwoEyes()
   const thirdEye = makeThirdEye()
-  const sword = rectangle(2, 140, '#FFF', 0, 0)
+  const sword = rectangle(2, 140, K.w, 0, 0)
   const swordHandle = rectangle(4, 40, '#ea5')
   const slash1 = slash(1)
   const slash2 = slash(0)
@@ -644,7 +644,7 @@ const turret = (x, y) => {
       }
       o.attacked = true
       barrel.muz = 8
-      barrel.color = '#ff0'
+      barrel.color = K.y
 
       const HZ = 600
       g.soundEffect(HZ, .15, 'triangle', .10, HZ * .7, false)

@@ -1,4 +1,4 @@
-import { g, currentAction, CELLSIZE } from "../../main.js"
+import { g, currentAction, CELLSIZE, K } from "../../main.js"
 import { gridMap } from "../mainSetUp/initMap.js"
 import { canBuildHere } from '../../functions.js'
 import { currentGold, PRICES } from "../mainSetUp/initBottomPanel.js"
@@ -30,11 +30,11 @@ export const showBluePrint = () => {
     if (bluePrintMoved) {
       bluePrintMoved = false
       if (row < 0) {
-        bluePrint.f = '#F00'
+        bluePrint.f = K.r
         return
       }
-      if (canBuildHere(gridMap, row, col) && currentGold >= PRICES[2]) bluePrint.f = '#FFF'
-      else bluePrint.f = '#F00'
+      if (canBuildHere(gridMap, row, col) && currentGold >= PRICES[2]) bluePrint.f = K.w
+      else bluePrint.f = K.r
     }
   }
 }

@@ -1,4 +1,4 @@
-import { g } from './main.js'
+import { g, K } from './main.js'
 import { world, objLayer } from './main/mainSetUp/initLayers.js'
 import { rectangle } from './drawings.js'
 import { armedUnits, makeText, playerUnits, solids } from './objects.js'
@@ -44,7 +44,7 @@ const simpleButton = ({
   y = 10,
   width = 100,
   height = 80,
-  color = '#555',
+  color = K.g,
   text = '',
   textX = 10,
   textY = 10,
@@ -53,7 +53,7 @@ const simpleButton = ({
 }) => {
   const button = rectangle(width, height, color, 1, x, y)
   if (onPress) button.onPress = onPress
-  button.text = makeText(button, text, `${textSize}px arial`, '#FFF', textX, textY)
+  button.text = makeText(button, text, `${textSize}px arial`, K.w, textX, textY)
   return button
 }
 
