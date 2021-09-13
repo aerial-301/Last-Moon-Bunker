@@ -1,22 +1,27 @@
-import { currentAction, g, playerUnits, selectedUnits, movingUnits, enemies, attackingTarget, cellSize, miners, started } from './main.js'
+import { currentAction, g, CELLSIZE, K } from './main.js'
 import { gridMap, mine } from './main/mainSetUp/initMap.js'
 import { uiLayer, world, floorLayer } from './main/mainSetUp/initLayers.js'
 import { getUnitVector, sortUnits, setDirection, checkNeighbors, notEnough } from './functions.js'
 import { actionMark, rectangle, makeSelectionBox } from './drawings.js'
 import { currentPlayer, UC } from './keyboard.js'
-import { buttons, currentGold, goldDisplay, prices } from './main/mainSetUp/initBottomPanel.js'
+import { buttons, currentGold, goldDisplay, PRICES } from './main/mainSetUp/initBottomPanel.js'
 import { bluePrint } from './main/mainLoop/showBluePrint.js'
-import { turret } from './unitObject.js'
+import { enemies, playerUnits, turret } from './objects.js'
+import { attackingTarget } from './main/mainLoop/attackTarget.js'
+import { movingUnits } from './main/mainLoop/moveUnits.js'
+import { miners } from './main/mainLoop/moveMiners.js'
 
 let selectionBox
 let selectionStarted
 let boxSet
 
+export let selectedUnits = []
+
 const initSelectionBox = () => {
   selectionStarted = false
   boxSet = false
   selectionBox = makeSelectionBox()
-  selectionBox.alpha = 0
+  selectionBox.visible = false
   uiLayer.addChild(selectionBox)
 }
 const pointerDown = (e) => {
@@ -32,10 +37,10 @@ const clickedBottomPanel = () => {
 }
 const leftMouseDown = () => {
 
-  if (!started) {
+  if (!currentAction.started) {
     buttons.forEach(button => {
       if (g.hitTestPoint(g.pointer, button)) {
-        button.action()
+        button.onPress()
       }
     })
     return
@@ -46,34 +51,33 @@ const leftMouseDown = () => {
     if (clickedBottomPanel()) {
       buttons.forEach(button => {
         if (g.hitTestPoint(g.pointer, button)) {
-          button.action()
+          button.onPress()
         }
       })
 
     } else {
       if (currentAction.placingBuilding) {
         
-        const row = ((g.pointer.y - world.y) / cellSize) | 0
+        const row = ((g.pointer.y - world.y) / CELLSIZE) | 0
         if (row < 0) return
-        const cel = ((g.pointer.x - world.x) / cellSize) | 0
+        const cel = ((g.pointer.x - world.x) / CELLSIZE) | 0
 
         const currentCell = gridMap[row][cel]
 
-        if (currentCell || !checkNeighbors(gridMap, row, cel) || currentGold < prices[2]) {
+        if (currentCell || !checkNeighbors(gridMap, row, cel) || currentGold < PRICES[2]) {
+          // cant build here or not enough gold
           notEnough()
-          // console.log('cant build here')
         } else {
-          goldDisplay.sub(prices[2])
+          goldDisplay.sub(PRICES[2])
           currentAction.placingBuilding = false
           gridMap[row][cel] = 4
-          turret(cel, row, cellSize)
+          turret(cel, row)
           bluePrint.visible = false
-          // console.log('construction complete')
         }
         
       } else {
         selectionStarted = true
-        g.wait(20, () => selectionBox.alpha = 1)
+        g.wait(20, () => selectionBox.visible = true)
       }
     }
   } else currentPlayer.attack()
@@ -81,7 +85,7 @@ const leftMouseDown = () => {
 const rightMouseDown = () => {
   if (!UC) {
 
-    if (g.pointer.shiftedY < 30) return
+    if (g.pointer.shiftedY < -20) return
 
     if (!clickedBottomPanel()) {
       if (currentAction.placingBuilding) {
@@ -160,14 +164,17 @@ const rightMouseDown = () => {
     }
   }
 }
+
+
 const leftMouseUp = () => {
-  if (started) {
+  if (currentAction.started) {
     if (selectionStarted) {
       selectedUnits.forEach(v => v.deselect())
       selectedUnits.length = 0
       const w = selectionBox.WIDTH
       const h = selectionBox.HEIGHT
-      const tempBox = rectangle(w ? Math.abs(w) : 1, h ? Math.abs(h) : 1, '#FFF', 0, w < 0 ? selectionBox.gx + w : selectionBox.gx, h < 0 ? selectionBox.gy + h : selectionBox.gy)
+      const tempBox = rectangle(w ? Math.abs(w) : 1, h ? Math.abs(h) : 1, K.w, 0, w < 0 ? selectionBox.gx + w : selectionBox.gx, h < 0 ? selectionBox.gy + h : selectionBox.gy)
+      tempBox.visible = false
       g.stage.addChild(tempBox)
       playerUnits.forEach(unit => {
         if (g.hitTestRectangle(tempBox, unit, true)) {
@@ -175,7 +182,7 @@ const leftMouseUp = () => {
         }
       })
       selectionStarted = false
-      selectionBox.alpha = 0
+      selectionBox.visible = false
       boxSet = false
       g.wait(80, () => g.remove(tempBox))
     }

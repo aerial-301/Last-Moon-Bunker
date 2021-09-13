@@ -1,8 +1,8 @@
-import { GA } from './ga_minTest.js'
+import { GA } from './modifiedGA.js'
 import { initCanvasEvents } from './main/mainSetUp/initCanvas.js'
-import { initLayers, objLayer, uiLayer, world } from './main/mainSetUp/initLayers.js'
-import { HQ, initMap } from './main/mainSetUp/initMap.js'
-import { buttons, currentKills, initBottomPanel, initTipBox, totalGold } from './main/mainSetUp/initBottomPanel.js'
+import { initLayers, objLayer, uiLayer } from './main/mainSetUp/initLayers.js'
+import { initMap } from './main/mainSetUp/initMap.js'
+import { buttons, initBottomPanel, initTipBox } from './main/mainSetUp/initBottomPanel.js'
 import { initSelectionBox} from './mouse.js'
 import { initUnitCamera } from './camera.js'
 
@@ -16,17 +16,17 @@ import { initBluePrint, showBluePrint } from './main/mainLoop/showBluePrint.js'
 import { showTip } from './main/mainLoop/showTip.js'
 import { summonWave } from './main/mainLoop/summonWaves.js'
 
-import { UC } from './keyboard.js'
-import { createArmedPleb, createPleb, makeText } from './unitObject.js'
-import { drawRank, makeGold, rectangle } from './drawings.js'
-import { removeItem, simpleButton } from './functions.js'
+import { simpleButton, removeItem } from './functions.js'
+import { startingUnits } from './main/mainSetUp/startingUnits.js'
 
-const surfaceWidth = 2400
-const surfaceHeight = 1000
-const cellSize = 73
+const SURFACE_WIDTH = 2400
+const SURFACE_HEIGHT = 1000
+const CELLSIZE = 73
+const PI = Math.PI
 
 const currentAction = {
   placingBuilding: false,
+  started: false
 }
 
 const K = {
@@ -37,28 +37,63 @@ const K = {
   g : '#555'
 }
 
-const PI = Math.PI
 let g
 let menu
-let started = false
-let solids = []
-let units = []
-let playerUnits = []
-let selectedUnits = []
-let movingUnits = []
-let armedUnits = []
-let enemies = []
-let attackingTarget = []
-let shots = []
-let bloods = []
-let bloodDrops = []
-let bloodSplats = []
-let fadeOuts = []
-let miners = []
 
-// ////////////////////////////////////////////////////////////////////////////////////////////////////////
+g = GA.create(mainMenu)
+g.start()
 
-const play = () => {
+function mainMenu(){
+  initCanvasEvents()
+  initLayers()
+
+  menu = simpleButton({
+    x: g.stage.width / 2 - 100,
+    y: g.stage.height / 2 - 100,
+    width: 200,
+    height: 100,
+    color: '#800',
+    text: '>',
+    textX: 70,
+    textY: 5,
+    textSize: 99,
+    onPress: () => {
+      g.actx = new AudioContext()
+      removeItem(buttons, menu)
+      currentAction.started = true
+      g.remove(menu)
+      g.resume()
+      setup()
+    },
+  })
+
+  buttons.push(menu)
+  uiLayer.addChild(menu)
+  g.pause()
+}
+
+function setup(){
+
+  initMap()
+
+  initBluePrint()
+
+  initBottomPanel()
+
+  startingUnits()
+
+  initSelectionBox()
+
+  initTipBox()
+
+  objLayer.children.sort((a, b) => a.bottom - b.bottom)
+
+  initUnitCamera()
+
+  g.state = play
+}
+
+function play(){
 
   playerInput()
 
@@ -77,86 +112,14 @@ const play = () => {
   showTip()
 
   summonWave()
-
-  if (HQ.health <= 0) {
-    g.pause()
-    g.remove(world)
-    started = false
-    uiLayer.children.length = 0
-    const b = rectangle(g.stage.width, g.stage.height, '#900')
-    b.alpha = 0.5
-    const x = g.stage.width / 2
-    const y = g.stage.height / 2
-    makeText(b, 'GAME OVER', "99px sans-serif", K.r, x - 300, y - 200)
-    const k = makeGold(x - 237, y + 70)
-    b.addChild(k)
-    makeText(b, `${totalGold}`, '35px sans-serif', K.w, x - 193, y + 78)
-    makeText(b, `k ${currentKills}`, '35px sans-serif', K.w, x - 220, y + 120)
-    uiLayer.addChild(b)
-  }
-
 }
 
-const initialStuff = () => {
-  const p = createPleb(HQ.x - 100, HQ.y + 100)
-  p.isMining = true
-  miners.push(p)
-  createArmedPleb(HQ.x + 70, HQ.y + 100)
-  createArmedPleb(HQ.x - 350, HQ.y + 250)
-
-  
-}
-
-
-const setup = () => {
-
-  initMap()
-
-  initBluePrint()
-
-  initBottomPanel()
-
-  initialStuff()
-
-  initSelectionBox()
-
-  initTipBox()
-
-  objLayer.children.sort((a, b) => a.bottom - b.bottom)
-
-  initUnitCamera()
-
-  g.state = play
-}
-
-const mainMenu = () => {
-  initCanvasEvents()
-  initLayers()
-  menu = simpleButton('>', g.stage.width / 2 - 100, g.stage.height / 2 - 100, 70, 5, '#800', 99, () => {
-    removeItem(buttons, menu)
-    started = true
-    g.remove(menu)
-    g.resume()
-    setup()
-  }, 200, 100)
-  buttons.push(menu)
-  uiLayer.addChild(menu)
-  g.pause()
-
-
-  // const t = createArmedPleb(100, 100, 0)
-  // uiLayer.addChild(t)
-  // t.twoEyes.y -= 8
-  // drawRank(t.border, 11, 35)
-  // drawRank(t.border, 11, 41)
-  // drawRank(t.border, 11, 47)
-  // drawRank(t.border, 53, 61)
-  // const r = drawRank(10, 10)
-  // uiLayer.addChild(r)
-}
-
-g = GA.create(mainMenu)
-g.start()
-
-export { started, menu, PI, K, currentAction, surfaceHeight, surfaceWidth, miners, g, units, enemies, shots, selectedUnits, movingUnits, solids, playerUnits, bloods, bloodSplats, UC, attackingTarget, armedUnits, bloodDrops, fadeOuts, cellSize
+export { 
+  g,
+  K,
+  PI,
+  currentAction,
+  SURFACE_HEIGHT,
+  SURFACE_WIDTH,
+  CELLSIZE
 }

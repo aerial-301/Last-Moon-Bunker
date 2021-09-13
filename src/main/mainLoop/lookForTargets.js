@@ -1,4 +1,5 @@
-import { g, enemies, playerUnits, armedUnits } from '../../main.js'
+import { g } from '../../main.js'
+import { armedUnits, enemies, playerUnits } from '../../objects.js'
 
 
 let readyToScanE = true

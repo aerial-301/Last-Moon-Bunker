@@ -1,13 +1,12 @@
-import { g, movingUnits, solids, playerUnits, armedUnits } from './main.js'
+import { g, K } from './main.js'
 import { world, objLayer } from './main/mainSetUp/initLayers.js'
 import { rectangle } from './drawings.js'
-import { makeText } from './unitObject.js'
+import { armedUnits, makeText, playerUnits, solids } from './objects.js'
 import { currentPlayer } from './keyboard.js'
+import { movingUnits } from './main/mainLoop/moveUnits.js'
 
 const OBSDIST = 250
-const OBSDIST_UNDERGROUND = 400
-
-const directions = [
+export const DIRECTIONS = [
   [1, 0],
   [1, 1],
   [0, 1],
@@ -28,36 +27,42 @@ const canBuildHere = (gridMap, r, c) => {
   catch (e) {}
   return false
 }
+
 const checkNeighbors = (gridMap, row, col) => {
   let n
-  for (let d of directions) {
+  for (let d of DIRECTIONS) {
     n = addVectors([row, col], d)
     try {
       if (gridMap[n[0]][n[1]] != 0) return false
-    } catch (e) {null}
+    } catch (e) {}
   }
   return true
 }
-const simpleButton = (
-  text,
-  xPos = 10,
-  yPos = 10,
+
+const simpleButton = ({
+  x = 10,
+  y = 10,
+  width = 100,
+  height = 80,
+  color = K.g,
+  text = '',
   textX = 10,
   textY = 10,
-  color = '#555',
-  size = 28,
-  action = () => console.log(text),
-  width = 100,
-  height = 80
-  ) => {
-  const button = rectangle(width, height, color, 1, xPos, yPos)
-  if (action) button.action = action
-  const tSize = size
-  if (text ) button.text = makeText(button, text, `${tSize}px arial`, '#FFF', textX, textY)
+  textSize = 28,
+  onPress = 0,
+}) => {
+  const button = rectangle(width, height, color, 1, x, y)
+  if (onPress) button.onPress = onPress
+  button.text = makeText(button, text, `${textSize}px arial`, K.w, textX, textY)
   return button
 }
+
 const avoidObstacles = (collider, H) => {
   collider.obstacles.forEach(obst => {
+    if (obst.isDead) {
+      removeItem(collider.obstacles, obst)
+      return
+    }
     if (g.hitTestRectangle(collider, obst)) {
       const desX = collider.destinationX + world.x
       const desY = collider.destinationY + world.y
@@ -99,6 +104,7 @@ const avoidObstacles = (collider, H) => {
     }
   })
 }
+
 const checkCollisions = (side, collider = currentPlayer, exception = null) => {
   if (!collider.obstacles) return false
   collider.obstacles.forEach(obst => {
@@ -131,14 +137,21 @@ const checkCollisions = (side, collider = currentPlayer, exception = null) => {
     }
   })
 }
+
 const randomNum = (min, max, int = 1) => {
     const r = Math.random() * (max - min) + min
     return int ? r | 0 : r
 }
+
 const removeItem = (array, item) => {
     const index = array.indexOf(item)
     if (index !== -1) array.splice(index, 1)
 }
+
+const addNewItem = (array, item) => {
+  if (array.findIndex(i => i == item) == -1) array.push(item)
+}
+
 const getUnitVector = (a, b) => {
   let xv, yv
   xv = b.centerX - a.centerX
@@ -146,6 +159,7 @@ const getUnitVector = (a, b) => {
   const mag = Math.sqrt( (xv**2) + (yv**2) )
   return { x: xv / mag, y: yv / mag }
 }
+
 const sortUnits = (array, x, y, moveArray) => {
   const len = array.length
   if (len == 0) return
@@ -170,7 +184,6 @@ const sortUnits = (array, x, y, moveArray) => {
     const u = array[i]
 
     u.getInRange = false
-    // u.isCollided = false
     u.target = null
     u.isSeeking = false
 
@@ -183,12 +196,11 @@ const sortUnits = (array, x, y, moveArray) => {
     u.destinationY = y + (0 | (i / size)) * (maxHeight + ySpace) - midY
     setDirection(u)
 
-    if (moveArray.findIndex((e) => e == u) == -1) {
-      u.isMoving = true
-      moveArray.push(u)
-    }
+    u.isMoving = true
+    addNewItem(moveArray, u)
   }
 }
+
 const setDirection = (u) => {
   const xD = u.destinationX - u.x
   const yD = u.destinationY - u.y
@@ -196,7 +208,8 @@ const setDirection = (u) => {
   u.vx = (xD / mag)
   u.vy = (yD / mag)
 }
-const newMoveX = (u) => {
+
+const moveX = (u) => {
   const xD = u.destinationX - u.x
   const xd = Math.abs(xD)
   if (!u.isCollidingV) {
@@ -210,7 +223,8 @@ const newMoveX = (u) => {
     } else return false
   } else u.x += u.vx * u.speed
 }
-const newMoveY = (u) => {
+
+const moveY = (u) => {
   objLayer.children.sort((a, b) => a.bottom - b.bottom)
   const yD = u.destinationY - u.y
   const yd = Math.abs(yD)
@@ -225,23 +239,24 @@ const newMoveY = (u) => {
     } else return false
   } else u.y += u.vy * u.speed
 }
-const newMoveTest = (u) => {
-  const x = newMoveX(u)
-  const y = newMoveY(u)
 
+const moveUnit = (u) => {
+  const x = moveX(u)
+  const y = moveY(u)
   if (!x && !y) {
     removeItem(movingUnits, u)
     u.getInRange = false
     u.isMoving = false
   }
 }
-const scan = (u, delay = 400, distance = OBSDIST_UNDERGROUND) => {
+
+const scan = (u, delay = 400, distance = OBSDIST) => {
   if (!u.scaned) {
     u.scaned = true
     for (const obj of solids) {
       if (xDistance(u, obj) < distance) {
         if (yDistance(u, obj) < distance) {
-          if (u.obstacles.findIndex((value) => value == obj) == -1) u.obstacles.push(obj)
+          addNewItem(u.obstacles, obj)
           continue
         }
       }
@@ -250,6 +265,7 @@ const scan = (u, delay = 400, distance = OBSDIST_UNDERGROUND) => {
     g.wait(delay, () => u.scaned = false)
   }
 }
+
 const roll = (t, vx, vy) => {
   if (t.rollCounter > 0) {
     g.wait(1, () => {
@@ -274,13 +290,35 @@ const roll = (t, vx, vy) => {
     t.isRolling = false
   }
 }
+
 const playerDie = (o) => {
   removeItem(playerUnits, o)
   removeItem(armedUnits, o)
 }
+
 const notEnough = () => {
+  // Can't build or can't summon sound
   const HZ = 150
   g.soundEffect(HZ, .2, 'sawtooth', .05, 100, false)
 }
 
-export { notEnough, checkNeighbors, setDirection, simpleButton, checkCollisions, removeItem, randomNum, getUnitVector, sortUnits, xDistance, yDistance, scan, roll, newMoveTest, tempAngle, playerDie, canBuildHere }
+export {
+  notEnough,
+  checkNeighbors,
+  setDirection,
+  checkCollisions,
+  addNewItem,
+  removeItem,
+  randomNum,
+  getUnitVector,
+  sortUnits,
+  xDistance,
+  yDistance,
+  scan,
+  roll,
+  moveUnit,
+  tempAngle,
+  playerDie,
+  canBuildHere,
+  simpleButton
+}

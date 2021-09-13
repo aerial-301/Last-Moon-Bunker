@@ -1,8 +1,11 @@
-import { g, units, bloodDrops, fadeOuts, shots } from "../../main.js"
+import { g } from "../../main.js"
 import { removeItem } from "../../functions.js"
+import { shots, units } from "../../objects.js"
+import { bloodDrops } from "../../drawings.js"
 
-
+export let fadeOuts = []
 let animate = true
+
 const animateUnits = () => {
   if (animate) {
     animate = false

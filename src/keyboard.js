@@ -1,17 +1,19 @@
 import { world, objLayer } from './main/mainSetUp/initLayers.js'
-import { g, selectedUnits, movingUnits, attackingTarget } from './main.js'
+import { g } from './main.js'
 import { checkCollisions, removeItem } from './functions.js'
 import { bottomPanel, tip } from './main/mainSetUp/initBottomPanel.js'
-import { summonWave } from './main/mainLoop/summonWaves.js'
-// import { gridMap } from './main/mainSetUp/initMap.js'
-// import { debugShape, tempIndicator } from '../extra/debug.js'
-let currentPlayer, UC
+import { selectedUnits } from './mouse.js'
+import { attackingTarget } from './main/mainLoop/attackTarget.js'
+import { movingUnits } from './main/mainLoop/moveUnits.js'
 
+let currentPlayer, UC
 const keys = {
   'w': false,
   's': false,
   'a': false,
   'd': false,
+  'q': false,
+  'z': false
 }
 
 window.addEventListener('keydown', (k) => {
@@ -28,30 +30,24 @@ window.addEventListener('keyup', (k) => {
     }
 
   } else if (k.key === 'r') switchMode()
-
-  if (k.key === 'p') summonWave()
-  // if (k.key === 'o') {
-  //   gridMap.forEach(r => console.log(r.join('')))
-  // }
-  
 })
 
-const moveCamera = (surfaceWidth, surfaceHeight) => {
-  if (keys['w']) {
+const moveCamera = (SURFACE_WIDTH, SURFACE_HEIGHT) => {
+  if (keys['w'] || keys['z']) {
     if (world.y < 300) world.y += 20
   }
   if (keys['s']) {
-    if (world.y > g.stage.height - surfaceHeight) world.y -= 20
+    if (world.y > g.stage.height - SURFACE_HEIGHT) world.y -= 20
   }
-  if (keys['a']) {
+  if (keys['a'] || keys['q']) {
     if (world.x < 0) world.x += 20
   }
   if (keys['d']) {
-    if (world.x > g.stage.width - surfaceWidth) world.x -= 20
+    if (world.x > g.stage.width - SURFACE_WIDTH) world.x -= 20
   }
 }
 const movePlayer = () => {
-  if (keys['w']) {
+  if (keys['w'] || keys['z']) {
     currentPlayer.y -= currentPlayer.speed
     checkCollisions('bot')
     currentPlayer.scan()
@@ -63,7 +59,7 @@ const movePlayer = () => {
     currentPlayer.scan()
     objLayer.children.sort((a, b) => a.bottom - b.bottom)
   }
-  if (keys['a']) {
+  if (keys['a'] || keys['q']) {
     currentPlayer.x -= currentPlayer.speed
     checkCollisions('right')
     currentPlayer.scan()
@@ -87,6 +83,7 @@ const switchMode = () => {
       currentPlayer = selectedUnits[0]
       currentPlayer.isMoving = false
       currentPlayer.target = null
+      currentPlayer.rollOnCooldown = false
       removeItem(movingUnits, currentPlayer)
       removeItem(attackingTarget, currentPlayer)
       currentPlayer.deselect()
